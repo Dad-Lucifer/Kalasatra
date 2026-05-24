@@ -1,0 +1,107 @@
+"use strict";
+
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const dotenv = require("dotenv");
+
+// Load env vars FIRST — before any other imports that depend on them
+dotenv.config();
+
+// Initialize Firebase + Cognito (validates env vars at startup)
+require("../database/firebase");
+
+const { apiLimiter } = require("./middlewares/rateLimiter.middleware");
+const authRoutes = require("./routes/auth.routes");
+
+const app = express();
+
+// ─── Security Headers ─────────────────────────────────────────────────────────
+app.use(
+  helmet({
+    contentSecurityPolicy: process.env.NODE_ENV === "production" ? undefined : false,
+  })
+);
+
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  : ["http://localhost:5173"];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    optionsSuccessStatus: 200,
+  })
+);
+
+// ─── Request Logging ──────────────────────────────────────────────────────────
+app.use(
+  morgan(process.env.NODE_ENV === "production" ? "combined" : "dev")
+);
+
+// ─── Body Parsers ─────────────────────────────────────────────────────────────
+app.use(express.json({ limit: "10kb" }));        // Limit body size to prevent DoS
+app.use(express.urlencoded({ extended: false, limit: "10kb" }));
+
+// ─── Global Rate Limiter ──────────────────────────────────────────────────────
+app.use("/api", apiLimiter);
+
+// ─── Health Check ─────────────────────────────────────────────────────────────
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
+
+// ─── API Routes ───────────────────────────────────────────────────────────────
+app.use("/api/v1/auth", authRoutes);
+
+// ─── 404 Handler ──────────────────────────────────────────────────────────────
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found.",
+  });
+});
+
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  console.error("[GLOBAL ERROR]", err);
+
+  // Handle CORS errors
+  if (err.message && err.message.startsWith("CORS blocked")) {
+    return res.status(403).json({ success: false, message: err.message });
+  }
+
+  // Handle JSON parse errors
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid JSON in request body.",
+    });
+  }
+
+  return res.status(err.status || 500).json({
+    success: false,
+    message:
+      process.env.NODE_ENV === "production"
+        ? "Internal server error."
+        : err.message,
+  });
+});
+
+module.exports = app;

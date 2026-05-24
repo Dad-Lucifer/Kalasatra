@@ -1,0 +1,313 @@
+{
+  "info": {
+    "name": "Kalasatr Auth API",
+    "_postman_id": "kalasatr-auth-v1",
+    "description": "Production-ready Auth API — AWS Cognito + Firestore\n\nBase URL: http://localhost:5000\n\n**Flow:**\n1. Signup → get OTP in email\n2. Verify OTP → account activated\n3. Login → copy accessToken\n4. Paste accessToken into collection variable `accessToken`\n5. Use /me and /logout",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "Paste the accessToken from /login response here"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string",
+      "description": "Paste the refreshToken from /login response here"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Signup",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Secret@123\",\n  \"name\": \"Test User\",\n  \"phone\": \"+911234567890\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/signup",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "signup"]
+        },
+        "description": "Registers a new user. AWS Cognito sends a 6-digit OTP to the email."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+              "pm.test('success is true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Verify OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"code\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/verify-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "verify-otp"]
+        },
+        "description": "Confirm the 6-digit OTP received in email after signup. Replace code with actual OTP."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('success is true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Resend OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"testuser@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/resend-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "resend-otp"]
+        },
+        "description": "Resends OTP. Rate limited to 3 attempts per 15 minutes."
+      }
+    },
+    {
+      "name": "4. Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Secret@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "login"]
+        },
+        "description": "Returns accessToken, idToken, refreshToken. Copy accessToken into collection variable."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "if (body.success && body.data) {",
+              "  pm.collectionVariables.set('accessToken', body.data.accessToken);",
+              "  pm.collectionVariables.set('refreshToken', body.data.refreshToken);",
+              "  console.log('Tokens saved to collection variables');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Refresh Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/refresh-token",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "refresh-token"]
+        },
+        "description": "Exchange refresh token for new access token. Uses collection variable refreshToken."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "if (body.success && body.data) {",
+              "  pm.collectionVariables.set('accessToken', body.data.accessToken);",
+              "  console.log('New accessToken saved');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Forgot Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"testuser@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "forgot-password"]
+        },
+        "description": "Sends a 6-digit password reset OTP to email."
+      }
+    },
+    {
+      "name": "7. Reset Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"code\": \"654321\",\n  \"newPassword\": \"NewSecret@456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "reset-password"]
+        },
+        "description": "Confirm reset OTP and set new password. Replace code with actual OTP from email."
+      }
+    },
+    {
+      "name": "8. Get Profile (Protected)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "me"]
+        },
+        "description": "Returns user profile from Firestore. Requires valid Bearer token — auto-filled after Login test script runs."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('Returns user object', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.be.true;",
+              "  pm.expect(body.data.user).to.be.an('object');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Logout (Protected)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "logout"]
+        },
+        "description": "Globally signs out — invalidates ALL Cognito sessions for this user. Requires Bearer token."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('accessToken', '');",
+              "pm.collectionVariables.set('refreshToken', '');",
+              "console.log('Tokens cleared');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Verify server is running."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('Server is healthy', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.equal('healthy');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
