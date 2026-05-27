@@ -131,6 +131,7 @@ const createSubcategorySchema = Joi.object({
 const createProductSchema = Joi.object({
   category_id: Joi.string().uuid().required(),
   subcategory_id: Joi.string().uuid().optional().allow(null),
+  subcategory_name: Joi.string().trim().min(1).max(100).optional().allow(null),
   name: Joi.string().trim().min(2).max(200).required(),
   description: Joi.string().trim().max(2000).optional(),
   buying_price: Joi.number().min(0).required(),

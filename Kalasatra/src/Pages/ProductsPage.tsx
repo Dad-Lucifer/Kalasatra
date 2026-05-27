@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiRequest } from '../utils/api';
+import EditProductModal from '../components/EditProductModal';
 import './ProductsPage.css';
 
 interface Category {
@@ -19,13 +20,18 @@ interface Product {
   id: string;
   name: string;
   slug: string;
+  category_id: string;
+  subcategory_id: string | null;
   description: string;
+  buying_price: number;
   selling_price: number;
   discount_percentage: number;
   colors: string[];
   sizes: string[];
   images: Array<{ url: string; alt: string; order: number }>;
   thumbnail_url: string;
+  stock_quantity: number;
+  low_stock_threshold: number;
   stock_status: string;
   category_name: string;
   subcategory_name: string;
@@ -58,6 +64,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -85,7 +92,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; alt: string; order: number }>>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [modalSubcategories, setModalSubcategories] = useState<Subcategory[]>([]);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -102,11 +109,18 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   }, [selectedCategory]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     loadProducts();
   }, [
     selectedCategory,
     selectedSubcategory,
-    searchQuery,
+    debouncedSearch,
     minPrice,
     maxPrice,
     selectedColors,
@@ -115,15 +129,6 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     sortOrder,
     currentPage,
   ]);
-
-  useEffect(() => {
-    if (formData.category_id) {
-      const cat = categories.find((c) => c.id === formData.category_id);
-      if (cat) loadModalSubcategories(cat.slug);
-    } else {
-      setModalSubcategories([]);
-    }
-  }, [formData.category_id]);
 
   const loadCategories = async () => {
     const res = await apiRequest('/products/categories');
@@ -136,13 +141,6 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     const res = await apiRequest(`/products/categories/${categorySlug}/subcategories`);
     if (res.success && res.data) {
       setSubcategories(res.data);
-    }
-  };
-
-  const loadModalSubcategories = async (categorySlug: string) => {
-    const res = await apiRequest(`/products/categories/${categorySlug}/subcategories`);
-    if (res.success && res.data) {
-      setModalSubcategories(res.data);
     }
   };
 
@@ -201,7 +199,8 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   };
 
   const handleEditProduct = (productId: string) => {
-    console.log('Edit product:', productId);
+    const product = products.find((p) => p.id === productId);
+    if (product) setEditingProduct(product);
   };
 
   const handleDeleteProduct = async (productId: string, productName: string) => {
@@ -308,7 +307,6 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
       sizes: [],
     });
     setUploadedImages([]);
-    setModalSubcategories([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -320,9 +318,19 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
 
     setSubmitting(true);
 
-    const payload = {
+    let subcategoryName: string | null = null;
+    let subcategoryId: string | null = formData.subcategory_id || null;
+
+    // If user typed a subcategory name (not a UUID), send as name instead
+    if (subcategoryId && subcategoryId.length !== 36) {
+      subcategoryName = subcategoryId;
+      subcategoryId = null;
+    }
+
+    const payload: Record<string, any> = {
       category_id: formData.category_id,
-      subcategory_id: formData.subcategory_id || null,
+      subcategory_id: subcategoryId,
+      subcategory_name: subcategoryName,
       name: formData.name,
       description: formData.description,
       buying_price: parseFloat(formData.buying_price) || 0,
@@ -734,15 +742,12 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
 
                 <div className="form-group">
                   <label>Subcategory</label>
-                  <select
+                  <input
+                    type="text"
                     value={formData.subcategory_id}
                     onChange={(e) => handleFormChange('subcategory_id', e.target.value)}
-                  >
-                    <option value="">None</option>
-                    {modalSubcategories.map((sub) => (
-                      <option key={sub.id} value={sub.id}>{sub.name}</option>
-                    ))}
-                  </select>
+                    placeholder="Type subcategory name (optional)"
+                  />
                 </div>
               </div>
 
@@ -931,6 +936,16 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
             </form>
           </div>
         </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {editingProduct && (
+        <EditProductModal
+          product={editingProduct}
+          categories={categories}
+          onClose={() => setEditingProduct(null)}
+          onSaved={loadProducts}
+        />
       )}
     </div>
   );

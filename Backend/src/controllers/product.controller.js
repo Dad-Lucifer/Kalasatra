@@ -250,9 +250,10 @@ const getProductBySlug = async (req, res) => {
  */
 const createProduct = async (req, res) => {
   try {
-    const {
+    let {
       category_id,
       subcategory_id,
+      subcategory_name,
       name,
       description,
       buying_price,
@@ -269,6 +270,44 @@ const createProduct = async (req, res) => {
       meta_description,
       meta_keywords,
     } = req.body;
+
+    // If subcategory_name is provided (not a UUID), look up or create the subcategory
+    if (subcategory_name && !subcategory_id) {
+      const { data: existingSub } = await supabase
+        .from("subcategories")
+        .select("id")
+        .eq("category_id", category_id)
+        .eq("name", subcategory_name)
+        .single();
+
+      if (existingSub) {
+        subcategory_id = existingSub.id;
+      } else {
+        const subSlug = generateSlug(subcategory_name);
+        const { data: newSub, error: subError } = await supabase
+          .from("subcategories")
+          .insert({
+            category_id,
+            name: subcategory_name,
+            slug: subSlug,
+            description: "",
+            display_order: 0,
+            created_by: req.user?.sub,
+          })
+          .select("id")
+          .single();
+
+        if (subError) {
+          console.error("Failed to create subcategory:", subError);
+          return res.status(400).json({
+            success: false,
+            message: "Failed to create subcategory: " + subError.message,
+          });
+        }
+
+        subcategory_id = newSub.id;
+      }
+    }
 
     const slug = generateSlug(name);
     const sku = `SKU-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
