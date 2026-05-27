@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .env
 SKILL.md
+*.md
 
 # Editor directories and files
 .vscode/*

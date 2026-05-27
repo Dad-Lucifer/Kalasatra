@@ -16,7 +16,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const { cognitoClient, COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID } =
   require("../config/cognito");
-const { db } = require("../../database/firebase");
+const { supabase } = require("../../database/supabase");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -62,26 +62,43 @@ const handleCognitoError = (res, err, context = "") => {
 };
 
 /**
- * Create or update the user profile in Firestore after successful Cognito auth.
+ * Create or update the user profile in Supabase after successful Cognito auth.
  * Called after signup confirmation and first login.
  */
-const upsertFirestoreUser = async (sub, data) => {
-  const ref = db.collection("users").doc(sub);
-  const snap = await ref.get();
+const upsertSupabaseUser = async (sub, data) => {
+  const { data: existingUser, error: fetchError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("uid", sub)
+    .single();
 
-  if (!snap.exists) {
-    await ref.set({
+  if (fetchError && fetchError.code !== "PGRST116") {
+    // PGRST116 = not found, which is okay
+    throw fetchError;
+  }
+
+  if (!existingUser) {
+    // Create new user
+    const { error: insertError } = await supabase.from("users").insert({
       uid: sub,
       ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isActive: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_active: true,
     });
+
+    if (insertError) throw insertError;
   } else {
-    await ref.update({
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+    // Update existing user
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({
+        ...data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("uid", sub);
+
+    if (updateError) throw updateError;
   }
 };
 
@@ -118,17 +135,22 @@ const signup = async (req, res) => {
 
     const userSub = result.UserSub;
 
-    // Store pending user in Firestore (confirmed after OTP verification)
-    await db.collection("users").doc(userSub).set({
+    // Store pending user in Supabase (confirmed after OTP verification)
+    const { error: insertError } = await supabase.from("users").insert({
       uid: userSub,
       email,
       name,
       ...(phone && { phone }),
-      isVerified: false,
-      isActive: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      is_verified: false,
+      is_active: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     });
+
+    if (insertError) {
+      console.error("[AUTH] Failed to create user in Supabase:", insertError);
+      throw new Error("Failed to create user profile");
+    }
 
     return res.status(201).json({
       success: true,
@@ -165,18 +187,19 @@ const verifyOtp = async (req, res) => {
       })
     );
 
-    // Mark user as verified in Firestore
-    const usersRef = db.collection("users");
-    const snap = await usersRef.where("email", "==", email).limit(1).get();
+    // Mark user as verified in Supabase
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({
+        is_verified: true,
+        is_active: true,
+        verified_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("email", email);
 
-    if (!snap.empty) {
-      const docRef = snap.docs[0].ref;
-      await docRef.update({
-        isVerified: true,
-        isActive: true,
-        verifiedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+    if (updateError) {
+      console.error("[AUTH] Failed to update user in Supabase:", updateError);
     }
 
     return res.status(200).json({
@@ -258,15 +281,17 @@ const login = async (req, res) => {
     const { AccessToken, IdToken, RefreshToken, ExpiresIn } =
       result.AuthenticationResult;
 
-    // Update last login in Firestore
-    const usersRef = db.collection("users");
-    const snap = await usersRef.where("email", "==", email).limit(1).get();
+    // Update last login in Supabase
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({
+        last_login_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("email", email);
 
-    if (!snap.empty) {
-      await snap.docs[0].ref.update({
-        lastLoginAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+    if (updateError) {
+      console.error("[AUTH] Failed to update last login:", updateError);
     }
 
     return res.status(200).json({

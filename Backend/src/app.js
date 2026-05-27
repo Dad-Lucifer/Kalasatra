@@ -9,11 +9,12 @@ const dotenv = require("dotenv");
 // Load env vars FIRST — before any other imports that depend on them
 dotenv.config();
 
-// Initialize Firebase + Cognito (validates env vars at startup)
-require("../database/firebase");
+// Initialize Supabase (validates env vars at startup)
+require("../database/supabase");
 
 const { apiLimiter } = require("./middlewares/rateLimiter.middleware");
 const authRoutes = require("./routes/auth.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
 
@@ -68,6 +69,13 @@ app.get("/health", (_req, res) => {
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/admin", adminRoutes);
+
+const productRoutes = require("./routes/product.routes");
+app.use("/api/v1/products", productRoutes);
+
+const uploadRoutes = require("./routes/upload.routes");
+app.use("/api/v1/upload", uploadRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -92,6 +100,35 @@ app.use((err, _req, res, _next) => {
     return res.status(400).json({
       success: false,
       message: "Invalid JSON in request body.",
+    });
+  }
+
+  // Handle Multer errors
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({
+      success: false,
+      message: "File too large. Maximum size is 10 MB.",
+    });
+  }
+
+  if (err.code === "LIMIT_FILE_COUNT") {
+    return res.status(400).json({
+      success: false,
+      message: "Too many files. Maximum is 10.",
+    });
+  }
+
+  if (err.code === "LIMIT_UNEXPECTED_FILE") {
+    return res.status(400).json({
+      success: false,
+      message: "Unexpected file field.",
+    });
+  }
+
+  if (err.message && err.message.startsWith("Invalid file type")) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
     });
   }
 

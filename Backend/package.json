@@ -14,15 +14,16 @@
   "type": "commonjs",
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.0.0",
+    "@supabase/supabase-js": "^2.106.2",
     "aws-jwt-verify": "^4.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^7.0.0",
-    "firebase-admin": "^13.10.0",
     "helmet": "^8.0.0",
     "joi": "^17.0.0",
     "morgan": "^1.10.0",
+    "multer": "^2.1.1",
     "uuid": "^11.0.0"
   },
   "devDependencies": {
