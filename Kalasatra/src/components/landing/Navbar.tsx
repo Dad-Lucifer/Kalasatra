@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const navLinks = [
-  { label: 'Men', href: '#men' },
-  { label: 'Women', href: '#women' },
-  { label: 'Kids', href: '#kids' },
-  { label: 'Collections', href: '#collections' },
+  { label: 'Men', href: '/products/mens-collection' },
+  { label: 'Women', href: '/products/womens-collection' },
+  { label: 'Kids', href: '/products/kids-collection' },
+  { label: 'Collections', href: '/products/mens-collection' },
 ];
 
 export default function Navbar() {
@@ -39,13 +39,13 @@ export default function Navbar() {
 
           <div className="hidden lg:flex items-center gap-10">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.label}
-                href={link.href}
+                to={link.href}
                 className="relative text-sm font-medium uppercase tracking-[0.15em] text-soft-white/70 hover:text-luxury-gold transition-colors duration-300 after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-luxury-gold after:transition-all after:duration-300 hover:after:w-full"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -92,14 +92,14 @@ export default function Navbar() {
       >
         <div className="bg-dark-charcoal/98 backdrop-blur-lg border-t border-luxury-gold/10 px-6 py-6 flex flex-col gap-4">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.label}
-              href={link.href}
+              to={link.href}
               onClick={() => setMobileOpen(false)}
               className="text-sm font-medium uppercase tracking-[0.15em] text-soft-white/70 hover:text-luxury-gold transition-colors py-2"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
           <div className="flex gap-3 pt-4 border-t border-luxury-gold/10">
             <Link

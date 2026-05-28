@@ -227,21 +227,22 @@ export default function EditProductModal({ product, categories, onClose, onSaved
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Edit Product</h2>
-          <button className="modal-close" onClick={onClose}>&times;</button>
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto py-10" onClick={onClose}>
+      <div className="w-full max-w-2xl bg-[#1C1C1C] rounded-2xl overflow-hidden mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#333]">
+          <h2 className="text-xl font-bold text-[#F5F5F5]">Edit Product</h2>
+          <button onClick={onClose} className="text-2xl text-[#999] hover:text-[#F5F5F5] bg-transparent border-none cursor-pointer transition-colors">&times;</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="product-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label>Category *</label>
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#999]">Category *</label>
               <select
                 value={formData.category_id}
                 onChange={(e) => handleFormChange('category_id', e.target.value)}
                 required
+                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm outline-none focus:border-[#D4AF37] transition-colors"
               >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
@@ -250,11 +251,12 @@ export default function EditProductModal({ product, categories, onClose, onSaved
               </select>
             </div>
 
-            <div className="form-group">
-              <label>Subcategory</label>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#999]">Subcategory</label>
               <select
                 value={formData.subcategory_id}
                 onChange={(e) => handleFormChange('subcategory_id', e.target.value)}
+                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm outline-none focus:border-[#D4AF37] transition-colors"
               >
                 <option value="">None</option>
                 {modalSubcategories.map((sub) => (
@@ -264,39 +266,42 @@ export default function EditProductModal({ product, categories, onClose, onSaved
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Product Name *</label>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-[#999]">Product Name *</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => handleFormChange('name', e.target.value)}
               required
+              className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
             />
           </div>
 
-          <div className="form-group">
-            <label>Description</label>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-[#999]">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => handleFormChange('description', e.target.value)}
               rows={3}
+              className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors resize-none"
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Buying Price</label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#999]">Buying Price</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 value={formData.buying_price}
                 onChange={(e) => handleFormChange('buying_price', e.target.value)}
+                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
               />
             </div>
 
-            <div className="form-group">
-              <label>Selling Price *</label>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#999]">Selling Price *</label>
               <input
                 type="number"
                 step="0.01"
@@ -304,74 +309,84 @@ export default function EditProductModal({ product, categories, onClose, onSaved
                 value={formData.selling_price}
                 onChange={(e) => handleFormChange('selling_price', e.target.value)}
                 required
+                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
               />
             </div>
 
-            <div className="form-group">
-              <label>Discount %</label>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#999]">Discount %</label>
               <input
                 type="number"
                 min="0"
                 max="100"
                 value={formData.discount_percentage}
                 onChange={(e) => handleFormChange('discount_percentage', e.target.value)}
+                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
               />
             </div>
 
-            <div className="form-group">
-              <label>GST %</label>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#999]">GST %</label>
               <input
                 type="number"
                 min="0"
                 max="100"
                 value={formData.gst_percentage}
                 onChange={(e) => handleFormChange('gst_percentage', e.target.value)}
+                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
               />
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Stock Quantity</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#999]">Stock Quantity</label>
               <input
                 type="number"
                 min="0"
                 value={formData.stock_quantity}
                 onChange={(e) => handleFormChange('stock_quantity', e.target.value)}
+                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
               />
             </div>
 
-            <div className="form-group">
-              <label>Low Stock Threshold</label>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#999]">Low Stock Threshold</label>
               <input
                 type="number"
                 min="0"
                 value={formData.low_stock_threshold}
                 onChange={(e) => handleFormChange('low_stock_threshold', e.target.value)}
+                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
               />
             </div>
 
-            <div className="form-group checkbox-group">
-              <label>
+            <div className="flex items-end pb-2">
+              <label className="flex items-center gap-2 text-sm text-[#F5F5F5] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.is_featured}
                   onChange={(e) => handleFormChange('is_featured', e.target.checked)}
+                  className="accent-[#D4AF37]"
                 />
                 Featured Product
               </label>
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Colors</label>
-            <div className="chip-group">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-[#999]">Colors</label>
+            <div className="flex flex-wrap gap-2">
               {availableColors.map((color) => (
                 <button
                   key={color}
                   type="button"
-                  className={`chip ${formData.colors.includes(color) ? 'active' : ''}`}
                   onClick={() => toggleFormColor(color)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all border ${
+                    formData.colors.includes(color)
+                      ? 'bg-[#D4AF37] text-[#0F0F0F] border-[#D4AF37]'
+                      : 'bg-[#0F0F0F] text-[#F5F5F5] border-[#333] hover:border-[#D4AF37]'
+                  }`}
                 >
                   {color}
                 </button>
@@ -379,15 +394,19 @@ export default function EditProductModal({ product, categories, onClose, onSaved
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Sizes</label>
-            <div className="chip-group">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-[#999]">Sizes</label>
+            <div className="flex flex-wrap gap-2">
               {availableSizes.map((size) => (
                 <button
                   key={size}
                   type="button"
-                  className={`chip ${formData.sizes.includes(size) ? 'active' : ''}`}
                   onClick={() => toggleFormSize(size)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all border ${
+                    formData.sizes.includes(size)
+                      ? 'bg-[#D4AF37] text-[#0F0F0F] border-[#D4AF37]'
+                      : 'bg-[#0F0F0F] text-[#F5F5F5] border-[#333] hover:border-[#D4AF37]'
+                  }`}
                 >
                   {size}
                 </button>
@@ -395,63 +414,65 @@ export default function EditProductModal({ product, categories, onClose, onSaved
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Product Images</label>
-            <div className="upload-area">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-[#999]">Product Images</label>
+            <div className="flex flex-col gap-2">
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"
                 multiple
                 onChange={handleImageUpload}
-                style={{ display: 'none' }}
+                className="hidden"
               />
-              <button
-                type="button"
-                className="upload-btn"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                {uploading ? 'Uploading...' : 'Choose Images'}
-              </button>
-              <span className="upload-hint">Supports JPG, PNG, WebP, AVIF (max 10MB each)</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="px-4 py-2 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all border-none cursor-pointer"
+                >
+                  {uploading ? 'Uploading...' : 'Choose Images'}
+                </button>
+                <span className="text-[10px] text-[#666]">Supports JPG, PNG, WebP, AVIF (max 10MB each)</span>
+              </div>
             </div>
 
             {uploadedImages.length > 0 && (
-              <div className="image-preview-grid">
+              <div className="grid grid-cols-4 gap-2 mt-3">
                 {uploadedImages.map((img, idx) => (
-                  <div key={idx} className="image-preview-item">
-                    <img src={img.url} alt={`Product ${idx + 1}`} />
+                  <div key={idx} className="relative aspect-square bg-[#0F0F0F] rounded-lg overflow-hidden group">
+                    <img src={img.url} alt={`Product ${idx + 1}`} className="w-full h-full object-cover" />
                     <button
                       type="button"
-                      className="image-remove-btn"
                       onClick={() => removeImage(idx)}
                       title="Remove image"
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none flex items-center justify-center"
                     >
                       &times;
                     </button>
-                    {idx === 0 && <span className="thumbnail-badge">Thumbnail</span>}
+                    {idx === 0 && <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-[#D4AF37]/80 text-[#0F0F0F] text-[8px] font-bold rounded">Thumbnail</span>}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="form-actions">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#333]">
             <button
               type="button"
-              className="btn-cancel"
               onClick={() => {
                 resetForm();
                 onClose();
               }}
+              className="px-6 py-2.5 bg-transparent text-[#999] text-sm font-medium rounded-lg border border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5] transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn-submit"
               disabled={submitting || uploading}
+              className="px-6 py-2.5 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               {submitting ? 'Saving...' : 'Save Changes'}
             </button>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiRequest, clearTokens } from '../utils/api';
 import ProductsPage from './ProductsPage';
-import './Dashboard.css';
 
 interface AdminUser {
   sub: string;
@@ -53,145 +52,128 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="dashboard-container">
-        <div className="dashboard-card">
-          <div className="spinner" style={{ margin: '40px auto' }} />
-          <p style={{ textAlign: 'center', color: 'var(--text)' }}>Loading admin profile...</p>
+      <div className="min-h-screen bg-rich-black flex items-center justify-center">
+        <div className="bg-dark-charcoal rounded-2xl p-8 max-w-md w-full text-center">
+          <div className="w-8 h-8 border-2 border-luxury-gold border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-[#999] text-sm">Loading admin profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-card animate-fade-in">
-        
-        <div className="dashboard-header">
+    <div className="min-h-screen bg-rich-black py-8 px-4">
+      <div className="max-w-5xl mx-auto bg-dark-charcoal rounded-2xl overflow-hidden">
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b border-[#333]">
           <div>
-            <h1 className="dashboard-title">🛡️ Admin Dashboard</h1>
-            <p className="dashboard-subtitle">Welcome to the admin control panel</p>
+            <h1 className="text-2xl font-bold text-soft-white">🛡️ Admin Dashboard</h1>
+            <p className="text-sm text-[#999] mt-1">Welcome to the admin control panel</p>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <nav style={{ display: 'flex', gap: '8px' }}>
-              <button 
-                className={`tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+          <div className="flex items-center gap-3">
+            <nav className="flex gap-2">
+              <button
                 onClick={() => setActiveTab('dashboard')}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border)',
-                  background: activeTab === 'dashboard' ? 'var(--accent)' : 'var(--bg)',
-                  color: activeTab === 'dashboard' ? 'white' : 'var(--text)',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer border ${
+                  activeTab === 'dashboard'
+                    ? 'bg-luxury-gold text-rich-black border-luxury-gold'
+                    : 'bg-transparent text-[#999] border-[#333] hover:border-luxury-gold hover:text-soft-white'
+                }`}
               >
                 Dashboard
               </button>
-              <button 
-                className={`tab-btn ${activeTab === 'products' ? 'active' : ''}`}
+              <button
                 onClick={() => setActiveTab('products')}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border)',
-                  background: activeTab === 'products' ? 'var(--accent)' : 'var(--bg)',
-                  color: activeTab === 'products' ? 'white' : 'var(--text)',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer border ${
+                  activeTab === 'products'
+                    ? 'bg-luxury-gold text-rich-black border-luxury-gold'
+                    : 'bg-transparent text-[#999] border-[#333] hover:border-luxury-gold hover:text-soft-white'
+                }`}
               >
                 Products
               </button>
             </nav>
-            <button className="logout-btn" onClick={handleLogout}>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm font-medium text-red-400 border border-red-800/50 rounded-lg hover:bg-red-900/30 transition-all cursor-pointer"
+            >
               Logout
             </button>
           </div>
         </div>
 
         {activeTab === 'dashboard' && adminUser && (
-          <div className="profile-section">
-            <div className="profile-card">
-              <div className="profile-avatar">
+          <div className="p-6 space-y-6">
+            <div className="flex items-center gap-4 p-4 bg-rich-black rounded-xl">
+              <div className="w-14 h-14 rounded-full bg-luxury-gold flex items-center justify-center text-xl font-bold text-rich-black shrink-0">
                 {adminUser.name.charAt(0).toUpperCase()}
               </div>
-              <div className="profile-info">
-                <h2 className="profile-name">{adminUser.name}</h2>
-                <p className="profile-email">{adminUser.email}</p>
-                <div className="profile-badges">
-                  <span className="badge badge-admin">{adminUser.role}</span>
+              <div>
+                <h2 className="text-lg font-semibold text-soft-white">{adminUser.name}</h2>
+                <p className="text-sm text-[#999]">{adminUser.email}</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-luxury-gold text-rich-black rounded">{adminUser.role}</span>
                   {adminUser.groups.map((group) => (
-                    <span key={group} className="badge badge-group">{group}</span>
+                    <span key={group} className="px-2 py-0.5 text-[10px] bg-[#333] text-[#999] rounded">{group}</span>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="info-grid">
-              <div className="info-card">
-                <div className="info-label">User ID</div>
-                <div className="info-value">{adminUser.sub}</div>
-              </div>
-              <div className="info-card">
-                <div className="info-label">Email</div>
-                <div className="info-value">{adminUser.email}</div>
-              </div>
-              <div className="info-card">
-                <div className="info-label">Role</div>
-                <div className="info-value">{adminUser.role}</div>
-              </div>
-              <div className="info-card">
-                <div className="info-label">Groups</div>
-                <div className="info-value">{adminUser.groups.join(', ') || 'None'}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { label: 'User ID', value: adminUser.sub },
+                { label: 'Email', value: adminUser.email },
+                { label: 'Role', value: adminUser.role },
+                { label: 'Groups', value: adminUser.groups.join(', ') || 'None' },
+              ].map((item) => (
+                <div key={item.label} className="bg-rich-black rounded-xl px-4 py-3">
+                  <div className="text-xs text-[#666] uppercase tracking-wider mb-1">{item.label}</div>
+                  <div className="text-sm text-soft-white break-all">{item.value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <h3 className="text-base font-semibold text-soft-white mb-4">Admin Features</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button
+                  onClick={() => setActiveTab('products')}
+                  className="text-left bg-rich-black rounded-xl p-4 hover:border-luxury-gold transition-all border border-transparent cursor-pointer"
+                >
+                  <div className="text-2xl mb-2">🛍️</div>
+                  <h4 className="text-sm font-semibold text-soft-white">Product Management</h4>
+                  <p className="text-xs text-[#999] mt-1">Manage products, categories, and inventory</p>
+                </button>
+                <div className="bg-rich-black rounded-xl p-4 opacity-60">
+                  <div className="text-2xl mb-2">👥</div>
+                  <h4 className="text-sm font-semibold text-soft-white">User Management</h4>
+                  <p className="text-xs text-[#999] mt-1">Manage user accounts and permissions</p>
+                </div>
+                <div className="bg-rich-black rounded-xl p-4 opacity-60">
+                  <div className="text-2xl mb-2">📊</div>
+                  <h4 className="text-sm font-semibold text-soft-white">Analytics</h4>
+                  <p className="text-xs text-[#999] mt-1">View system analytics and reports</p>
+                </div>
+                <div className="bg-rich-black rounded-xl p-4 opacity-60">
+                  <div className="text-2xl mb-2">⚙️</div>
+                  <h4 className="text-sm font-semibold text-soft-white">Settings</h4>
+                  <p className="text-xs text-[#999] mt-1">Configure system settings</p>
+                </div>
               </div>
             </div>
 
-            <div className="admin-features">
-              <h3 style={{ marginBottom: '16px', color: 'var(--text-h)' }}>Admin Features</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => setActiveTab('products')} style={{ cursor: 'pointer' }}>
-                  <div className="feature-icon">🛍️</div>
-                  <h4>Product Management</h4>
-                  <p>Manage products, categories, and inventory</p>
-                </div>
-                <div className="feature-card">
-                  <div className="feature-icon">👥</div>
-                  <h4>User Management</h4>
-                  <p>Manage user accounts and permissions</p>
-                </div>
-                <div className="feature-card">
-                  <div className="feature-icon">📊</div>
-                  <h4>Analytics</h4>
-                  <p>View system analytics and reports</p>
-                </div>
-                <div className="feature-card">
-                  <div className="feature-icon">⚙️</div>
-                  <h4>Settings</h4>
-                  <p>Configure system settings</p>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ 
-              marginTop: '24px', 
-              padding: '16px', 
-              background: 'rgba(16, 185, 129, 0.08)', 
-              borderRadius: '12px',
-              border: '1px solid rgba(16, 185, 129, 0.2)'
-            }}>
-              <strong style={{ color: '#10b981' }}>✅ Admin Authentication Successful!</strong>
-              <p style={{ marginTop: '8px', fontSize: '14px', color: 'var(--text)' }}>
-                Your admin account is verified and active. You have <strong>{adminUser.role}</strong> level access.
+            <div className="p-4 bg-emerald-950/30 border border-emerald-800/30 rounded-xl">
+              <strong className="text-emerald-400">✅ Admin Authentication Successful!</strong>
+              <p className="mt-2 text-sm text-[#999]">
+                Your admin account is verified and active. You have <strong className="text-soft-white">{adminUser.role}</strong> level access.
               </p>
             </div>
           </div>
         )}
 
         {activeTab === 'products' && (
-          <div style={{ marginTop: '20px' }}>
+          <div className="mt-6">
             <ProductsPage isAdminMode={true} />
           </div>
         )}

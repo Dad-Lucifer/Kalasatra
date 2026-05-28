@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { apiRequest, getTokens, setTokens, clearTokens } from '../utils/api';
-import './Dashboard.css';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -94,113 +93,107 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   if (loading && !profile) {
     return (
-      <div className="dashboard-container">
-        <div className="dashboard-card" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
-          <div className="spinner" style={{ width: '40px', height: '40px', borderTopColor: 'var(--accent)' }} />
-        </div>
+      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-card animate-fade-in">
-        
-        {/* Header with avatar info */}
-        <div className="dashboard-header">
-          <div className="user-badge">
-            <div className="avatar">
+    <div className="min-h-screen bg-[#0F0F0F] py-8 px-4">
+      <div className="max-w-2xl mx-auto bg-[#1C1C1C] rounded-2xl overflow-hidden">
+
+        <div className="flex items-center justify-between gap-4 p-6 border-b border-[#333]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-[#D4AF37] flex items-center justify-center text-lg font-bold text-[#0F0F0F] shrink-0">
               {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
             </div>
-            <div className="user-meta">
-              <h2>{profile?.name || 'Authorized User'}</h2>
-              <p>{profile?.email || 'N/A'}</p>
+            <div>
+              <h2 className="text-lg font-semibold text-[#F5F5F5]">{profile?.name || 'Authorized User'}</h2>
+              <p className="text-sm text-[#999]">{profile?.email || 'N/A'}</p>
             </div>
           </div>
-          <button className="auth-btn logout-btn" onClick={handleLogout} disabled={loading}>
+          <button
+            onClick={handleLogout}
+            disabled={loading}
+            className="px-4 py-2 text-sm font-medium text-red-400 border border-red-800/50 rounded-lg hover:bg-red-900/30 transition-all disabled:opacity-50 cursor-pointer"
+          >
             Sign Out
           </button>
         </div>
 
-        {/* Errors if any */}
         {error && (
-          <div className="alert alert-error" style={{ marginBottom: '24px' }}>
+          <div className="mx-6 mt-4 px-4 py-3 bg-red-900/30 text-red-400 border border-red-800/50 rounded-lg text-sm">
             <span>{error}</span>
           </div>
         )}
 
-        {/* Firestore profile data */}
-        <div className="dashboard-section">
-          <div className="section-title">Firestore User Profile</div>
-          <div className="info-grid">
-            <div className="info-tile">
-              <div className="tile-label">User ID (Cognito Sub)</div>
-              <div className="tile-value">{profile?.uid || 'N/A'}</div>
-            </div>
-            <div className="info-tile">
-              <div className="tile-label">Phone Number</div>
-              <div className="tile-value">{profile?.phone || 'Not Provided'}</div>
-            </div>
-            <div className="info-tile">
-              <div className="tile-label">Created At</div>
-              <div className="tile-value">
-                {profile?.createdAt ? new Date(profile.createdAt).toLocaleString() : 'N/A'}
-              </div>
-            </div>
-            <div className="info-tile">
-              <div className="tile-label">Last Logged In</div>
-              <div className="tile-value">
-                {profile?.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString() : 'First session'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Security Token Inspector */}
-        <div className="dashboard-section">
-          <div className="section-title">Cognito Token Inspector</div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Access Token */}
-            <div className="token-container">
-              <div className="token-header">
-                <span className="input-label" style={{ margin: 0 }}>Access Token (Authorization Bearer)</span>
-                <button 
-                  className="copy-btn" 
-                  onClick={() => handleCopyToken(tokens.accessToken, 'access')}
-                >
-                  {copyStatus === 'access' ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-              <div className="token-scroller">
-                {tokens.accessToken || 'No access token available'}
-              </div>
-            </div>
-
-            {/* Refresh Token */}
-            <div className="token-container">
-              <div className="token-header">
-                <span className="input-label" style={{ margin: 0 }}>Refresh Token (Session rotation)</span>
-                <button 
-                  className="copy-btn" 
-                  onClick={() => handleCopyToken(tokens.refreshToken, 'refresh')}
-                >
-                  {copyStatus === 'refresh' ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-              <div className="token-scroller">
-                {tokens.refreshToken || 'No refresh token available'}
-              </div>
+        <div className="p-6 space-y-6">
+          <div>
+            <div className="text-sm font-semibold text-[#999] uppercase tracking-wider mb-4">Firestore User Profile</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { label: 'User ID (Cognito Sub)', value: profile?.uid || 'N/A' },
+                { label: 'Phone Number', value: profile?.phone || 'Not Provided' },
+                { label: 'Created At', value: profile?.createdAt ? new Date(profile.createdAt).toLocaleString() : 'N/A' },
+                { label: 'Last Logged In', value: profile?.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString() : 'First session' },
+              ].map((item) => (
+                <div key={item.label} className="bg-[#0F0F0F] rounded-xl px-4 py-3">
+                  <div className="text-xs text-[#666] uppercase tracking-wider mb-1">{item.label}</div>
+                  <div className="text-sm text-[#F5F5F5] break-all">{item.value}</div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="action-row">
-            <button className="auth-btn refresh-btn" onClick={handleManualRefresh} disabled={refreshing}>
-              {refreshing ? <div className="spinner" style={{ borderTopColor: 'var(--accent)' }} /> : 'Force Rotate JWTs'}
-            </button>
-            <button className="secondary-btn" onClick={fetchProfile}>
-              Refresh Profile Data
-            </button>
+          <div>
+            <div className="text-sm font-semibold text-[#999] uppercase tracking-wider mb-4">Cognito Token Inspector</div>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-[#999]">Access Token (Authorization Bearer)</span>
+                  <button
+                    onClick={() => handleCopyToken(tokens.accessToken, 'access')}
+                    className="text-[10px] font-medium text-[#D4AF37] hover:underline bg-transparent border-none cursor-pointer"
+                  >
+                    {copyStatus === 'access' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <div className="max-h-20 overflow-y-auto bg-[#0F0F0F] rounded-lg px-3 py-2 text-xs text-[#666] break-all">
+                  {tokens.accessToken || 'No access token available'}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-[#999]">Refresh Token (Session rotation)</span>
+                  <button
+                    onClick={() => handleCopyToken(tokens.refreshToken, 'refresh')}
+                    className="text-[10px] font-medium text-[#D4AF37] hover:underline bg-transparent border-none cursor-pointer"
+                  >
+                    {copyStatus === 'refresh' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <div className="max-h-20 overflow-y-auto bg-[#0F0F0F] rounded-lg px-3 py-2 text-xs text-[#666] break-all">
+                  {tokens.refreshToken || 'No refresh token available'}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <button
+                onClick={handleManualRefresh}
+                disabled={refreshing}
+                className="px-4 py-2 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
+              >
+                {refreshing ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}
+                {refreshing ? 'Rotating...' : 'Force Rotate JWTs'}
+              </button>
+              <button
+                onClick={fetchProfile}
+                className="px-4 py-2 bg-transparent text-[#999] text-sm font-medium rounded-lg border border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5] transition-all cursor-pointer"
+              >
+                Refresh Profile Data
+              </button>
+            </div>
           </div>
         </div>
 

@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { apiRequest, setTokens } from '../utils/api';
-import './AuthPage.css';
 
 interface AdminAuthPageProps {
   onLoginSuccess: () => void;
@@ -146,219 +145,210 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
     }
   };
 
-  // RENDER INTERFACE
   return (
-    <div className="auth-container">
-      <div className="auth-card animate-fade-in">
-        
-        <div className="auth-header">
-          <div className="auth-logo">🛡️ Admin Portal</div>
-          <div className="auth-subtitle">Kalasatra Admin Authentication</div>
+    <div className="min-h-screen bg-rich-black flex items-center justify-center px-4 py-10">
+      <div className="w-full  bg-dark-charcoal rounded-2xl p-8 animate-fade-in">
+
+        <div className="text-center mb-8">
+          <div className="text-3xl mb-2">🛡️ Admin Portal</div>
+          <div className="text-sm text-[#999]">Kalasatra Admin Authentication</div>
         </div>
 
-        {/* Success/Error Alerts */}
         {message && (
-          <div className={`alert alert-${message.type}`} style={{ marginBottom: '20px' }}>
+          <div className={`mb-5 px-4 py-3 rounded-lg text-sm ${
+            message.type === 'success'
+              ? 'bg-green-900/30 text-green-400 border border-green-800/50'
+              : 'bg-red-900/30 text-red-400 border border-red-800/50'
+          }`}>
             <span>{message.text}</span>
             {message.list && message.list.length > 0 && (
-              <ul className="alert-list">
+              <ul className="mt-2 space-y-1 list-disc list-inside">
                 {message.list.map((err, i) => <li key={i}>{err}</li>)}
               </ul>
             )}
           </div>
         )}
 
-        {/* View 1: OTP Verification View */}
         {isVerifyingOtp ? (
-          <form className="auth-form" onSubmit={handleVerifyOtp}>
-            <div className="otp-container">
-              <h3>Verify Your Admin Email</h3>
-              <p className="auth-subtitle">
-                We sent a 6-digit verification code to <strong>{otpEmail || email}</strong>
+          <form onSubmit={handleVerifyOtp} className="space-y-5">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-[#F5F5F5]">Verify Your Admin Email</h3>
+              <p className="text-sm text-[#999]">
+                We sent a 6-digit verification code to <strong className="text-[#D4AF37]">{otpEmail || email}</strong>
               </p>
-              
-              <div className="input-group">
-                <label className="input-label">Verification OTP Code</label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  placeholder="123456"
-                  className="input-field"
-                  style={{ textAlign: 'center', fontSize: '20px', letterSpacing: '8px', fontWeight: 'bold' }}
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                  required
-                />
-              </div>
+            </div>
 
-              <button type="submit" className="auth-btn" style={{ width: '100%' }} disabled={loading}>
-                {loading ? <div className="spinner" /> : 'Confirm Admin Registration'}
-              </button>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#999]">Verification OTP Code</label>
+              <input
+                type="text"
+                maxLength={6}
+                placeholder="123456"
+                className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-lg text-center tracking-[8px] font-bold outline-none focus:border-[#D4AF37] transition-colors"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                required
+              />
+            </div>
 
-              <div className="otp-footer">
-                Didn't get the code?{' '}
-                <button
-                  type="button"
-                  className="resend-link"
-                  onClick={handleResendOtp}
-                  disabled={loading || resendTimer > 0}
-                >
-                  {resendTimer > 0 ? `Resend OTP (${resendTimer}s)` : 'Resend Code'}
-                </button>
-              </div>
+            <button type="submit" className="w-full px-6 py-3 bg-[#D4AF37] text-[#0F0F0F] text-sm font-semibold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none" disabled={loading}>
+              {loading ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}
+              {loading ? 'Verifying...' : 'Confirm Admin Registration'}
+            </button>
 
+            <div className="text-center text-sm text-[#999]">
+              Didn't get the code?{' '}
               <button
                 type="button"
-                className="secondary-btn"
-                style={{ width: '100%', marginTop: '8px' }}
-                onClick={() => setIsVerifyingOtp(false)}
+                onClick={handleResendOtp}
+                disabled={loading || resendTimer > 0}
+                className="bg-transparent border-none text-[#D4AF37] hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Back to Auth Form
+                {resendTimer > 0 ? `Resend OTP (${resendTimer}s)` : 'Resend Code'}
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsVerifyingOtp(false)}
+              className="w-full px-6 py-2.5 bg-transparent text-[#999] text-sm font-medium rounded-lg border border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5] transition-all cursor-pointer"
+            >
+              Back to Auth Form
+            </button>
           </form>
         ) : (
-          /* View 2: Login/Signup Forms */
           <>
-            {/* Tabs */}
-            <div className="auth-tabs">
+            <div className="flex rounded-lg overflow-hidden border border-[#333] mb-6">
               <button
-                className={`auth-tab ${tab === 'login' ? 'active' : ''}`}
                 onClick={() => handleTabChange('login')}
+                className={`flex-1 py-2.5 text-sm font-medium transition-all cursor-pointer border-none ${
+                  tab === 'login'
+                    ? 'bg-[#D4AF37] text-[#0F0F0F]'
+                    : 'bg-transparent text-[#999] hover:text-[#F5F5F5]'
+                }`}
               >
                 Admin Login
               </button>
               <button
-                className={`auth-tab ${tab === 'signup' ? 'active' : ''}`}
                 onClick={() => handleTabChange('signup')}
+                className={`flex-1 py-2.5 text-sm font-medium transition-all cursor-pointer border-none ${
+                  tab === 'signup'
+                    ? 'bg-[#D4AF37] text-[#0F0F0F]'
+                    : 'bg-transparent text-[#999] hover:text-[#F5F5F5]'
+                }`}
               >
                 Admin Signup
               </button>
             </div>
 
-            {/* ADMIN LOGIN FORM */}
             {tab === 'login' && (
-              <form className="auth-form" onSubmit={handleAdminLogin}>
-                <div className="input-group">
-                  <label className="input-label">Admin Email Address</label>
+              <form onSubmit={handleAdminLogin} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-[#999]">Admin Email Address</label>
                   <input
                     type="email"
                     placeholder="admin@example.com"
-                    className="input-field"
+                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
-                
-                <div className="input-group">
-                  <label className="input-label">Password</label>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-[#999]">Password</label>
                   <input
                     type="password"
                     placeholder="••••••••"
-                    className="input-field"
+                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>
 
-                <button type="submit" className="auth-btn" disabled={loading}>
-                  {loading ? <div className="spinner" /> : '🔐 Admin Login'}
+                <button type="submit" className="w-full px-6 py-3 bg-[#D4AF37] text-[#0F0F0F] text-sm font-semibold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none" disabled={loading}>
+                  {loading ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}
+                  {loading ? 'Logging in...' : '🔐 Admin Login'}
                 </button>
-                
-                <p className="auth-subtitle" style={{ textAlign: 'center', fontSize: '13px', marginTop: '12px' }}>
+
+                <p className="text-center text-xs text-[#999]">
                   If your admin account isn't confirmed yet,{' '}
-                  <span 
-                    className="forgot-link" 
+                  <span
                     onClick={() => {
                       setOtpEmail(email);
                       setIsVerifyingOtp(true);
                     }}
+                    className="text-[#D4AF37] hover:underline cursor-pointer"
                   >
                     verify code here
                   </span>
                 </p>
 
-                <div style={{ 
-                  marginTop: '20px', 
-                  padding: '12px', 
-                  background: 'rgba(59, 130, 246, 0.08)', 
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  color: 'var(--text)'
-                }}>
+                <div className="mt-5 p-3 bg-blue-950/30 border border-blue-900/30 rounded-xl text-xs text-[#999]">
                   <strong>ℹ️ Note:</strong> Only users with the Admin role can access this portal.
                 </div>
               </form>
             )}
 
-            {/* ADMIN SIGNUP FORM */}
             {tab === 'signup' && (
-              <form className="auth-form" onSubmit={handleAdminSignup}>
-                <div className="input-group">
-                  <label className="input-label">Full Name</label>
+              <form onSubmit={handleAdminSignup} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-[#999]">Full Name</label>
                   <input
                     type="text"
                     placeholder="John Doe"
-                    className="input-field"
+                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="input-group">
-                  <label className="input-label">Email Address</label>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-[#999]">Email Address</label>
                   <input
                     type="email"
                     placeholder="admin@example.com"
-                    className="input-field"
+                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="input-group">
-                  <label className="input-label">Phone Number (Optional, E.164 format)</label>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-[#999]">Phone Number (Optional, E.164 format)</label>
                   <input
                     type="tel"
                     placeholder="+919876543210"
-                    className="input-field"
+                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
                 </div>
 
-                <div className="input-group">
-                  <label className="input-label">Password</label>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-[#999]">Password</label>
                   <input
                     type="password"
                     placeholder="••••••••"
-                    className="input-field"
+                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
-                  <small style={{ fontSize: '11px', opacity: 0.7, color: 'var(--text)' }}>
+                  <small className="text-[11px] text-[#666] block mt-1">
                     Min 8 characters. Must contain uppercase, lowercase, number, and special character.
                   </small>
                 </div>
 
-                <button type="submit" className="auth-btn" disabled={loading}>
-                  {loading ? <div className="spinner" /> : '✨ Create Admin Account'}
+                <button type="submit" className="w-full px-6 py-3 bg-[#D4AF37] text-[#0F0F0F] text-sm font-semibold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none" disabled={loading}>
+                  {loading ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}
+                  {loading ? 'Creating...' : '✨ Create Admin Account'}
                 </button>
 
-                <div style={{ 
-                  marginTop: '16px', 
-                  padding: '12px', 
-                  background: 'rgba(59, 130, 246, 0.08)', 
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  color: 'var(--text)',
-                  border: '1px solid rgba(59, 130, 246, 0.2)'
-                }}>
+                <div className="p-3 bg-blue-950/30 border border-blue-900/30 rounded-xl text-xs text-[#999]">
                   <strong>ℹ️ Note:</strong> All admin accounts will be assigned the "Admin" role after email verification.
                 </div>
               </form>

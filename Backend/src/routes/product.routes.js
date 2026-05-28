@@ -25,35 +25,35 @@ const {
   createSubcategorySchema,
 } = require("../middlewares/validate.middleware");
 
-// ─── Protected Routes (Require Authentication) ──────────────────────────────
+// ─── Public Routes (No Authentication Required) ─────────────────────────────
 
 /**
  * @route   GET /api/v1/products/categories
  * @desc    Get all active categories
- * @access  Protected (Authenticated users only)
+ * @access  Public
  */
-router.get("/categories", authenticateToken, getCategories);
+router.get("/categories", getCategories);
 
 /**
  * @route   GET /api/v1/products/categories/:slug/subcategories
  * @desc    Get subcategories for a category
- * @access  Protected (Authenticated users only)
+ * @access  Public
  */
-router.get("/categories/:slug/subcategories", authenticateToken, getSubcategories);
+router.get("/categories/:slug/subcategories", getSubcategories);
 
 /**
  * @route   GET /api/v1/products
  * @desc    Get all products with filters and pagination
- * @access  Protected (Authenticated users only)
+ * @access  Public
  */
-router.get("/", authenticateToken, getProducts);
+router.get("/", getProducts);
 
 /**
  * @route   GET /api/v1/products/:slug
  * @desc    Get single product by slug
- * @access  Protected (Authenticated users only)
+ * @access  Public
  */
-router.get("/:slug", authenticateToken, getProductBySlug);
+router.get("/:slug", getProductBySlug);
 
 // ─── Admin Routes ─────────────────────────────────────────────────────────────
 
