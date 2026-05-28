@@ -400,8 +400,9 @@
 
 .product-price {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .price-original {
@@ -416,6 +417,12 @@
   font-size: 20px;
   font-weight: 700;
   color: var(--accent);
+}
+
+.price-gst-info {
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.6;
 }
 
 .stock-status {

@@ -32,6 +32,7 @@ interface EditProduct {
   buying_price: number;
   selling_price: number;
   discount_percentage: number;
+  gst_percentage: number;
   colors: string[];
   sizes: string[];
   images: ProductImage[];
@@ -59,6 +60,7 @@ export default function EditProductModal({ product, categories, onClose, onSaved
     buying_price: product.buying_price.toString(),
     selling_price: product.selling_price.toString(),
     discount_percentage: product.discount_percentage.toString(),
+    gst_percentage: product.gst_percentage.toString(),
     stock_quantity: product.stock_quantity.toString(),
     low_stock_threshold: product.low_stock_threshold.toString(),
     is_featured: product.is_featured,
@@ -107,7 +109,7 @@ export default function EditProductModal({ product, categories, onClose, onSaved
     }));
   };
 
-  const getAuthHeaders = () => {
+  const getAuthHeaders = (): HeadersInit => {
     const token = localStorage.getItem('accessToken');
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
@@ -163,6 +165,7 @@ export default function EditProductModal({ product, categories, onClose, onSaved
       buying_price: product.buying_price.toString(),
       selling_price: product.selling_price.toString(),
       discount_percentage: product.discount_percentage.toString(),
+      gst_percentage: product.gst_percentage.toString(),
       stock_quantity: product.stock_quantity.toString(),
       low_stock_threshold: product.low_stock_threshold.toString(),
       is_featured: product.is_featured,
@@ -198,6 +201,7 @@ export default function EditProductModal({ product, categories, onClose, onSaved
       buying_price: parseFloat(formData.buying_price) || 0,
       selling_price: parseFloat(formData.selling_price),
       discount_percentage: parseFloat(formData.discount_percentage) || 0,
+      gst_percentage: parseFloat(formData.gst_percentage) || 0,
       colors: formData.colors,
       sizes: formData.sizes,
       images: uploadedImages,
@@ -311,6 +315,17 @@ export default function EditProductModal({ product, categories, onClose, onSaved
                 max="100"
                 value={formData.discount_percentage}
                 onChange={(e) => handleFormChange('discount_percentage', e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>GST %</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={formData.gst_percentage}
+                onChange={(e) => handleFormChange('gst_percentage', e.target.value)}
               />
             </div>
           </div>

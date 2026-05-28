@@ -72,6 +72,7 @@ CREATE TABLE products (
   buying_price DECIMAL(10, 2) NOT NULL,
   selling_price DECIMAL(10, 2) NOT NULL,
   discount_percentage DECIMAL(5, 2) DEFAULT 0,
+  gst_percentage DECIMAL(5, 2) DEFAULT 0,
   
   -- Product Details
   colors TEXT[] DEFAULT ARRAY[]::TEXT[],
@@ -103,7 +104,8 @@ CREATE TABLE products (
   -- Constraints
   CONSTRAINT positive_buying_price CHECK (buying_price >= 0),
   CONSTRAINT positive_selling_price CHECK (selling_price >= 0),
-  CONSTRAINT valid_discount CHECK (discount_percentage >= 0 AND discount_percentage <= 100)
+  CONSTRAINT valid_discount CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
+  CONSTRAINT valid_gst CHECK (gst_percentage >= 0 AND gst_percentage <= 100)
 );
 
 -- Create indexes for better performance

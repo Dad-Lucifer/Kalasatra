@@ -26,6 +26,7 @@ interface Product {
   buying_price: number;
   selling_price: number;
   discount_percentage: number;
+  gst_percentage: number;
   colors: string[];
   sizes: string[];
   images: Array<{ url: string; alt: string; order: number }>;
@@ -83,6 +84,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     buying_price: '',
     selling_price: '',
     discount_percentage: '0',
+    gst_percentage: '0',
     stock_quantity: '0',
     low_stock_threshold: '10',
     is_featured: false,
@@ -198,6 +200,14 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     return price - (price * discount) / 100;
   };
 
+  const calculateGstAmount = (price: number, gstPercentage: number) => {
+    return (price * gstPercentage) / 100;
+  };
+
+  // const calculatePriceWithGst = (price: number, gstPercentage: number) => {
+  //   return price + calculateGstAmount(price, gstPercentage);
+  // };
+
   const handleEditProduct = (productId: string) => {
     const product = products.find((p) => p.id === productId);
     if (product) setEditingProduct(product);
@@ -220,7 +230,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
 
   // ─── Image Upload ──────────────────────────────────────────────────────
 
-  const getAuthHeaders = () => {
+  const getAuthHeaders = (): HeadersInit => {
     const token = localStorage.getItem('accessToken');
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
@@ -300,6 +310,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
       buying_price: '',
       selling_price: '',
       discount_percentage: '0',
+      gst_percentage: '0',
       stock_quantity: '0',
       low_stock_threshold: '10',
       is_featured: false,
@@ -336,6 +347,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
       buying_price: parseFloat(formData.buying_price) || 0,
       selling_price: parseFloat(formData.selling_price),
       discount_percentage: parseFloat(formData.discount_percentage) || 0,
+      gst_percentage: parseFloat(formData.gst_percentage) || 0,
       colors: formData.colors,
       sizes: formData.sizes,
       images: uploadedImages,
@@ -657,16 +669,33 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
 
                       <div className="product-footer">
                         <div className="product-price">
-                          {product.discount_percentage > 0 ? (
-                            <>
-                              <span className="price-original">₹{product.selling_price.toFixed(2)}</span>
-                              <span className="price-discounted">
-                                ₹{calculateDiscountedPrice(product.selling_price, product.discount_percentage).toFixed(2)}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="price-current">₹{product.selling_price.toFixed(2)}</span>
-                          )}
+                          {(() => {
+                            const basePrice = product.selling_price;
+                            const discountedPrice = product.discount_percentage > 0
+                              ? calculateDiscountedPrice(basePrice, product.discount_percentage)
+                              : basePrice;
+                            const gstAmount = calculateGstAmount(discountedPrice, product.gst_percentage);
+                            const finalPrice = discountedPrice + gstAmount;
+                            return (
+                              <>
+                                {product.discount_percentage > 0 ? (
+                                  <>
+                                    <span className="price-original">₹{basePrice.toFixed(2)}</span>
+                                    <span className="price-discounted">
+                                      ₹{finalPrice.toFixed(2)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="price-current">₹{finalPrice.toFixed(2)}</span>
+                                )}
+                                {product.gst_percentage > 0 && (
+                                  <span className="price-gst-info">
+                                    ₹{discountedPrice.toFixed(2)} + {product.gst_percentage}% GST
+                                  </span>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                         <div className={`stock-status ${product.stock_status}`}>
                           {product.stock_status === 'in_stock' && '✓ In Stock'}
@@ -802,6 +831,17 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                     max="100"
                     value={formData.discount_percentage}
                     onChange={(e) => handleFormChange('discount_percentage', e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>GST %</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.gst_percentage}
+                    onChange={(e) => handleFormChange('gst_percentage', e.target.value)}
                   />
                 </div>
               </div>

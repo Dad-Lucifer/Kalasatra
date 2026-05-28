@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiRequest, clearTokens } from '../utils/api';
 import ProductsPage from './ProductsPage';
 import './Dashboard.css';
