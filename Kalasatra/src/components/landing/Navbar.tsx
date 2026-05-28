@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const navLinks = [
   { label: 'Men', href: '#men' },
@@ -7,12 +8,7 @@ const navLinks = [
   { label: 'Collections', href: '#collections' },
 ];
 
-interface NavbarProps {
-  onAuthClick?: () => void;
-  onHomeClick?: () => void;
-}
-
-export default function Navbar({ onAuthClick, onHomeClick }: NavbarProps) {
+export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -32,14 +28,14 @@ export default function Navbar({ onAuthClick, onHomeClick }: NavbarProps) {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="flex items-center justify-between h-20 lg:h-24">
-          <button onClick={onHomeClick} className="flex items-center gap-3 group bg-transparent border-none p-0 cursor-pointer">
+          <Link to="/" className="flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-full bg-luxury-gold flex items-center justify-center">
               <span className="text-rich-black font-black text-sm tracking-widest">K</span>
             </div>
             <span className="font-heading text-2xl lg:text-3xl font-bold tracking-wide text-soft-white group-hover:text-luxury-gold transition-colors duration-300">
               Kalasatra
             </span>
-          </button>
+          </Link>
 
           <div className="hidden lg:flex items-center gap-10">
             {navLinks.map((link) => (
@@ -54,9 +50,12 @@ export default function Navbar({ onAuthClick, onHomeClick }: NavbarProps) {
           </div>
 
           <div className="hidden lg:flex items-center gap-4">
-            <button onClick={onAuthClick} className="px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.1rem] text-luxury-gold border border-luxury-gold/40 rounded-none hover:bg-luxury-gold hover:text-rich-black transition-all duration-300">
+            <Link
+              to="/auth"
+              className="px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.1rem] text-luxury-gold border border-luxury-gold/40 rounded-none hover:bg-luxury-gold hover:text-rich-black transition-all duration-300"
+            >
               Sign In
-            </button>
+            </Link>
             <button className="px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.1rem] bg-luxury-gold text-rich-black rounded-none hover:bg-gold-light transition-all duration-300">
               Explore
             </button>
@@ -103,9 +102,13 @@ export default function Navbar({ onAuthClick, onHomeClick }: NavbarProps) {
             </a>
           ))}
           <div className="flex gap-3 pt-4 border-t border-luxury-gold/10">
-            <button onClick={onAuthClick} className="flex-1 px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.1rem] text-luxury-gold border border-luxury-gold/40 hover:bg-luxury-gold hover:text-rich-black transition-all">
+            <Link
+              to="/auth"
+              onClick={() => setMobileOpen(false)}
+              className="flex-1 px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.1rem] text-luxury-gold border border-luxury-gold/40 hover:bg-luxury-gold hover:text-rich-black transition-all text-center"
+            >
               Sign In
-            </button>
+            </Link>
             <button className="flex-1 px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.1rem] bg-luxury-gold text-rich-black hover:bg-gold-light transition-all">
               Explore
             </button>

@@ -14,7 +14,7 @@ dist-ssr
 .env
 SKILL.md
 *.md
-
+*.zip
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
