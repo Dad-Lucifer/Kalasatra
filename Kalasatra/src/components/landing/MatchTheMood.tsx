@@ -33,12 +33,12 @@ const moodItems = [
 
 export default function MatchTheMood() {
   return (
-    <section className="w-full bg-white py-10 lg:py-16">
+    <section className="w-full bg-pure-white py-10 lg:py-16">
       <div className="max-w-[1400px] mx-auto px-4 lg:px-8">
         
         {/* Section Title */}
         <div className="flex justify-center mb-8 lg:mb-12">
-          <h2 className="text-xl lg:text-2xl font-bold tracking-widest uppercase text-black">
+          <h2 className="text-2xl lg:text-3xl font-heading font-bold tracking-widest uppercase text-deep-black">
             MATCH THE MOOD
           </h2>
         </div>
@@ -50,22 +50,19 @@ export default function MatchTheMood() {
               key={item.id} 
               className="relative flex-none w-[70vw] sm:w-[45vw] lg:w-auto aspect-[3/4] group cursor-pointer overflow-hidden"
             >
-              {/* Background Image */}
+              {/* Image with grayscale filter for cold look */}
               <img 
                 src={item.imgUrl} 
                 alt={`${item.title1} ${item.title2}`}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
               />
               
-              {/* Gradient Overlay for Text Readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/20 opacity-80" />
-
-              {/* Text Overlay */}
-              <div className="absolute top-8 left-0 right-0 flex flex-col items-center text-center">
-                <span className="text-white text-2xl lg:text-3xl font-light tracking-wide">
+              {/* Minimal White Box for Text */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center text-center bg-pure-white px-6 py-3 shadow-lg border-b-4 border-accent-yellow transition-transform duration-300 group-hover:-translate-y-2 w-[85%]">
+                <span className="text-deep-black text-xl lg:text-2xl font-heading font-bold tracking-widest uppercase">
                   {item.title1}
                 </span>
-                <span className="text-[#F2D022] text-sm lg:text-base tracking-[0.2em] font-medium -mt-1">
+                <span className="text-cold-grey text-xs lg:text-sm tracking-[0.2em] font-medium mt-1 uppercase">
                   {item.title2}
                 </span>
               </div>

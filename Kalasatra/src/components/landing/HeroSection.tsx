@@ -40,7 +40,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative w-full h-[calc(100vh-160px)] lg:h-[80vh] bg-black overflow-hidden group">
+    <section className="relative w-full h-[calc(100vh-160px)] lg:h-[80vh] bg-cold-white overflow-hidden group">
       
       {/* Desktop Grid Layout (3 items visible) */}
       <div className="hidden lg:grid grid-cols-3 h-full w-full gap-1">
@@ -52,19 +52,19 @@ export default function HeroSection() {
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-105"
             />
             {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-deep-black/80 via-deep-black/20 to-transparent"></div>
             
             {item.badge && (
-              <div className="absolute top-6 right-6 px-4 py-1.5 border border-white/50 rounded-full bg-black/20 backdrop-blur-sm">
-                <span className="text-white text-xs tracking-wider">{item.badge}</span>
+              <div className="absolute top-6 right-6 px-4 py-1.5 border border-pure-white/50 bg-deep-black/20 backdrop-blur-sm">
+                <span className="text-pure-white text-xs tracking-widest uppercase">{item.badge}</span>
               </div>
             )}
 
             <div className="absolute bottom-12 left-8 right-8 flex justify-between items-end">
                <div>
-                  <h2 className="text-white text-4xl font-bold tracking-wide">{item.desktopTitle}</h2>
+                  <h2 className="text-pure-white text-4xl lg:text-5xl font-heading tracking-widest uppercase">{item.desktopTitle}</h2>
                   {item.desktopSubtitle && (
-                     <p className="text-white/80 text-sm tracking-wider mt-2 whitespace-pre-line text-right">
+                     <p className="text-pure-white/80 text-sm tracking-widest mt-2 whitespace-pre-line text-right uppercase">
                        {item.desktopSubtitle}
                      </p>
                   )}
@@ -73,8 +73,8 @@ export default function HeroSection() {
             
             {item.id === 3 && (
                 <div className="absolute bottom-12 right-8">
-                    <div className="px-6 py-2 border border-white rounded-full bg-black/30 backdrop-blur-sm">
-                        <span className="text-white text-sm font-semibold tracking-widest">FLAT 50% OFF*</span>
+                    <div className="px-6 py-2 border border-accent-yellow bg-deep-black/50 backdrop-blur-md">
+                        <span className="text-accent-yellow text-sm font-bold tracking-widest uppercase">FLAT 50% OFF*</span>
                     </div>
                 </div>
             )}
@@ -96,18 +96,18 @@ export default function HeroSection() {
               alt={item.title}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-deep-black/80 via-deep-black/20 to-transparent"></div>
             
             <div className="absolute inset-0 flex flex-col items-center justify-end pb-24 px-6 text-center">
-              <h2 className="text-white text-4xl sm:text-5xl font-bold tracking-wide mb-4 shadow-sm">
+              <h2 className="text-pure-white text-4xl sm:text-5xl font-heading tracking-widest uppercase mb-4 shadow-sm">
                 {item.title}
               </h2>
               {item.id === 1 ? (
-                <button className="bg-white/90 backdrop-blur text-black px-8 py-3 rounded-full font-bold text-sm tracking-wider shadow-lg">
+                <button className="bg-accent-yellow text-deep-black px-8 py-3 font-bold text-sm tracking-widest uppercase shadow-lg hover:bg-pure-white transition-colors">
                   {item.subtitle}
                 </button>
               ) : (
-                <p className="text-white text-sm tracking-widest uppercase">
+                <p className="text-pure-white text-sm tracking-widest uppercase">
                     {item.subtitle}
                 </p>
               )}
@@ -142,8 +142,8 @@ export default function HeroSection() {
             onClick={() => setCurrentIndex(index)}
             className={`transition-all duration-300 ${
               index === currentIndex
-                ? 'w-6 h-1 bg-white rounded-full'
-                : 'w-1.5 h-1.5 bg-white/50 rounded-full'
+                ? 'w-6 h-1 bg-accent-yellow rounded-full'
+                : 'w-1.5 h-1.5 bg-pure-white/50 rounded-full'
             }`}
           />
         ))}

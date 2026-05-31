@@ -40,6 +40,12 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleOpenSidebar = () => setIsSidebarOpen(true);
+    window.addEventListener('open-sidebar', handleOpenSidebar);
+    return () => window.removeEventListener('open-sidebar', handleOpenSidebar);
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -52,7 +58,7 @@ export default function Navbar() {
     <>
       <SidebarMenu isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <nav
-        className={`sticky top-0 z-40 bg-white transition-all duration-300 ${
+        className={`sticky top-0 z-40 bg-pure-white border-b border-cold-grey-light transition-all duration-300 ${
           scrolled ? 'shadow-sm' : ''
         }`}
       >
@@ -78,8 +84,7 @@ export default function Navbar() {
              <div className="flex items-center gap-3 justify-center h-14">
                 <img src={logoImg} alt="Kalastra Logo" className="h-full w-auto object-contain" />
                 <span 
-                  className="text-2xl font-black tracking-[0.2em] uppercase text-black"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  className="text-2xl font-black tracking-[0.2em] uppercase text-deep-black font-heading"
                 >
                   Kalasatra
                 </span>
@@ -99,7 +104,7 @@ export default function Navbar() {
               <input
                 type="text"
                 placeholder="Search &quot;BAGGY JEANS&quot;"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2 border-b border-cold-grey-light bg-cold-white text-sm focus:outline-none focus:border-deep-black transition-colors placeholder-cold-grey text-deep-black"
               />
             </div>
 
@@ -128,14 +133,20 @@ export default function Navbar() {
                 )}
 
                 {profileOpen && isLoggedIn && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 shadow-lg py-1 z-50">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-black truncate">{userName}</p>
-                      <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-pure-white border border-cold-grey-light shadow-lg py-1 z-50">
+                    <div className="px-4 py-2 border-b border-cold-grey-light">
+                      <p className="text-sm font-medium text-deep-black truncate">{userName}</p>
+                      <p className="text-xs text-cold-grey truncate">{userEmail}</p>
                     </div>
+                    <Link
+                      to="/dashboard"
+                      className="block w-full text-left px-4 py-2.5 text-sm font-bold tracking-widest uppercase text-deep-black hover:bg-cold-white transition-colors"
+                    >
+                      My Profile
+                    </Link>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm font-bold tracking-widest uppercase text-red-500 hover:bg-cold-white transition-colors cursor-pointer"
                     >
                       Logout
                     </button>

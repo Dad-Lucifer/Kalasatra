@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
-import { apiRequest, getTokens, setTokens, clearTokens } from '../utils/api';
+import { useNavigate, Link } from 'react-router-dom';
+import { apiRequest, clearTokens } from '../utils/api';
+import Navbar from '../components/landing/Navbar';
+import Footer from '../components/landing/Footer';
+import BottomMobileNav from '../components/landing/BottomMobileNav';
+import { 
+  FiPackage, FiGrid, FiCreditCard, FiAward, FiSmartphone,
+  FiChevronRight, FiGift, FiStar, FiUser, FiMapPin, FiSettings, FiCheckCircle
+} from 'react-icons/fi';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -17,24 +25,18 @@ interface UserProfile {
 }
 
 export default function Dashboard({ onLogout }: DashboardProps) {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [copyStatus, setCopyStatus] = useState<string | null>(null);
-
-  const tokens = getTokens();
+  const [activeView, setActiveView] = useState<'overview' | 'edit'>('overview');
 
   const fetchProfile = async () => {
     setLoading(true);
-    setError(null);
     const res = await apiRequest<{ user: UserProfile }>('/auth/me');
     setLoading(false);
 
     if (res.success && res.data) {
       setProfile(res.data.user);
-    } else {
-      setError(res.message || 'Failed to fetch user profile.');
     }
   };
 
@@ -44,160 +46,349 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   const handleLogout = async () => {
     setLoading(true);
-    // Call server to invalidate tokens
     await apiRequest('/auth/logout', { method: 'POST' });
     clearTokens();
     setLoading(false);
     onLogout();
   };
 
-  const handleManualRefresh = async () => {
-    setRefreshing(true);
-    setError(null);
-    const { refreshToken } = getTokens();
-
-    if (!refreshToken) {
-      setError('No refresh token available.');
-      setRefreshing(false);
-      return;
-    }
-
-    try {
-      const res = await fetch('http://localhost:5000/api/v1/auth/refresh-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success && data.data) {
-        setTokens(data.data.accessToken, data.data.idToken);
-        setError(null);
-        alert('Token rotated and updated in storage successfully!');
-      } else {
-        setError(data.message || 'Refresh failed. Session might be invalid.');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Network error during token refresh.');
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const handleCopyToken = (token: string | null, type: string) => {
-    if (!token) return;
-    navigator.clipboard.writeText(token);
-    setCopyStatus(type);
-    setTimeout(() => setCopyStatus(null), 2000);
-  };
-
   if (loading && !profile) {
     return (
-      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-cold-white flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-deep-black border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
+  const userName = profile?.name || 'Authorized User';
+
   return (
-    <div className="min-h-screen bg-[#0F0F0F] py-8 px-4">
-      <div className="max-w-2xl mx-auto bg-[#1C1C1C] rounded-2xl overflow-hidden">
-
-        <div className="flex items-center justify-between gap-4 p-6 border-b border-[#333]">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#D4AF37] flex items-center justify-center text-lg font-bold text-[#0F0F0F] shrink-0">
-              {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
+    <>
+      {/* DESKTOP VIEW */}
+      <div className="hidden md:flex flex-col min-h-screen bg-pure-white">
+        <Navbar />
+        
+        <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 lg:px-8 py-10 flex gap-8">
+          {/* Sidebar */}
+          <aside className="w-[250px] shrink-0 border-r border-cold-grey-light pr-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-deep-black tracking-tight">Account</h2>
+              <p className="text-sm text-cold-grey">{userName}</p>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-[#F5F5F5]">{profile?.name || 'Authorized User'}</h2>
-              <p className="text-sm text-[#999]">{profile?.email || 'N/A'}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-red-400 border border-red-800/50 rounded-lg hover:bg-red-900/30 transition-all disabled:opacity-50 cursor-pointer"
-          >
-            Sign Out
-          </button>
-        </div>
-
-        {error && (
-          <div className="mx-6 mt-4 px-4 py-3 bg-red-900/30 text-red-400 border border-red-800/50 rounded-lg text-sm">
-            <span>{error}</span>
-          </div>
-        )}
-
-        <div className="p-6 space-y-6">
-          <div>
-            <div className="text-sm font-semibold text-[#999] uppercase tracking-wider mb-4">Firestore User Profile</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { label: 'User ID (Cognito Sub)', value: profile?.uid || 'N/A' },
-                { label: 'Phone Number', value: profile?.phone || 'Not Provided' },
-                { label: 'Created At', value: profile?.createdAt ? new Date(profile.createdAt).toLocaleString() : 'N/A' },
-                { label: 'Last Logged In', value: profile?.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString() : 'First session' },
-              ].map((item) => (
-                <div key={item.label} className="bg-[#0F0F0F] rounded-xl px-4 py-3">
-                  <div className="text-xs text-[#666] uppercase tracking-wider mb-1">{item.label}</div>
-                  <div className="text-sm text-[#F5F5F5] break-all">{item.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="text-sm font-semibold text-[#999] uppercase tracking-wider mb-4">Cognito Token Inspector</div>
-            <div className="space-y-4">
+            
+            <nav className="space-y-6">
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-[#999]">Access Token (Authorization Bearer)</span>
-                  <button
-                    onClick={() => handleCopyToken(tokens.accessToken, 'access')}
-                    className="text-[10px] font-medium text-[#D4AF37] hover:underline bg-transparent border-none cursor-pointer"
-                  >
-                    {copyStatus === 'access' ? 'Copied!' : 'Copy'}
+                <button onClick={() => setActiveView('overview')} className={`font-bold text-sm tracking-wider cursor-pointer transition-colors ${activeView === 'overview' ? 'text-accent-yellow' : 'text-deep-black hover:text-accent-yellow'}`}>Overview</button>
+              </div>
+              
+              <div>
+                <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Orders</h3>
+                <ul className="space-y-3 text-sm text-deep-black">
+                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Orders & Returns</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Credits</h3>
+                <ul className="space-y-3 text-sm text-deep-black">
+                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Coupons</a></li>
+                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Kalasatra Credit</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Account</h3>
+                <ul className="space-y-3 text-sm text-deep-black">
+                  <li><button onClick={() => setActiveView('edit')} className={`transition-colors font-semibold cursor-pointer ${activeView === 'edit' ? 'text-accent-yellow' : 'hover:text-accent-yellow'}`}>Profile</button></li>
+                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Addresses</a></li>
+                  <li><button onClick={handleLogout} className="text-red-500 hover:text-red-600 transition-colors font-semibold cursor-pointer">Log Out</button></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Legal</h3>
+                <ul className="space-y-3 text-sm text-deep-black">
+                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Terms of Use</a></li>
+                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Privacy Center</a></li>
+                </ul>
+              </div>
+            </nav>
+          </aside>
+
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0 pb-10">
+            {activeView === 'overview' ? (
+              <>
+                {/* Profile Summary Card */}
+                <div className="bg-cold-white border border-cold-grey-light p-8 flex items-center justify-between mb-8 shadow-sm">
+                  <div className="flex flex-col items-center justify-center w-32 h-32 bg-cold-grey-light text-cold-grey relative">
+                    <FiUser size={48} className="opacity-50" />
+                  </div>
+                  <button onClick={() => setActiveView('edit')} className="px-6 py-2 border border-deep-black text-deep-black font-bold uppercase tracking-widest text-xs hover:bg-deep-black hover:text-pure-white transition-colors cursor-pointer">
+                    Edit Profile
                   </button>
                 </div>
-                <div className="max-h-20 overflow-y-auto bg-[#0F0F0F] rounded-lg px-3 py-2 text-xs text-[#666] break-all">
-                  {tokens.accessToken || 'No access token available'}
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-[#999]">Refresh Token (Session rotation)</span>
-                  <button
-                    onClick={() => handleCopyToken(tokens.refreshToken, 'refresh')}
-                    className="text-[10px] font-medium text-[#D4AF37] hover:underline bg-transparent border-none cursor-pointer"
-                  >
-                    {copyStatus === 'refresh' ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
-                <div className="max-h-20 overflow-y-auto bg-[#0F0F0F] rounded-lg px-3 py-2 text-xs text-[#666] break-all">
-                  {tokens.refreshToken || 'No refresh token available'}
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3 mt-4">
-              <button
-                onClick={handleManualRefresh}
-                disabled={refreshing}
-                className="px-4 py-2 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
-              >
-                {refreshing ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}
-                {refreshing ? 'Rotating...' : 'Force Rotate JWTs'}
-              </button>
-              <button
-                onClick={fetchProfile}
-                className="px-4 py-2 bg-transparent text-[#999] text-sm font-medium rounded-lg border border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5] transition-all cursor-pointer"
-              >
-                Refresh Profile Data
-              </button>
-            </div>
-          </div>
-        </div>
 
+                {/* Widgets Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Card 1 */}
+                  <div className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
+                    <FiPackage size={32} className="text-deep-black" />
+                    <div>
+                      <h4 className="font-bold text-deep-black text-sm uppercase tracking-wider">Orders</h4>
+                      <p className="text-xs text-cold-grey mt-1">Check your order status</p>
+                    </div>
+                  </div>
+
+                  {/* Card 2 */}
+                  <div className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
+                    <FiGrid size={32} className="text-deep-black" />
+                    <div>
+                      <h4 className="font-bold text-deep-black text-sm uppercase tracking-wider">Collections & Wishlist</h4>
+                      <p className="text-xs text-cold-grey mt-1">All your curated collections</p>
+                    </div>
+                  </div>
+
+                  {/* Card 3 */}
+                  <div className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
+                    <FiCreditCard size={32} className="text-deep-black" />
+                    <div>
+                      <h4 className="font-bold text-deep-black text-sm uppercase tracking-wider">Kalasatra Credit</h4>
+                      <p className="text-xs text-cold-grey mt-1">Manage refunds & gift cards</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="bg-pure-white border border-cold-grey-light p-8 md:p-10 shadow-sm max-w-3xl">
+                <h2 className="text-2xl font-bold text-deep-black mb-8">Edit Details</h2>
+                
+                <div className="space-y-6">
+                  {/* Mobile Number */}
+                  <div className="flex border border-cold-grey-light p-4 justify-between items-center group focus-within:border-deep-black transition-colors">
+                    <div>
+                      <span className="text-xs text-cold-grey block mb-1">Mobile Number*</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-deep-black">{profile?.phone || '+91 -'}</span>
+                        {profile?.phone && <FiCheckCircle className="text-green-500" size={16} />}
+                      </div>
+                    </div>
+                    <button className="px-6 py-2 border border-cold-grey-light text-xs font-bold uppercase tracking-widest text-deep-black hover:border-deep-black transition-colors cursor-pointer">
+                      CHANGE
+                    </button>
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex border border-cold-grey-light p-4 justify-between items-center group focus-within:border-deep-black transition-colors">
+                    <div>
+                      <span className="text-xs text-cold-grey block mb-1">Email</span>
+                      <span className="text-sm text-deep-black">{profile?.email}</span>
+                    </div>
+                    <button className="px-6 py-2 border border-cold-grey-light text-xs font-bold uppercase tracking-widest text-deep-black hover:border-deep-black transition-colors cursor-pointer">
+                      CHANGE
+                    </button>
+                  </div>
+
+                  {/* Full Name */}
+                  <div className="border border-cold-grey-light px-4 py-2 focus-within:border-deep-black transition-colors relative">
+                    <label className="text-[10px] text-cold-grey absolute top-2 bg-pure-white px-1 -mt-4 uppercase font-bold tracking-widest">Full Name</label>
+                    <input type="text" defaultValue={profile?.name} className="w-full text-sm font-bold text-deep-black outline-none pt-2 bg-transparent" />
+                  </div>
+
+                  {/* Gender Toggle */}
+                  <div className="flex border border-cold-grey-light">
+                    <button className="flex-1 py-3 text-sm font-bold text-deep-black border-r border-cold-grey-light hover:bg-cold-white transition-colors cursor-pointer">Male</button>
+                    <button className="flex-1 py-3 text-sm font-bold text-deep-black hover:bg-cold-white transition-colors cursor-pointer">Female</button>
+                  </div>
+
+                  {/* Birthday */}
+                  <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                    <input type="text" placeholder="Birthday (dd/mm/yyyy)" className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey placeholder:font-normal" />
+                  </div>
+
+                  <h3 className="font-bold text-deep-black mt-8 mb-4">Alternate mobile details</h3>
+
+                  {/* Alternate Mobile */}
+                  <div className="flex border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors items-center gap-3">
+                    <span className="text-cold-grey text-sm">+91</span>
+                    <div className="w-px h-4 bg-cold-grey-light" />
+                    <input type="tel" placeholder="Mobile Number" className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                  </div>
+
+                  {/* Hint Name */}
+                  <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                    <input type="text" placeholder="Hint name" className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                  </div>
+
+                  <div className="pt-8 border-t border-cold-grey-light mt-8">
+                    <button className="w-full py-4 text-sm font-bold uppercase tracking-widest text-[#ff3f6c] hover:bg-red-50 transition-colors cursor-pointer mb-4">
+                      DELETE ACCOUNT
+                    </button>
+                    <button className="w-full py-4 text-sm font-bold uppercase tracking-widest bg-[#ff3f6c] text-pure-white hover:brightness-110 transition-colors cursor-pointer shadow-md">
+                      SAVE DETAILS
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+        
+        <Footer />
       </div>
-    </div>
+
+      {/* MOBILE VIEW */}
+      <div className="md:hidden flex flex-col min-h-screen bg-cold-white pb-20">
+        
+        {/* Dark Banner */}
+        <div className="bg-deep-black text-pure-white px-5 pt-8 pb-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-accent-yellow/10 rounded-full blur-3xl" />
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-6">
+              <h1 className="text-2xl font-bold tracking-tight">Welcome {userName}</h1>
+              <div className="text-right">
+                <div className="font-heading font-black text-xl tracking-wider flex items-center gap-1">
+                  KALASATRA <span className="text-accent-yellow">X</span>
+                </div>
+                <div className="text-[10px] text-accent-yellow uppercase font-bold tracking-widest mt-1">Expired on 01 Jun</div>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              <div className="flex items-center gap-3">
+                <FiUser className="text-cold-grey" />
+                <span className="text-sm font-semibold">Join the exclusive X club</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <FiStar className="text-cold-grey" />
+                <span className="text-sm font-semibold">Assured cashback on every order</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <FiGift className="text-cold-grey" />
+                <span className="text-sm font-semibold">Win free gifts for order streaks</span>
+              </div>
+            </div>
+
+            <div className="text-xs text-cold-grey font-semibold mb-2">
+              Shop ₹5000 more to become a X member. <a href="#" className="text-pure-white underline decoration-accent-yellow underline-offset-4">More Details</a>
+            </div>
+            
+            <div className="h-1.5 w-full bg-pure-white/20 rounded-full overflow-hidden mt-3 relative">
+               <div className="absolute top-0 right-0 h-full w-full bg-pure-white/10" />
+            </div>
+            <div className="flex justify-between mt-1 text-[10px] font-bold text-cold-grey uppercase tracking-widest">
+              <span>₹0</span>
+              <span>₹5000</span>
+            </div>
+          </div>
+        </div>
+
+        {/* List Links */}
+        <div className="bg-pure-white border-t border-cold-grey-light">
+          {activeView === 'overview' ? (
+            <ul className="flex flex-col">
+              {[
+                'Orders & Returns', 'Coupons', 'Kalasatra Credit', 'Profile', 
+                'Addresses', 'Terms of Use', 'Privacy Center'
+              ].map((item, index) => (
+                <li key={item} className="border-b border-cold-grey-light/50">
+                  <button 
+                    onClick={() => item === 'Profile' ? setActiveView('edit') : null}
+                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-cold-white transition-colors cursor-pointer"
+                  >
+                    <span className="text-sm font-bold text-deep-black uppercase tracking-widest">{item}</span>
+                    <FiChevronRight className="text-cold-grey" />
+                  </button>
+                </li>
+              ))}
+              
+              <li>
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-red-50 text-red-500 transition-colors cursor-pointer"
+                >
+                  <span className="text-sm font-bold uppercase tracking-widest">Log Out</span>
+                  <FiChevronRight className="opacity-50" />
+                </button>
+              </li>
+            </ul>
+          ) : (
+            <div className="p-4 bg-pure-white">
+              <button onClick={() => setActiveView('overview')} className="text-sm font-bold text-deep-black mb-6 uppercase tracking-widest flex items-center gap-2 cursor-pointer">
+                <FiChevronRight className="rotate-180" /> Back to Dashboard
+              </button>
+              
+              <h2 className="text-2xl font-bold text-deep-black mb-6">Edit Details</h2>
+              
+              <div className="space-y-5">
+                <div className="border border-cold-grey-light p-4 focus-within:border-deep-black transition-colors">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey block mb-1">Mobile Number*</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-deep-black">{profile?.phone || '+91 -'}</span>
+                        {profile?.phone && <FiCheckCircle className="text-green-500" size={14} />}
+                      </div>
+                    </div>
+                    <button className="px-4 py-1.5 border border-cold-grey-light text-[10px] font-bold uppercase tracking-widest text-deep-black cursor-pointer">
+                      CHANGE
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border border-cold-grey-light p-4 focus-within:border-deep-black transition-colors">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey block mb-1">Email</span>
+                      <span className="text-sm font-bold text-deep-black truncate max-w-[150px] inline-block">{profile?.email}</span>
+                    </div>
+                    <button className="px-4 py-1.5 border border-cold-grey-light text-[10px] font-bold uppercase tracking-widest text-deep-black cursor-pointer">
+                      CHANGE
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border border-cold-grey-light px-4 py-2 focus-within:border-deep-black transition-colors relative">
+                  <label className="text-[10px] text-cold-grey absolute top-2 bg-pure-white px-1 -mt-4 uppercase font-bold tracking-widest">Full Name</label>
+                  <input type="text" defaultValue={profile?.name} className="w-full text-sm font-bold text-deep-black outline-none pt-2 bg-transparent" />
+                </div>
+
+                <div className="flex border border-cold-grey-light">
+                  <button className="flex-1 py-3 text-sm font-bold text-deep-black border-r border-cold-grey-light hover:bg-cold-white cursor-pointer">Male</button>
+                  <button className="flex-1 py-3 text-sm font-bold text-deep-black hover:bg-cold-white cursor-pointer">Female</button>
+                </div>
+
+                <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                  <input type="text" placeholder="Birthday (dd/mm/yyyy)" className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                </div>
+
+                <h3 className="font-bold text-deep-black mt-6 mb-2">Alternate mobile details</h3>
+
+                <div className="flex border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors items-center gap-3">
+                  <span className="text-cold-grey text-sm font-bold">+91</span>
+                  <div className="w-px h-4 bg-cold-grey-light" />
+                  <input type="tel" placeholder="Mobile Number" className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                </div>
+
+                <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                  <input type="text" placeholder="Hint name" className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                </div>
+
+                <div className="pt-6 border-t border-cold-grey-light mt-6 flex flex-col gap-4">
+                  <button className="w-full py-4 text-sm font-bold uppercase tracking-widest text-[#ff3f6c] bg-pure-white border border-cold-grey-light cursor-pointer">
+                    DELETE ACCOUNT
+                  </button>
+                  <button className="w-full py-4 text-sm font-bold uppercase tracking-widest bg-[#ff3f6c] text-pure-white cursor-pointer">
+                    SAVE DETAILS
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <BottomMobileNav />
+      </div>
+    </>
   );
 }

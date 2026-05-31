@@ -12,26 +12,26 @@ export default function CategoryNav() {
   const [activeCategory, setActiveCategory] = useState('Discover');
 
   return (
-    <div className="w-full bg-white border-b border-gray-100 overflow-x-auto hide-scrollbar">
+    <div className="w-full bg-pure-white border-b border-cold-grey-light overflow-x-auto hide-scrollbar">
       <div className="max-w-[1400px] mx-auto px-4 lg:px-8">
-        <ul className="flex items-center gap-6 lg:gap-8 min-w-max h-12">
+        <ul className="flex items-center gap-8 lg:gap-10 min-w-max h-14">
           {categories.map((cat) => (
-            <li key={cat.label} className="h-full flex items-center relative">
+            <li key={cat.label} className="h-full flex items-center relative group">
               <button
                 onClick={() => {
                   setActiveCategory(cat.label);
                   navigate(`/products/${cat.slug}`);
                 }}
-                className={`text-sm lg:text-[15px] font-medium whitespace-nowrap transition-colors ${
+                className={`text-sm lg:text-[15px] font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${
                   activeCategory === cat.label 
-                    ? 'text-black' 
-                    : 'text-gray-500 hover:text-black'
+                    ? 'text-deep-black' 
+                    : 'text-cold-grey group-hover:text-deep-black'
                 }`}
               >
                 {cat.label}
               </button>
               {activeCategory === cat.label && (
-                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#d35a38]"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent-yellow"></div>
               )}
             </li>
           ))}

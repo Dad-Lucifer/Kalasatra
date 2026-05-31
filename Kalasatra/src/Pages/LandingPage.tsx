@@ -10,7 +10,7 @@ import BottomMobileNav from '../components/landing/BottomMobileNav';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-black font-sans pb-16 lg:pb-0">
+    <div className="min-h-screen bg-cold-white text-deep-black font-sans pb-16 lg:pb-0">
       {/* Top UI */}
       <div className="sticky top-0 z-50">
         <TopNotification />

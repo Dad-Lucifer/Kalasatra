@@ -71,12 +71,12 @@ export default function NewAndPopular() {
   const [activeTab, setActiveTab] = useState('ALL');
 
   return (
-    <section className="w-full bg-white py-10 lg:py-16">
+    <section className="w-full bg-pure-white py-10 lg:py-16">
       <div className="max-w-[1400px] mx-auto px-4 lg:px-8">
         
         {/* Section Title */}
         <div className="flex justify-center mb-6">
-          <h2 className="text-xl lg:text-2xl font-bold tracking-widest uppercase text-black">
+          <h2 className="text-2xl lg:text-3xl font-heading font-bold tracking-widest uppercase text-deep-black">
             NEW AND POPULAR
           </h2>
         </div>
@@ -88,10 +88,10 @@ export default function NewAndPopular() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-none px-4 sm:px-5 py-1.5 text-[10px] sm:text-xs font-semibold tracking-widest uppercase border border-black transition-colors ${
+                className={`flex-none px-4 sm:px-5 py-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase border border-deep-black transition-colors ${
                   activeTab === tab
-                    ? 'bg-black text-white'
-                    : 'bg-white text-black hover:bg-gray-100'
+                    ? 'bg-deep-black text-pure-white'
+                    : 'bg-pure-white text-deep-black hover:bg-cold-white'
                 }`}
               >
                 {tab}
@@ -106,7 +106,7 @@ export default function NewAndPopular() {
             <div key={product.id} className="group cursor-pointer flex flex-col">
               
               {/* Product Image Box */}
-              <div className="relative aspect-[3/4] bg-[#f0f0f0] overflow-hidden mb-3">
+              <div className="relative aspect-[3/4] bg-cold-white overflow-hidden mb-3 border border-transparent group-hover:border-cold-grey-light transition-colors">
                 <img 
                   src={product.imgUrl} 
                   alt={product.title}
@@ -122,11 +122,11 @@ export default function NewAndPopular() {
               </div>
 
               {/* Product Info */}
-              <div className="flex flex-col flex-1">
-                <h3 className="text-xs sm:text-sm text-gray-800 font-medium truncate mb-1" title={product.title}>
+              <div className="flex flex-col flex-1 px-1">
+                <h3 className="text-xs sm:text-sm text-cold-grey font-medium truncate mb-1 uppercase tracking-wider" title={product.title}>
                   {product.title}
                 </h3>
-                <span className="text-sm sm:text-base text-black font-bold mb-2">
+                <span className="text-sm sm:text-base text-deep-black font-bold mb-2">
                   {product.price}
                 </span>
 
@@ -136,7 +136,7 @@ export default function NewAndPopular() {
                     {product.colors.map((color, idx) => (
                       <div 
                         key={idx} 
-                        className="w-3 h-3 sm:w-3.5 sm:h-3.5 border border-gray-300 shadow-sm"
+                        className="w-3 h-3 sm:w-3.5 sm:h-3.5 border border-cold-grey-light"
                         style={{ backgroundColor: color }}
                       />
                     ))}
