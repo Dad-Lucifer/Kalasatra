@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiRequest, setTokens } from '../utils/api';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 interface AdminAuthPageProps {
   onLoginSuccess: () => void;
@@ -11,14 +12,16 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
   const [tab, setTab] = useState<TabType>('login');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string; list?: string[] } | null>(null);
-  
+
   // Forms state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  
+
   // OTP verification sub-view
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [otpEmail, setOtpEmail] = useState('');
@@ -134,16 +137,20 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
     if (res.success && res.data) {
       const { accessToken, idToken, refreshToken, user } = res.data;
       setTokens(accessToken, idToken, refreshToken);
-      
+
       // Store admin user info
       localStorage.setItem('adminUser', JSON.stringify(user));
-      
+
       showMessage('success', `Welcome back, ${user.name}! Role: ${user.role}`);
       setTimeout(() => onLoginSuccess(), 1500);
     } else {
       showMessage('error', res.message || 'Admin login failed');
     }
   };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  }
 
   return (
     <div className="min-h-screen bg-rich-black flex items-center justify-center px-4 py-10">
@@ -155,11 +162,10 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
         </div>
 
         {message && (
-          <div className={`mb-5 px-4 py-3 rounded-lg text-sm ${
-            message.type === 'success'
+          <div className={`mb-5 px-4 py-3 rounded-lg text-sm ${message.type === 'success'
               ? 'bg-green-900/30 text-green-400 border border-green-800/50'
               : 'bg-red-900/30 text-red-400 border border-red-800/50'
-          }`}>
+            }`}>
             <span>{message.text}</span>
             {message.list && message.list.length > 0 && (
               <ul className="mt-2 space-y-1 list-disc list-inside">
@@ -221,21 +227,19 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
             <div className="flex rounded-lg overflow-hidden border border-[#333] mb-6">
               <button
                 onClick={() => handleTabChange('login')}
-                className={`flex-1 py-2.5 text-sm font-medium transition-all cursor-pointer border-none ${
-                  tab === 'login'
+                className={`flex-1 py-2.5 text-sm font-medium transition-all cursor-pointer border-none ${tab === 'login'
                     ? 'bg-[#D4AF37] text-[#0F0F0F]'
                     : 'bg-transparent text-[#999] hover:text-[#F5F5F5]'
-                }`}
+                  }`}
               >
                 Admin Login
               </button>
               <button
                 onClick={() => handleTabChange('signup')}
-                className={`flex-1 py-2.5 text-sm font-medium transition-all cursor-pointer border-none ${
-                  tab === 'signup'
+                className={`flex-1 py-2.5 text-sm font-medium transition-all cursor-pointer border-none ${tab === 'signup'
                     ? 'bg-[#D4AF37] text-[#0F0F0F]'
                     : 'bg-transparent text-[#999] hover:text-[#F5F5F5]'
-                }`}
+                  }`}
               >
                 Admin Signup
               </button>
@@ -255,18 +259,28 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-[#999]">Password</label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-
+               <div className="flex flex-col gap-2 relative">
+                    <label className="text-xs uppercase tracking-[0.15em] text-soft-white/60 font-semibold">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-5 py-3 pr-12 bg-rich-black/80 border border-luxury-gold/20 text-soft-white text-sm placeholder:text-soft-white/30 outline-none focus:border-luxury-gold/60 transition-all duration-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute top-1/2 right-3 -translate-y-1/2 text-soft-white/50 hover:text-luxury-gold transition-colors bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                      </button>
+                    </div>
+                  </div>
                 <button type="submit" className="w-full px-6 py-3 bg-[#D4AF37] text-[#0F0F0F] text-sm font-semibold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none" disabled={loading}>
                   {loading ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}
                   {loading ? 'Logging in...' : '🔐 Admin Login'}
@@ -328,20 +342,31 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-[#999]">Password</label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <small className="text-[11px] text-[#666] block mt-1">
-                    Min 8 characters. Must contain uppercase, lowercase, number, and special character.
-                  </small>
-                </div>
+                <div className="flex flex-col gap-2 relative">
+                    <label className="text-xs uppercase tracking-[0.15em] text-soft-white/60 font-semibold">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-5 py-3 pr-12 bg-rich-black/80 border border-luxury-gold/20 text-soft-white text-sm placeholder:text-soft-white/30 outline-none focus:border-luxury-gold/60 transition-all duration-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute top-1/2 right-3 -translate-y-1/2 text-soft-white/50 hover:text-luxury-gold transition-colors bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-soft-white/40 mt-1">
+                      Min 8 characters. Must contain uppercase, lowercase, number, and special character.
+                    </p>
+                  </div>
 
                 <button type="submit" className="w-full px-6 py-3 bg-[#D4AF37] text-[#0F0F0F] text-sm font-semibold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none" disabled={loading}>
                   {loading ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}

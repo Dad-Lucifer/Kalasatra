@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
 import { useCart } from '../context/CartContext';
 
@@ -28,6 +28,7 @@ const categoryMeta: Record<string, { title: string; subtitle: string }> = {
 };
 
 export default function CategoryProductsPage() {
+  const navigate = useNavigate();
   const { categorySlug } = useParams<{ categorySlug: string }>();
   const { addItem, items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
   const [cartOpen, setCartOpen] = useState(false);
@@ -92,6 +93,10 @@ export default function CategoryProductsPage() {
   };
 
   const handleAddToCart = (product: Product) => {
+    if (!localStorage.getItem('accessToken')) {
+      navigate('/auth');
+      return;
+    }
     const variant = selectedVariants[product.id];
     addItem({
       productId: product.id,
@@ -105,6 +110,10 @@ export default function CategoryProductsPage() {
   };
 
   const handleBuyNow = (product: Product) => {
+    if (!localStorage.getItem('accessToken')) {
+      navigate('/auth');
+      return;
+    }
     handleAddToCart(product);
     setCartOpen(true);
   };
@@ -120,7 +129,7 @@ export default function CategoryProductsPage() {
       {/* Header */}
       <section className="relative border-b border-luxury-gold/10">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(212,175,55,0.06),transparent_70%)]" />
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-16 lg:py-20">
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-16 lg:py-10">
           <div className="flex items-center justify-between">
             <div>
               <Link to="/" className="text-xs uppercase tracking-[0.2em] text-luxury-gold/60 hover:text-luxury-gold transition-colors mb-4 inline-block">

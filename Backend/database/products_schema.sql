@@ -250,6 +250,54 @@ CREATE POLICY "Service role full access to variants"
   USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- CART ITEMS TABLE (persists per user)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+DROP TABLE IF EXISTS cart_items CASCADE;
+
+CREATE TABLE cart_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_uid TEXT NOT NULL REFERENCES users(uid) ON DELETE CASCADE,
+  product_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  size TEXT NOT NULL,
+  color TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  image TEXT,
+  slug TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_uid, product_id, size, color)
+);
+
+CREATE INDEX idx_cart_items_user_uid ON cart_items(user_uid);
+
+-- Trigger for auto-update timestamp
+DROP TRIGGER IF EXISTS update_cart_items_updated_at ON cart_items;
+CREATE TRIGGER update_cart_items_updated_at
+  BEFORE UPDATE ON cart_items
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- RLS
+ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can manage their own cart" ON cart_items;
+CREATE POLICY "Users can manage their own cart"
+  ON cart_items FOR ALL
+  USING (user_uid = auth.jwt()->>'sub')
+  WITH CHECK (user_uid = auth.jwt()->>'sub');
+
+DROP POLICY IF EXISTS "Service role full access to cart" ON cart_items;
+CREATE POLICY "Service role full access to cart"
+  ON cart_items FOR ALL
+  TO service_role
+  USING (true) WITH CHECK (true);
+
+COMMENT ON TABLE cart_items IS 'Shopping cart items persisted per user';
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- HELPFUL VIEWS
 -- ═══════════════════════════════════════════════════════════════════════════
 

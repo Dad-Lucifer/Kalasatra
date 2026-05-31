@@ -375,7 +375,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   // ─── Render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F]">
+    <div className="min-h-screen bg-rich-black">
       {/* Header */}
       <div className="text-center pt-24 pb-12 px-4 bg-[#1C1C1C]">
         <h1 className="text-4xl font-bold text-[#F5F5F5]">{isAdminMode ? 'Product Management' : 'Shop Our Collection'}</h1>

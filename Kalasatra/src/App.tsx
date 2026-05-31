@@ -7,7 +7,9 @@ import AdminAuthPage from './Pages/AdminAuthPage';
 import AdminDashboard from './Pages/AdminDashboard';
 import LandingPage from './Pages/LandingPage';
 import CategoryProductsPage from './Pages/CategoryProductsPage';
+import CartPage from './Pages/CartPage';
 import './App.css';
+import Navbar from './components/landing/Navbar';
 
 function App() {
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ function App() {
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
-    navigate('/dashboard');
+    navigate('/');
   };
 
   const handleAdminLoginSuccess = () => {
@@ -44,9 +46,11 @@ function App() {
 
   return (
     <CartProvider>
+     
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/products/:categorySlug" element={<CategoryProductsPage />} />
         <Route path='/ownerauth' element={<AdminAuthPage onLoginSuccess={handleAdminLoginSuccess} />} />
         <Route

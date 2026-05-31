@@ -75,7 +75,7 @@ export default function FeaturedProducts() {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex justify-center gap-2 mb-16 p-2 bg-gradient-to-r from-dark-charcoal/50 via-dark-charcoal to-dark-charcoal/50 border border-luxury-gold/10 w-fit mx-auto backdrop-blur-sm">
+        <div className="flex justify-center gap-2 mb-16 p-2 bg-linear-to-r from-dark-charcoal/50 via-dark-charcoal to-dark-charcoal/50 border border-luxury-gold/10 w-fit mx-auto backdrop-blur-sm">
           {categories.map((cat) => (
             <button
               key={cat.id}
@@ -97,9 +97,9 @@ export default function FeaturedProducts() {
 
         {/* Featured Hero Box */}
         <div className="mb-16 lg:mb-20 relative overflow-hidden group">
-          <div className={`relative h-80 sm:h-96 lg:h-[450px] bg-gradient-to-br ${current.gradient} overflow-hidden`}>
+          <div className={`relative h-80 sm:h-96 lg:h-[450px] bg-linear-to-br ${current.gradient} overflow-hidden`}>
             {/* Background Glow */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${current.accentBg}`} />
+            <div className={`absolute inset-0 bg-linear-to-br ${current.accentBg}`} />
             <div className="absolute top-1/4 -right-20 w-96 h-96 rounded-full blur-[80px] opacity-40" style={{
               background: activeTab === 'men' ? 'rgba(59, 130, 246, 0.2)' : activeTab === 'women' ? 'rgba(244, 63, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)'
             }} />
@@ -135,7 +135,7 @@ export default function FeaturedProducts() {
             </div>
 
             {/* Divider */}
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-luxury-gold/30 to-transparent" />
           </div>
         </div>
 
@@ -153,10 +153,10 @@ export default function FeaturedProducts() {
               {/* Product Card */}
               <div className="relative bg-dark-charcoal border border-luxury-gold/10 hover:border-luxury-gold/40 transition-all duration-500 overflow-hidden group-hover:shadow-[0_0_40px_rgba(212,175,55,0.2)]">
                 {/* Hover Glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-luxury-gold/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-linear-to-br from-luxury-gold/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                 {/* Product Image Placeholder */}
-                <div className="aspect-[3/4] flex items-center justify-center bg-gradient-to-b from-dark-charcoal via-rich-black to-dark-charcoal relative overflow-hidden">
+                <div className="aspect-3/4 flex items-center justify-center bg-linear-to-b from-dark-charcoal via-rich-black to-dark-charcoal relative overflow-hidden">
                   {/* Animated Background */}
                   <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.1),transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
@@ -185,7 +185,7 @@ export default function FeaturedProducts() {
                         <h4 className="font-heading text-lg font-bold text-soft-white group-hover:text-luxury-gold transition-colors duration-300">
                           {item.name}
                         </h4>
-                        <p className="text-xs uppercase tracking-[0.1em] text-soft-white/40 mt-1">
+                        <p className="text-xs uppercase tracking-[0.1rem] text-soft-white/40 mt-1">
                           {item.category}
                         </p>
                       </div>
@@ -203,7 +203,7 @@ export default function FeaturedProducts() {
                 </div>
 
                 {/* Bottom Interest Line */}
-                <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-luxury-gold to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center" />
+                <div className="absolute inset-x-0 bottom-0 h-[2px] bg-linear-to-r from-transparent via-luxury-gold to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center" />
               </div>
             </div>
           ))}

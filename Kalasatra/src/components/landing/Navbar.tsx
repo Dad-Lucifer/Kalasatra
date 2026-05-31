@@ -1,17 +1,52 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import logoImg from '../../assets/kalastra-logo.png';
 import SidebarMenu from './SidebarMenu';
 
+const decodeJwt = (token: string) => {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+};
+
 export default function Navbar() {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const idToken = localStorage.getItem('idToken');
+  const isLoggedIn = !!localStorage.getItem('accessToken');
+  const tokenPayload = isLoggedIn && idToken ? decodeJwt(idToken) : null;
+  const userName = tokenPayload?.name || tokenPayload?.email || 'User';
+  const userEmail = tokenPayload?.email || '';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('idToken');
+    setProfileOpen(false);
+    navigate('/');
+  };
 
   return (
     <>
@@ -38,7 +73,7 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Center: Logo (Hidden on very small screens if search takes over, but let's keep it for now) */}
+          {/* Center: Logo */}
           <Link to="/" className="hidden lg:flex flex-1 justify-center items-center">
              <div className="flex items-center gap-3 justify-center h-14">
                 <img src={logoImg} alt="Kalastra Logo" className="h-full w-auto object-contain" />
@@ -68,15 +103,48 @@ export default function Navbar() {
               />
             </div>
 
-            {/* Desktop Icons (Hidden on Mobile since they are in bottom nav) */}
+            {/* Desktop Icons */}
             <div className="hidden lg:flex items-center gap-5">
-              <button className="text-black hover:text-gray-600">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </button>
-              <button className="text-black hover:text-gray-600">
+              {/* Profile */}
+              <div className="relative" ref={dropdownRef}>
+                {isLoggedIn ? (
+                  <button
+                    onClick={() => setProfileOpen(!profileOpen)}
+                    className="flex items-center gap-2 text-black hover:text-gray-600"
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span className="text-sm font-medium max-w-[100px] truncate">{userName}</span>
+                  </button>
+                ) : (
+                  <button onClick={() => navigate('/auth')} className="text-black hover:text-gray-600">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </button>
+                )}
+
+                {profileOpen && isLoggedIn && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 shadow-lg py-1 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-black truncate">{userName}</p>
+                      <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Cart */}
+              <button onClick={() => navigate('/cart')} className="text-black hover:text-gray-600">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
                   <path d="M3 6h18"></path>

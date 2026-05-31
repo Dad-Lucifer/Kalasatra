@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiRequest, setTokens } from '../utils/api';
+import {FaEye, FaEyeSlash} from "react-icons/fa";
 
 interface AuthPageProps {
   onLoginSuccess: () => void;
@@ -14,6 +15,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -179,6 +181,9 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       showMessage('error', res.message || 'Password reset failed');
     }
   };
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   return (
     <section className="relative min-h-svh flex items-center justify-center overflow-hidden bg-rich-black px-4 py-20">
@@ -325,18 +330,27 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
                     />
                   </div>
 
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 relative">
                     <label className="text-xs uppercase tracking-[0.15em] text-soft-white/60 font-semibold">
                       Password
                     </label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full px-5 py-3 bg-rich-black/80 border border-luxury-gold/20 text-soft-white text-sm placeholder:text-soft-white/30 outline-none focus:border-luxury-gold/60 transition-all duration-300"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-5 py-3 pr-12 bg-rich-black/80 border border-luxury-gold/20 text-soft-white text-sm placeholder:text-soft-white/30 outline-none focus:border-luxury-gold/60 transition-all duration-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute top-1/2 right-3 -translate-y-1/2 text-soft-white/50 hover:text-luxury-gold transition-colors bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
@@ -414,18 +428,27 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
                     />
                   </div>
 
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 relative">
                     <label className="text-xs uppercase tracking-[0.15em] text-soft-white/60 font-semibold">
                       Password
                     </label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full px-5 py-3 bg-rich-black/80 border border-luxury-gold/20 text-soft-white text-sm placeholder:text-soft-white/30 outline-none focus:border-luxury-gold/60 transition-all duration-300"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-5 py-3 pr-12 bg-rich-black/80 border border-luxury-gold/20 text-soft-white text-sm placeholder:text-soft-white/30 outline-none focus:border-luxury-gold/60 transition-all duration-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute top-1/2 right-3 -translate-y-1/2 text-soft-white/50 hover:text-luxury-gold transition-colors bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                      </button>
+                    </div>
                     <p className="text-[11px] text-soft-white/40 mt-1">
                       Min 8 characters. Must contain uppercase, lowercase, number, and special character.
                     </p>

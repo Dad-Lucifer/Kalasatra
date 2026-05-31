@@ -1,0 +1,158 @@
+import { Link } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+
+export default function CartPage() {
+  const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, syncing } = useCart();
+
+  return (
+    <div className="min-h-screen bg-rich-black">
+      <div className="h-20 lg:h-24" />
+
+      <section className="relative border-b border-luxury-gold/10">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(212,175,55,0.06),transparent_70%)]" />
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-16 lg:py-20">
+          <div>
+            <Link to="/" className="text-xs uppercase tracking-[0.2em] text-luxury-gold/60 hover:text-luxury-gold transition-colors mb-4 inline-block">
+              ← Back to Home
+            </Link>
+            <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold text-soft-white mt-2">
+              Your Cart
+            </h1>
+            <p className="text-lg text-soft-white/60 mt-3 font-light">
+              {totalItems === 0 ? 'Your cart is empty.' : `${totalItems} item${totalItems !== 1 ? 's' : ''} in your cart`}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-10">
+        {syncing ? (
+          <div className="flex items-center justify-center py-32">
+            <div className="w-10 h-10 border-2 border-luxury-gold/30 border-t-luxury-gold rounded-full animate-spin" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-32">
+            <p className="text-soft-white/50 text-lg mb-6">Your cart is empty.</p>
+            <Link
+              to="/products/mens-collection"
+              className="inline-block px-8 py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500"
+            >
+              Start Shopping
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-10">
+            <div className="flex-1 space-y-4">
+              {items.map((item) => {
+                const key = `${item.productId}-${item.size}-${item.color}`;
+                return (
+                  <div
+                    key={key}
+                    className="flex gap-4 p-4 bg-dark-charcoal border border-luxury-gold/10 hover:border-luxury-gold/30 transition-all duration-300"
+                  >
+                    <div className="w-24 h-24 shrink-0 bg-rich-black border border-luxury-gold/10 flex items-center justify-center overflow-hidden">
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-heading text-2xl font-bold text-luxury-gold/30">K</span>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <Link
+                          to={`/products/${item.slug}`}
+                          className="font-heading text-base font-bold text-soft-white hover:text-luxury-gold transition-colors"
+                        >
+                          {item.name}
+                        </Link>
+                        <p className="text-xs text-soft-white/50 mt-1 uppercase tracking-wider">
+                          {item.size} / {item.color}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center border border-luxury-gold/20">
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.size, item.color, -1)}
+                              className="px-3 py-1.5 text-soft-white/60 hover:text-soft-white bg-transparent border-none cursor-pointer text-sm"
+                            >
+                              −
+                            </button>
+                            <span className="px-3 py-1.5 text-sm text-soft-white min-w-[28px] text-center font-semibold">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.size, item.color, 1)}
+                              className="px-3 py-1.5 text-soft-white/60 hover:text-soft-white bg-transparent border-none cursor-pointer text-sm"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => removeItem(item.productId, item.size, item.color)}
+                            className="text-xs text-soft-white/30 hover:text-red-400 transition-colors bg-transparent border-none p-0 cursor-pointer uppercase tracking-wider"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <span className="font-heading text-base font-bold text-luxury-gold">
+                          ₹{(item.price * item.quantity).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div className="pt-4 flex justify-between items-center">
+                <button
+                  onClick={clearCart}
+                  className="px-5 py-2.5 border border-luxury-gold/20 text-soft-white/50 font-semibold uppercase tracking-[0.1em] text-xs hover:text-red-400 hover:border-red-400/30 transition-all duration-300 bg-transparent cursor-pointer"
+                >
+                  Clear Cart
+                </button>
+              </div>
+            </div>
+
+            <div className="lg:w-80 shrink-0">
+              <div className="bg-dark-charcoal border border-luxury-gold/10 p-6 sticky top-28">
+                <h3 className="font-heading text-lg font-bold text-soft-white mb-6 uppercase tracking-wider">
+                  Order Summary
+                </h3>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between text-soft-white/70">
+                    <span>Items ({totalItems})</span>
+                    <span>₹{totalPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-soft-white/70">
+                    <span>Shipping</span>
+                    <span className="text-green-500">Free</span>
+                  </div>
+                  <div className="border-t border-luxury-gold/10 pt-3 flex justify-between font-heading text-lg font-bold text-luxury-gold">
+                    <span>Total</span>
+                    <span>₹{totalPrice.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <button className="w-full mt-6 px-6 py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500">
+                  Proceed to Checkout
+                </button>
+
+                <Link
+                  to="/products/mens-collection"
+                  className="block w-full mt-3 px-6 py-3 text-center text-xs uppercase tracking-[0.15em] text-soft-white/50 hover:text-luxury-gold transition-colors"
+                >
+                  Continue Shopping
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
