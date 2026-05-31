@@ -1,3 +1,5 @@
+import logoImg from '../../assets/kalastra-logo.png';
+
 const footerLinks = [
   {
     title: 'Collections',
@@ -60,13 +62,8 @@ export default function Footer() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-10 lg:gap-8 mb-16 lg:mb-20">
             {/* Brand Column */}
             <div className="lg:col-span-1">
-              <a href="#" className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-luxury-gold to-gold-dark flex items-center justify-center hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all duration-300">
-                  <span className="text-rich-black font-black text-lg tracking-widest">K</span>
-                </div>
-                <div className="font-heading text-xl lg:text-2xl font-bold text-soft-white">
-                  Kalasatra
-                </div>
+              <a href="#" className="flex items-center mb-8 h-16">
+                <img src={logoImg} alt="Kalastra Logo" className="h-full w-auto object-contain" />
               </a>
 
               <p className="text-sm text-soft-white/50 leading-relaxed mb-8 max-w-xs font-light">
