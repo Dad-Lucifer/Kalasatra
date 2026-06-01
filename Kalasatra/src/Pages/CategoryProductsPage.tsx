@@ -407,7 +407,7 @@ export default function CategoryProductsPage() {
                               </span>
                               {rippleIds.has(product.id) && (
                                 <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                  <span className="w-0 h-0 rounded-full border-2 border-[#D4AF37] animate-ping absolute" />
+                                  <span className="w-8 h-8  rounded-full border-4 border-[#D4AF37] animate-ping absolute" />
                                 </span>
                               )}
                             </button>
