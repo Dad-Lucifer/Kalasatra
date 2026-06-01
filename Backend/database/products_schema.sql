@@ -298,6 +298,68 @@ CREATE POLICY "Service role full access to cart"
 COMMENT ON TABLE cart_items IS 'Shopping cart items persisted per user';
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- REVIEWS TABLE
+-- ═══════════════════════════════════════════════════════════════════════════
+
+DROP TABLE IF EXISTS reviews CASCADE;
+
+CREATE TABLE reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  user_uid TEXT NOT NULL REFERENCES users(uid) ON DELETE CASCADE,
+  user_name TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  review TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(product_id, user_uid)
+);
+
+CREATE INDEX idx_reviews_product_id ON reviews(product_id);
+
+DROP TRIGGER IF EXISTS update_reviews_updated_at ON reviews;
+CREATE TRIGGER update_reviews_updated_at
+  BEFORE UPDATE ON reviews
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can read reviews" ON reviews;
+CREATE POLICY "Public can read reviews"
+  ON reviews FOR SELECT
+  USING (is_active = true);
+
+DROP POLICY IF EXISTS "Users can create their own reviews" ON reviews;
+CREATE POLICY "Users can create their own reviews"
+  ON reviews FOR INSERT
+  TO authenticated
+  WITH CHECK (user_uid = auth.jwt()->>'sub');
+
+DROP POLICY IF EXISTS "Users can update their own reviews" ON reviews;
+CREATE POLICY "Users can update their own reviews"
+  ON reviews FOR UPDATE
+  TO authenticated
+  USING (user_uid = auth.jwt()->>'sub')
+  WITH CHECK (user_uid = auth.jwt()->>'sub');
+
+DROP POLICY IF EXISTS "Users can delete their own reviews" ON reviews;
+CREATE POLICY "Users can delete their own reviews"
+  ON reviews FOR DELETE
+  TO authenticated
+  USING (user_uid = auth.jwt()->>'sub');
+
+DROP POLICY IF EXISTS "Service role full access to reviews" ON reviews;
+CREATE POLICY "Service role full access to reviews"
+  ON reviews FOR ALL
+  TO service_role
+  USING (true) WITH CHECK (true);
+
+COMMENT ON TABLE reviews IS 'Product reviews and ratings';
+COMMENT ON COLUMN reviews.rating IS 'Rating from 1 to 5';
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- HELPFUL VIEWS
 -- ═══════════════════════════════════════════════════════════════════════════
 

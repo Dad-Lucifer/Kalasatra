@@ -112,7 +112,7 @@ export default function AdminDashboard() {
                 <h2 className="text-lg font-semibold text-soft-white">{adminUser.name}</h2>
                 <p className="text-sm text-[#999]">{adminUser.email}</p>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-luxury-gold text-rich-black rounded">{adminUser.role}</span>
+                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-[#D4AF37] text-[#1A1A1A] rounded">{adminUser.role}</span>
                   {adminUser.groups.map((group) => (
                     <span key={group} className="px-2 py-0.5 text-[10px] bg-[#333] text-[#999] rounded">{group}</span>
                   ))}
@@ -139,25 +139,25 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <button
                   onClick={() => setActiveTab('products')}
-                  className="text-left bg-rich-black rounded-xl p-4 hover:border-luxury-gold transition-all border border-transparent cursor-pointer"
+                  className="text-left bg-[#1A1A1A] rounded-xl p-4 hover:border-[#D4AF37] transition-all border border-transparent cursor-pointer"
                 >
                   <div className="text-2xl mb-2">🛍️</div>
-                  <h4 className="text-sm font-semibold text-soft-white">Product Management</h4>
+                  <h4 className="text-sm font-semibold text-[#FFFFFF]">Product Management</h4>
                   <p className="text-xs text-[#999] mt-1">Manage products, categories, and inventory</p>
                 </button>
-                <div className="bg-rich-black rounded-xl p-4 opacity-60">
+                <div className="bg-[#1A1A1A]  rounded-xl p-4 opacity-60">
                   <div className="text-2xl mb-2">👥</div>
-                  <h4 className="text-sm font-semibold text-soft-white">User Management</h4>
+                  <h4 className="text-sm font-semibold text-[#FFFFFF]">User Management</h4>
                   <p className="text-xs text-[#999] mt-1">Manage user accounts and permissions</p>
                 </div>
-                <div className="bg-rich-black rounded-xl p-4 opacity-60">
+                <div className="bg-[#1A1A1A]  rounded-xl p-4 opacity-60">
                   <div className="text-2xl mb-2">📊</div>
-                  <h4 className="text-sm font-semibold text-soft-white">Analytics</h4>
+                  <h4 className="text-sm font-semibold text-[#FFFFFF]">Analytics</h4>
                   <p className="text-xs text-[#999] mt-1">View system analytics and reports</p>
                 </div>
-                <div className="bg-rich-black rounded-xl p-4 opacity-60">
+                <div className="bg-[#1A1A1A] rounded-xl p-4 opacity-60">
                   <div className="text-2xl mb-2">⚙️</div>
-                  <h4 className="text-sm font-semibold text-soft-white">Settings</h4>
+                  <h4 className="text-sm font-semibold text-[#FFFFFF]">Settings</h4>
                   <p className="text-xs text-[#999] mt-1">Configure system settings</p>
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default function AdminDashboard() {
             <div className="p-4 bg-emerald-950/30 border border-emerald-800/30 rounded-xl">
               <strong className="text-emerald-400">✅ Admin Authentication Successful!</strong>
               <p className="mt-2 text-sm text-[#999]">
-                Your admin account is verified and active. You have <strong className="text-soft-white">{adminUser.role}</strong> level access.
+                Your admin account is verified and active. You have <strong className="text-[#FFFFFF]">{adminUser.role}</strong> level access.
               </p>
             </div>
           </div>

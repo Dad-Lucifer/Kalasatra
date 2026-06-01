@@ -13,6 +13,8 @@ const {
   forgotPassword,
   resetPassword,
   getMe,
+  updateProfile,
+  deleteAccount,
 } = require("../controllers/auth.controller");
 
 const { authenticateToken } = require("../middlewares/auth.middleware");
@@ -26,6 +28,7 @@ const {
   forgotPasswordSchema,
   resetPasswordSchema,
   refreshTokenSchema,
+  updateProfileSchema,
 } = require("../middlewares/validate.middleware");
 
 // ─── Public Routes ──────────────────────────────────────────────────────────
@@ -128,13 +131,36 @@ router.post(
 
 /**
  * @route   GET /api/v1/auth/me
- * @desc    Get current authenticated user's profile from Firestore
+ * @desc    Get current authenticated user's profile from Supabase
  * @access  Private (requires Bearer token)
  */
 router.get(
   "/me",
   authenticateToken,
   getMe
+);
+
+/**
+ * @route   PATCH /api/v1/auth/me
+ * @desc    Update authenticated user's profile
+ * @access  Private (requires Bearer token)
+ */
+router.patch(
+  "/me",
+  authenticateToken,
+  validate(updateProfileSchema),
+  updateProfile
+);
+
+/**
+ * @route   DELETE /api/v1/auth/me
+ * @desc    Delete authenticated user's account (Supabase + Cognito)
+ * @access  Private (requires Bearer token)
+ */
+router.delete(
+  "/me",
+  authenticateToken,
+  deleteAccount
 );
 
 module.exports = router;

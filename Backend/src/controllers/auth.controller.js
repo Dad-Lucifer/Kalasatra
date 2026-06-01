@@ -9,6 +9,7 @@ const {
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
   GetUserCommand,
+  AdminDeleteUserCommand,
 } = require("@aws-sdk/client-cognito-identity-provider");
 
 const crypto = require("crypto");
@@ -438,37 +439,149 @@ const resetPassword = async (req, res) => {
 
 /**
  * GET /api/v1/auth/me
- * Returns the authenticated user's profile from Firestore.
+ * Returns the authenticated user's profile from Supabase.
  * Protected route — requires valid Cognito access token.
  */
 const getMe = async (req, res) => {
   try {
     const { sub } = req.user;
 
-    const docRef = db.collection("users").doc(sub);
-    const snap = await docRef.get();
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("uid", sub)
+      .single();
 
-    if (!snap.exists) {
+    if (error || !user) {
       return res.status(404).json({
         success: false,
         message: "User profile not found.",
       });
     }
 
-    const user = snap.data();
-
-    // Never return sensitive fields
-    const { password, ...safeUser } = user;
-
     return res.status(200).json({
       success: true,
-      data: { user: safeUser },
+      data: { user },
     });
   } catch (err) {
     console.error("[AUTH CONTROLLER] getMe:", err);
     return res.status(500).json({
       success: false,
       message: "Failed to retrieve user profile.",
+    });
+  }
+};
+
+/**
+ * PATCH /api/v1/auth/me
+ * Updates the authenticated user's profile in Supabase.
+ * Protected route — requires valid Cognito access token.
+ */
+const updateProfile = async (req, res) => {
+  try {
+    const { sub } = req.user;
+    const updates = req.body;
+
+    const allowedFields = [
+      "name", "phone", "email", "gender", "birthday",
+      "alternate_phone", "hint_name",
+      "address_line1", "address_line2", "city", "state", "pincode", "country",
+    ];
+
+    const sanitized = {};
+    for (const key of allowedFields) {
+      if (updates[key] !== undefined) {
+        sanitized[key] = updates[key];
+      }
+    }
+
+    if (Object.keys(sanitized).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided to update.",
+      });
+    }
+
+    sanitized.updated_at = new Date().toISOString();
+
+    const { error } = await supabase
+      .from("users")
+      .update(sanitized)
+      .eq("uid", sub);
+
+    if (error) {
+      console.error("[AUTH CONTROLLER] updateProfile:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update profile.",
+      });
+    }
+
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("uid", sub)
+      .single();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      data: { user },
+    });
+  } catch (err) {
+    console.error("[AUTH CONTROLLER] updateProfile:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update profile.",
+    });
+  }
+};
+
+/**
+ * DELETE /api/v1/auth/me
+ * Deletes the authenticated user's account — removes from Supabase
+ * and deletes the Cognito user. Protected route.
+ */
+const deleteAccount = async (req, res) => {
+  try {
+    const { sub, email } = req.user;
+
+    // Delete from Supabase
+    const { error: dbError } = await supabase
+      .from("users")
+      .delete()
+      .eq("uid", sub);
+
+    if (dbError) {
+      console.error("[AUTH CONTROLLER] deleteAccount Supabase:", dbError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to delete account data.",
+      });
+    }
+
+    // Delete from Cognito
+    try {
+      await cognitoClient.send(
+        new AdminDeleteUserCommand({
+          UserPoolId: COGNITO_USER_POOL_ID,
+          Username: email,
+        })
+      );
+    } catch (cogErr) {
+      console.error("[AUTH CONTROLLER] deleteAccount Cognito:", cogErr);
+      // Continue — Supabase record is already removed
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Account deleted successfully.",
+    });
+  } catch (err) {
+    console.error("[AUTH CONTROLLER] deleteAccount:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete account.",
     });
   }
 };
@@ -483,4 +596,6 @@ module.exports = {
   forgotPassword,
   resetPassword,
   getMe,
+  updateProfile,
+  deleteAccount,
 };

@@ -80,6 +80,9 @@ app.use("/api/v1/upload", uploadRoutes);
 const cartRoutes = require("./routes/cart.routes");
 app.use("/api/v1/cart", cartRoutes);
 
+const reviewRoutes = require("./routes/review.routes");
+app.use("/api/v1/products", reviewRoutes);
+
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({

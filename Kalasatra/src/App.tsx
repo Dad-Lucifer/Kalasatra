@@ -7,9 +7,9 @@ import AdminAuthPage from './Pages/AdminAuthPage';
 import AdminDashboard from './Pages/AdminDashboard';
 import LandingPage from './Pages/LandingPage';
 import CategoryProductsPage from './Pages/CategoryProductsPage';
+import ProductDetailPage from './Pages/ProductDetailPage';
 import CartPage from './Pages/CartPage';
 import './App.css';
-import Navbar from './components/landing/Navbar';
 
 function App() {
   const navigate = useNavigate();
@@ -52,6 +52,7 @@ function App() {
         <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/products/:categorySlug" element={<CategoryProductsPage />} />
+        <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path='/ownerauth' element={<AdminAuthPage onLoginSuccess={handleAdminLoginSuccess} />} />
         <Route
           path="/dashboard"

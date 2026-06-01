@@ -90,6 +90,32 @@ const refreshTokenSchema = Joi.object({
   refreshToken: Joi.string().required(),
 });
 
+// ──── Profile Schemas ─────────────────────────────────────────────────────
+
+const updateProfileSchema = Joi.object({
+  name: Joi.string().trim().min(2).max(100).optional(),
+  phone: Joi.string()
+    .pattern(/^\+[1-9]\d{6,14}$/)
+    .optional()
+    .allow(null, "")
+    .messages({
+      "string.pattern.base": "Phone must be in E.164 format e.g. +911234567890",
+    }),
+  email: Joi.string().email().lowercase().trim().optional(),
+  gender: Joi.string().valid("Male", "Female", "Other").optional().allow(null, ""),
+  birthday: Joi.date().iso().optional().allow(null, ""),
+  alternate_phone: Joi.string().pattern(/^\d{10}$/).optional().allow(null, "").messages({
+    "string.pattern.base": "Alternate phone must be 10 digits.",
+  }),
+  hint_name: Joi.string().trim().max(100).optional().allow(null, ""),
+  address_line1: Joi.string().trim().max(255).optional().allow(null, ""),
+  address_line2: Joi.string().trim().max(255).optional().allow(null, ""),
+  city: Joi.string().trim().max(100).optional().allow(null, ""),
+  state: Joi.string().trim().max(100).optional().allow(null, ""),
+  pincode: Joi.string().trim().max(20).optional().allow(null, ""),
+  country: Joi.string().trim().max(100).optional().allow(null, ""),
+});
+
 // ──── Admin Schemas ────────────────────────────────────────────────────────
 
 const adminLoginSchema = Joi.object({
@@ -211,6 +237,7 @@ module.exports = {
   forgotPasswordSchema,
   resetPasswordSchema,
   refreshTokenSchema,
+  updateProfileSchema,
   adminLoginSchema,
   adminSignupSchema,
   createSubcategorySchema,

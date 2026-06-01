@@ -18,6 +18,16 @@ interface UserProfile {
   email: string;
   name: string;
   phone?: string;
+  gender?: string;
+  birthday?: string;
+  alternate_phone?: string;
+  hint_name?: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
   isVerified: boolean;
   isActive: boolean;
   createdAt: string;
@@ -30,6 +40,26 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState<'overview' | 'edit'>('overview');
 
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    gender: '',
+    birthday: '',
+    alternatePhone: '',
+    hintName: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    country: 'India',
+  });
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const fetchProfile = async () => {
     setLoading(true);
     const res = await apiRequest<{ user: UserProfile }>('/auth/me');
@@ -37,12 +67,82 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
     if (res.success && res.data) {
       setProfile(res.data.user);
+      setForm({
+        name: res.data.user.name || '',
+        phone: res.data.user.phone || '',
+        email: res.data.user.email || '',
+        gender: res.data.user.gender || '',
+        birthday: res.data.user.birthday || '',
+        alternatePhone: res.data.user.alternate_phone || '',
+        hintName: res.data.user.hint_name || '',
+        addressLine1: res.data.user.address_line1 || '',
+        addressLine2: res.data.user.address_line2 || '',
+        city: res.data.user.city || '',
+        state: res.data.user.state || '',
+        pincode: res.data.user.pincode || '',
+        country: res.data.user.country || 'India',
+      });
     }
   };
 
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+
+    const body: Record<string, unknown> = {
+      name: form.name,
+    };
+    if (form.phone) body.phone = form.phone;
+    if (form.email) body.email = form.email;
+    if (form.gender) body.gender = form.gender;
+    if (form.birthday) body.birthday = form.birthday;
+    if (form.alternatePhone) body.alternate_phone = form.alternatePhone;
+    if (form.hintName) body.hint_name = form.hintName;
+    if (form.addressLine1) body.address_line1 = form.addressLine1;
+    if (form.addressLine2) body.address_line2 = form.addressLine2;
+    if (form.city) body.city = form.city;
+    if (form.state) body.state = form.state;
+    if (form.pincode) body.pincode = form.pincode;
+    if (form.country) body.country = form.country;
+
+    const res = await apiRequest<{ user: UserProfile }>('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+
+    setSaving(false);
+
+    if (res.success && res.data) {
+      setProfile(res.data.user);
+      setMessage({ type: 'success', text: 'Profile updated successfully.' });
+    } else {
+      setMessage({ type: 'error', text: res.message || 'Failed to update profile.' });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      return;
+    }
+
+    setSaving(true);
+    setMessage(null);
+
+    const res = await apiRequest('/auth/me', { method: 'DELETE' });
+
+    setSaving(false);
+
+    if (res.success) {
+      clearTokens();
+      onLogout();
+    } else {
+      setMessage({ type: 'error', text: res.message || 'Failed to delete account.' });
+    }
+  };
 
   const handleLogout = async () => {
     setLoading(true);
@@ -162,48 +262,103 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             ) : (
               <div className="bg-pure-white border border-cold-grey-light p-8 md:p-10 shadow-sm max-w-3xl">
                 <h2 className="text-2xl font-bold text-deep-black mb-8">Edit Details</h2>
+
+                {message && (
+                  <div className={`mb-6 p-4 text-sm font-bold uppercase tracking-widest ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                    {message.text}
+                  </div>
+                )}
                 
                 <div className="space-y-6">
                   {/* Mobile Number */}
                   <div className="flex border border-cold-grey-light p-4 justify-between items-center group focus-within:border-deep-black transition-colors">
-                    <div>
-                      <span className="text-xs text-cold-grey block mb-1">Mobile Number*</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-deep-black">{profile?.phone || '+91 -'}</span>
-                        {profile?.phone && <FiCheckCircle className="text-green-500" size={16} />}
+                    {editingPhone ? (
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        placeholder="+91xxxxxxxxxx"
+                        className="w-full text-sm font-bold text-deep-black outline-none bg-transparent"
+                        autoFocus
+                      />
+                    ) : (
+                      <div>
+                        <span className="text-xs text-cold-grey block mb-1">Mobile Number*</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-deep-black">{form.phone || '+91 -'}</span>
+                          {form.phone && <FiCheckCircle className="text-green-500" size={16} />}
+                        </div>
                       </div>
-                    </div>
-                    <button className="px-6 py-2 border border-cold-grey-light text-xs font-bold uppercase tracking-widest text-deep-black hover:border-deep-black transition-colors cursor-pointer">
-                      CHANGE
+                    )}
+                    <button
+                      onClick={() => { setEditingPhone(!editingPhone); if (!editingPhone) setEditingEmail(false); }}
+                      className="px-6 py-2 border border-cold-grey-light text-xs font-bold uppercase tracking-widest text-deep-black hover:border-deep-black transition-colors cursor-pointer shrink-0"
+                    >
+                      {editingPhone ? 'CANCEL' : 'CHANGE'}
                     </button>
                   </div>
 
                   {/* Email */}
                   <div className="flex border border-cold-grey-light p-4 justify-between items-center group focus-within:border-deep-black transition-colors">
-                    <div>
-                      <span className="text-xs text-cold-grey block mb-1">Email</span>
-                      <span className="text-sm text-deep-black">{profile?.email}</span>
-                    </div>
-                    <button className="px-6 py-2 border border-cold-grey-light text-xs font-bold uppercase tracking-widest text-deep-black hover:border-deep-black transition-colors cursor-pointer">
-                      CHANGE
+                    {editingEmail ? (
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        placeholder="email@example.com"
+                        className="w-full text-sm font-bold text-deep-black outline-none bg-transparent"
+                        autoFocus
+                      />
+                    ) : (
+                      <div>
+                        <span className="text-xs text-cold-grey block mb-1">Email</span>
+                        <span className="text-sm text-deep-black">{form.email}</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => { setEditingEmail(!editingEmail); if (!editingEmail) setEditingPhone(false); }}
+                      className="px-6 py-2 border border-cold-grey-light text-xs font-bold uppercase tracking-widest text-deep-black hover:border-deep-black transition-colors cursor-pointer shrink-0"
+                    >
+                      {editingEmail ? 'CANCEL' : 'CHANGE'}
                     </button>
                   </div>
 
                   {/* Full Name */}
                   <div className="border border-cold-grey-light px-4 py-2 focus-within:border-deep-black transition-colors relative">
                     <label className="text-[10px] text-cold-grey absolute top-2 bg-pure-white px-1 -mt-4 uppercase font-bold tracking-widest">Full Name</label>
-                    <input type="text" defaultValue={profile?.name} className="w-full text-sm font-bold text-deep-black outline-none pt-2 bg-transparent" />
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      className="w-full text-sm font-bold text-deep-black outline-none pt-2 bg-transparent"
+                    />
                   </div>
 
                   {/* Gender Toggle */}
                   <div className="flex border border-cold-grey-light">
-                    <button className="flex-1 py-3 text-sm font-bold text-deep-black border-r border-cold-grey-light hover:bg-cold-white transition-colors cursor-pointer">Male</button>
-                    <button className="flex-1 py-3 text-sm font-bold text-deep-black hover:bg-cold-white transition-colors cursor-pointer">Female</button>
+                    {['Male', 'Female'].map((g) => (
+                      <button
+                        key={g}
+                        onClick={() => setForm({ ...form, gender: form.gender === g ? '' : g })}
+                        className={`flex-1 py-3 text-sm font-bold transition-colors cursor-pointer ${
+                          form.gender === g
+                            ? 'bg-deep-black text-pure-white'
+                            : 'text-deep-black border-r border-cold-grey-light hover:bg-cold-white'
+                        }`}
+                      >
+                        {g}
+                      </button>
+                    ))}
                   </div>
 
                   {/* Birthday */}
                   <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
-                    <input type="text" placeholder="Birthday (dd/mm/yyyy)" className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey placeholder:font-normal" />
+                    <input
+                      type="date"
+                      value={form.birthday}
+                      onChange={(e) => setForm({ ...form, birthday: e.target.value })}
+                      className="w-full text-sm font-bold text-deep-black outline-none bg-transparent"
+                    />
                   </div>
 
                   <h3 className="font-bold text-deep-black mt-8 mb-4">Alternate mobile details</h3>
@@ -212,20 +367,105 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   <div className="flex border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors items-center gap-3">
                     <span className="text-cold-grey text-sm">+91</span>
                     <div className="w-px h-4 bg-cold-grey-light" />
-                    <input type="tel" placeholder="Mobile Number" className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                    <input
+                      type="tel"
+                      placeholder="Mobile Number"
+                      value={form.alternatePhone}
+                      onChange={(e) => setForm({ ...form, alternatePhone: e.target.value })}
+                      className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                    />
                   </div>
 
                   {/* Hint Name */}
                   <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
-                    <input type="text" placeholder="Hint name" className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                    <input
+                      type="text"
+                      placeholder="Hint name"
+                      value={form.hintName}
+                      onChange={(e) => setForm({ ...form, hintName: e.target.value })}
+                      className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                    />
+                  </div>
+
+                  {/* Address Section */}
+                  <h3 className="font-bold text-deep-black mt-8 mb-4">Address</h3>
+
+                  <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                    <input
+                      type="text"
+                      placeholder="Address Line 1 (Street, Building)"
+                      value={form.addressLine1}
+                      onChange={(e) => setForm({ ...form, addressLine1: e.target.value })}
+                      className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                    />
+                  </div>
+
+                  <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                    <input
+                      type="text"
+                      placeholder="Address Line 2 (Area, Landmark)"
+                      value={form.addressLine2}
+                      onChange={(e) => setForm({ ...form, addressLine2: e.target.value })}
+                      className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                      <input
+                        type="text"
+                        placeholder="City"
+                        value={form.city}
+                        onChange={(e) => setForm({ ...form, city: e.target.value })}
+                        className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                      />
+                    </div>
+                    <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                      <input
+                        type="text"
+                        placeholder="State"
+                        value={form.state}
+                        onChange={(e) => setForm({ ...form, state: e.target.value })}
+                        className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                      <input
+                        type="text"
+                        placeholder="Pincode"
+                        value={form.pincode}
+                        onChange={(e) => setForm({ ...form, pincode: e.target.value })}
+                        className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                      />
+                    </div>
+                    <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                      <input
+                        type="text"
+                        placeholder="Country"
+                        value={form.country}
+                        onChange={(e) => setForm({ ...form, country: e.target.value })}
+                        className="w-full text-sm text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                      />
+                    </div>
                   </div>
 
                   <div className="pt-8 border-t border-cold-grey-light mt-8">
-                    <button className="w-full py-4 text-sm font-bold uppercase tracking-widest text-[#ff3f6c] hover:bg-red-50 transition-colors cursor-pointer mb-4">
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={saving}
+                      className="w-full py-4 text-sm font-bold uppercase tracking-widest text-[#ff3f6c] hover:bg-red-50 transition-colors cursor-pointer mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       DELETE ACCOUNT
                     </button>
-                    <button className="w-full py-4 text-sm font-bold uppercase tracking-widest bg-[#ff3f6c] text-pure-white hover:brightness-110 transition-colors cursor-pointer shadow-md">
-                      SAVE DETAILS
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="w-full py-4 text-sm font-bold uppercase tracking-widest bg-[#ff3f6c] text-pure-white hover:brightness-110 transition-colors cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {saving ? 'SAVING...' : 'SAVE DETAILS'}
                     </button>
                   </div>
                 </div>
@@ -319,47 +559,102 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               </button>
               
               <h2 className="text-2xl font-bold text-deep-black mb-6">Edit Details</h2>
+
+              {message && (
+                <div className={`mb-4 p-3 text-xs font-bold uppercase tracking-widest ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                  {message.text}
+                </div>
+              )}
               
               <div className="space-y-5">
                 <div className="border border-cold-grey-light p-4 focus-within:border-deep-black transition-colors">
                   <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey block mb-1">Mobile Number*</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-deep-black">{profile?.phone || '+91 -'}</span>
-                        {profile?.phone && <FiCheckCircle className="text-green-500" size={14} />}
+                    {editingPhone ? (
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        placeholder="+91xxxxxxxxxx"
+                        className="w-full text-sm font-bold text-deep-black outline-none bg-transparent"
+                        autoFocus
+                      />
+                    ) : (
+                      <div>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey block mb-1">Mobile Number*</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-deep-black">{form.phone || '+91 -'}</span>
+                          {form.phone && <FiCheckCircle className="text-green-500" size={14} />}
+                        </div>
                       </div>
-                    </div>
-                    <button className="px-4 py-1.5 border border-cold-grey-light text-[10px] font-bold uppercase tracking-widest text-deep-black cursor-pointer">
-                      CHANGE
+                    )}
+                    <button
+                      onClick={() => { setEditingPhone(!editingPhone); if (!editingPhone) setEditingEmail(false); }}
+                      className="px-4 py-1.5 border border-cold-grey-light text-[10px] font-bold uppercase tracking-widest text-deep-black cursor-pointer shrink-0"
+                    >
+                      {editingPhone ? 'CANCEL' : 'CHANGE'}
                     </button>
                   </div>
                 </div>
 
                 <div className="border border-cold-grey-light p-4 focus-within:border-deep-black transition-colors">
                   <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey block mb-1">Email</span>
-                      <span className="text-sm font-bold text-deep-black truncate max-w-[150px] inline-block">{profile?.email}</span>
-                    </div>
-                    <button className="px-4 py-1.5 border border-cold-grey-light text-[10px] font-bold uppercase tracking-widest text-deep-black cursor-pointer">
-                      CHANGE
+                    {editingEmail ? (
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        placeholder="email@example.com"
+                        className="w-full text-sm font-bold text-deep-black outline-none bg-transparent"
+                        autoFocus
+                      />
+                    ) : (
+                      <div>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey block mb-1">Email</span>
+                        <span className="text-sm font-bold text-deep-black truncate max-w-[150px] inline-block">{form.email}</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => { setEditingEmail(!editingEmail); if (!editingEmail) setEditingPhone(false); }}
+                      className="px-4 py-1.5 border border-cold-grey-light text-[10px] font-bold uppercase tracking-widest text-deep-black cursor-pointer shrink-0"
+                    >
+                      {editingEmail ? 'CANCEL' : 'CHANGE'}
                     </button>
                   </div>
                 </div>
 
                 <div className="border border-cold-grey-light px-4 py-2 focus-within:border-deep-black transition-colors relative">
                   <label className="text-[10px] text-cold-grey absolute top-2 bg-pure-white px-1 -mt-4 uppercase font-bold tracking-widest">Full Name</label>
-                  <input type="text" defaultValue={profile?.name} className="w-full text-sm font-bold text-deep-black outline-none pt-2 bg-transparent" />
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full text-sm font-bold text-deep-black outline-none pt-2 bg-transparent"
+                  />
                 </div>
 
                 <div className="flex border border-cold-grey-light">
-                  <button className="flex-1 py-3 text-sm font-bold text-deep-black border-r border-cold-grey-light hover:bg-cold-white cursor-pointer">Male</button>
-                  <button className="flex-1 py-3 text-sm font-bold text-deep-black hover:bg-cold-white cursor-pointer">Female</button>
+                  {['Male', 'Female'].map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setForm({ ...form, gender: form.gender === g ? '' : g })}
+                      className={`flex-1 py-3 text-sm font-bold transition-colors cursor-pointer ${
+                        form.gender === g
+                          ? 'bg-deep-black text-pure-white'
+                          : 'text-deep-black border-r border-cold-grey-light hover:bg-cold-white'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
                 </div>
 
                 <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
-                  <input type="text" placeholder="Birthday (dd/mm/yyyy)" className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                  <input
+                    type="date"
+                    value={form.birthday}
+                    onChange={(e) => setForm({ ...form, birthday: e.target.value })}
+                    className="w-full text-sm font-bold text-deep-black outline-none bg-transparent"
+                  />
                 </div>
 
                 <h3 className="font-bold text-deep-black mt-6 mb-2">Alternate mobile details</h3>
@@ -367,19 +662,104 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 <div className="flex border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors items-center gap-3">
                   <span className="text-cold-grey text-sm font-bold">+91</span>
                   <div className="w-px h-4 bg-cold-grey-light" />
-                  <input type="tel" placeholder="Mobile Number" className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                  <input
+                    type="tel"
+                    placeholder="Mobile Number"
+                    value={form.alternatePhone}
+                    onChange={(e) => setForm({ ...form, alternatePhone: e.target.value })}
+                    className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                  />
                 </div>
 
                 <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
-                  <input type="text" placeholder="Hint name" className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey" />
+                  <input
+                    type="text"
+                    placeholder="Hint name"
+                    value={form.hintName}
+                    onChange={(e) => setForm({ ...form, hintName: e.target.value })}
+                    className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                  />
+                </div>
+
+                {/* Address Section */}
+                <h3 className="font-bold text-deep-black mt-6 mb-2">Address</h3>
+
+                <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                  <input
+                    type="text"
+                    placeholder="Address Line 1 (Street, Building)"
+                    value={form.addressLine1}
+                    onChange={(e) => setForm({ ...form, addressLine1: e.target.value })}
+                    className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                  />
+                </div>
+
+                <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                  <input
+                    type="text"
+                    placeholder="Address Line 2 (Area, Landmark)"
+                    value={form.addressLine2}
+                    onChange={(e) => setForm({ ...form, addressLine2: e.target.value })}
+                    className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                    <input
+                      type="text"
+                      placeholder="City"
+                      value={form.city}
+                      onChange={(e) => setForm({ ...form, city: e.target.value })}
+                      className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                    />
+                  </div>
+                  <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                    <input
+                      type="text"
+                      placeholder="State"
+                      value={form.state}
+                      onChange={(e) => setForm({ ...form, state: e.target.value })}
+                      className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                    <input
+                      type="text"
+                      placeholder="Pincode"
+                      value={form.pincode}
+                      onChange={(e) => setForm({ ...form, pincode: e.target.value })}
+                      className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                    />
+                  </div>
+                  <div className="border border-cold-grey-light px-4 py-3 focus-within:border-deep-black transition-colors">
+                    <input
+                      type="text"
+                      placeholder="Country"
+                      value={form.country}
+                      onChange={(e) => setForm({ ...form, country: e.target.value })}
+                      className="w-full text-sm font-bold text-deep-black outline-none bg-transparent placeholder:text-cold-grey"
+                    />
+                  </div>
                 </div>
 
                 <div className="pt-6 border-t border-cold-grey-light mt-6 flex flex-col gap-4">
-                  <button className="w-full py-4 text-sm font-bold uppercase tracking-widest text-[#ff3f6c] bg-pure-white border border-cold-grey-light cursor-pointer">
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={saving}
+                    className="w-full py-4 text-sm font-bold uppercase tracking-widest text-[#ff3f6c] bg-pure-white border border-cold-grey-light cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     DELETE ACCOUNT
                   </button>
-                  <button className="w-full py-4 text-sm font-bold uppercase tracking-widest bg-[#ff3f6c] text-pure-white cursor-pointer">
-                    SAVE DETAILS
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="w-full py-4 text-sm font-bold uppercase tracking-widest bg-[#ff3f6c] text-pure-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? 'SAVING...' : 'SAVE DETAILS'}
                   </button>
                 </div>
               </div>

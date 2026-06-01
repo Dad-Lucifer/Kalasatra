@@ -42,6 +42,9 @@ export default function CategoryProductsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, { size: string; color: string }>>({});
+  const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
+  const [rippleIds, setRippleIds] = useState<Set<string>>(new Set());
+  const [cartBump, setCartBump] = useState(0);
 
   const meta = categoryMeta[categorySlug || ''] || {
     title: 'Collection',
@@ -107,6 +110,23 @@ export default function CategoryProductsPage() {
       image: product.thumbnail_url || product.images[0]?.url || '',
       slug: product.slug,
     });
+    setAnimatingIds((prev) => new Set(prev).add(product.id));
+    setRippleIds((prev) => new Set(prev).add(product.id));
+    setCartBump((prev) => prev + 1);
+    setTimeout(() => {
+      setAnimatingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+    }, 800);
+    setTimeout(() => {
+      setRippleIds((prev) => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+    }, 600);
   };
 
   const handleBuyNow = (product: Product) => {
@@ -146,7 +166,10 @@ export default function CategoryProductsPage() {
             >
               <span className="text-sm font-semibold uppercase tracking-[0.15em]">Cart</span>
               {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-luxury-gold text-rich-black text-xs font-bold flex items-center justify-center">
+                <span
+                  key={cartBump}
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-luxury-gold text-rich-black text-xs font-bold flex items-center justify-center animate-cart-bounce"
+                >
                   {totalItems}
                 </span>
               )}
@@ -254,7 +277,8 @@ export default function CategoryProductsPage() {
                     const price = calcPrice(product);
                     const variant = selectedVariants[product.id];
                     return (
-                      <div
+                      <Link
+                        to={`/product/${product.slug}`}
                         key={product.id}
                         className="group relative 
                         h-fit bg-dark-charcoal border border-luxury-gold/10 hover:border-luxury-gold/40 transition-all duration-500 overflow-hidden flex flex-col"
@@ -374,22 +398,29 @@ export default function CategoryProductsPage() {
 
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleAddToCart(product)}
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleAddToCart(product); }}
                               disabled={product.stock_status === 'out'}
-                              className="flex-1 px-3 py-2.5 border-2 border-luxury-gold text-luxury-gold font-bold uppercase tracking-[0.12em] text-[10px] hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="relative flex-1 px-3 py-2.5 border-2 border-luxury-gold text-luxury-gold font-bold uppercase tracking-[0.12em] text-[10px] hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
                             >
-                              Add to Cart
+                              <span className={`transition-transform duration-300 inline-block ${animatingIds.has(product.id) ? 'scale-110' : ''}`}>
+                                Add to Cart
+                              </span>
+                              {rippleIds.has(product.id) && (
+                                <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <span className="w-0 h-0 rounded-full border-2 border-[#D4AF37] animate-ping absolute" />
+                                </span>
+                              )}
                             </button>
                             <button
-                              onClick={() => handleBuyNow(product)}
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleBuyNow(product); }}
                               disabled={product.stock_status === 'out'}
-                              className="flex-1 px-3 py-2.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.12em] text-[10px] hover:bg-gold-light transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="flex-1 px-3 py-2.5 bg-[#D4AF37] text-rich-black font-bold uppercase tracking-[0.12em] text-[10px] hover:bg-gold-light transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               Buy Now
                             </button>
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
@@ -399,7 +430,7 @@ export default function CategoryProductsPage() {
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] border border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] border border-[#D4AF37]/30 text-luxury-gold hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
@@ -410,8 +441,8 @@ export default function CategoryProductsPage() {
                           onClick={() => setPage(p)}
                           className={`w-10 h-10 text-sm font-semibold transition-all duration-300 ${
                             page === p
-                              ? 'bg-luxury-gold text-rich-black'
-                              : 'border border-luxury-gold/20 text-soft-white/60 hover:border-luxury-gold/50'
+                              ? 'bg-[#D4AF37] text-rich-black'
+                              : 'border border-[#D4AF37]/20 text-soft-white/60 hover:border-[#D4AF37]/50'
                           }`}
                         >
                           {p}
@@ -435,7 +466,7 @@ export default function CategoryProductsPage() {
 
       {/* Cart Drawer */}
       <div
-        className={`fixed inset-0 z-50 transition-all duration-500 ${
+        className={`fixed inset-0 z-50 transition-all  duration-500 ${
           cartOpen ? 'visible' : 'invisible'
         }`}
       >
@@ -446,7 +477,7 @@ export default function CategoryProductsPage() {
           onClick={() => setCartOpen(false)}
         />
         <div
-          className={`absolute top-0 right-0 h-full w-full max-w-md bg-dark-charcoal border-l border-luxury-gold/20 transition-transform duration-500 ${
+          className={`absolute top-0 right-0 h-full w-full max-w-md bg-[#e1e1e1] border-l  border-luxury-gold/20 transition-transform duration-500 ${
             cartOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
