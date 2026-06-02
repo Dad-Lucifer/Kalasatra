@@ -4,7 +4,6 @@ import CategoryNav from '../components/landing/CategoryNav';
 import HeroSection from '../components/landing/HeroSection';
 import FeaturedCategories from '../components/landing/FeaturedCategories';
 import MatchTheMood from '../components/landing/MatchTheMood';
-import Steals from '../components/landing/Steals';
 import NewAndPopular from '../components/landing/NewAndPopular';
 import BottomMobileNav from '../components/landing/BottomMobileNav';
 
@@ -23,7 +22,6 @@ export default function LandingPage() {
         <HeroSection />
         <FeaturedCategories />
         <MatchTheMood />
-        <Steals />
         <NewAndPopular />
       </main>
 

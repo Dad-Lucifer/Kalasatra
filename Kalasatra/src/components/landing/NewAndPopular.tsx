@@ -1,74 +1,123 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { apiRequest } from '../../utils/api';
 
-const tabs = ['ALL', 'SHIRTS', 'T-SHIRTS', 'JEANS', 'TROUSERS', 'SHOES', 'SHORTS', 'JACKETS'];
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
-const products = [
-  {
-    id: 1,
-    title: '100% Cotton Regular Fit Shirt',
-    price: '₹1099',
-    imgUrl: 'https://images.unsplash.com/photo-1596755094514-f87e32f85e2c?w=500&h=650&fit=crop',
-    colors: ['#000000', '#D8B4E2', '#4169E1'],
-    moreColors: '+3',
-  },
-  {
-    id: 2,
-    title: 'Straight Loose Fit Washed Jeans',
-    price: '₹1899',
-    imgUrl: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&h=650&fit=crop',
-  },
-  {
-    id: 3,
-    title: 'Regular Fit Checks Shirt',
-    price: '₹1399',
-    imgUrl: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=500&h=650&fit=crop',
-  },
-  {
-    id: 4,
-    title: 'Flared Fit Washed Jeans',
-    price: '₹1899',
-    imgUrl: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&h=650&fit=crop',
-  },
-  {
-    id: 5,
-    title: 'Flared Fit Washed Jeans',
-    price: '₹1899',
-    imgUrl: 'https://images.unsplash.com/photo-1517438476312-10d79c077509?w=500&h=650&fit=crop', // generic placeholder
-  },
-  {
-    id: 6,
-    title: 'Textured Casual Shirt',
-    price: '₹1299',
-    imgUrl: 'https://images.unsplash.com/photo-1603252109303-2751441dd157?w=500&h=650&fit=crop',
-  },
-  {
-    id: 7,
-    title: 'Classic White Shirt',
-    price: '₹1199',
-    imgUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=650&fit=crop',
-  },
-  {
-    id: 8,
-    title: 'Summer Linen Shirt',
-    price: '₹1499',
-    imgUrl: 'https://images.unsplash.com/photo-1507114845806-0347f6150324?w=500&h=650&fit=crop',
-  },
-  {
-    id: 9,
-    title: 'Minimalist White Shirt',
-    price: '₹1099',
-    imgUrl: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500&h=650&fit=crop',
-  },
-  {
-    id: 10,
-    title: 'Dark Melange Polo',
-    price: '₹899',
-    imgUrl: 'https://images.unsplash.com/photo-1516826957135-700ede19c6ce?w=500&h=650&fit=crop',
-  }
-];
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  selling_price: number;
+  discount_percentage: number;
+  gst_percentage: number;
+  colors: string[];
+  thumbnail_url: string;
+  category_slug: string;
+  stock_quantity: number;
+  is_featured: boolean;
+}
 
 export default function NewAndPopular() {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [activeTab, setActiveTab] = useState('ALL');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [activeTab, categories]);
+
+  const fetchCategories = async () => {
+    const res = await apiRequest('/products/categories');
+    if (res.success && res.data) {
+      setCategories(res.data);
+    }
+  };
+
+  const loadProducts = async () => {
+    // Only load if categories are fetched (to avoid race conditions on initial load)
+    if (categories.length === 0 && activeTab !== 'ALL') return;
+
+    setLoading(true);
+    
+    const params = new URLSearchParams();
+    params.append('sortBy', 'created_at');
+    params.append('sortOrder', 'desc');
+    params.append('page', '1');
+    params.append('limit', '10');
+
+    // If activeTab is not ALL, find the category based on short names
+    const getShortName = (name: string) => name.split(' ')[0].replace(/'s/i, 'S').toUpperCase();
+    
+    const activeCategory = categories.find(c => getShortName(c.name) === activeTab);
+    if (activeCategory) {
+      params.append('category', activeCategory.slug);
+    }
+
+    const res = await apiRequest(`/products?${params.toString()}`);
+    setLoading(false);
+    if (res.success && res.data) {
+      const allowedSlugs = categories.map(c => c.slug);
+      
+      const seen = new Set<string>();
+      const uniqueProducts = res.data.filter((p: Product) => {
+        // Only show products that match the active categories strictly
+        if (activeTab === 'ALL') {
+          if (!allowedSlugs.includes(p.category_slug)) return false;
+        } else {
+          if (!activeCategory || p.category_slug !== activeCategory.slug) return false;
+        }
+
+        // Deduplicate by name to prevent multiple entries of the same product from showing
+        const identifier = p.name ? p.name.trim().toLowerCase() : p.id;
+        if (seen.has(identifier)) return false;
+        seen.add(identifier);
+        return true;
+      });
+      setProducts(uniqueProducts);
+    }
+  };
+
+  const calcPrice = (product: Product) => {
+    const discounted = product.discount_percentage > 0
+      ? product.selling_price - (product.selling_price * product.discount_percentage) / 100
+      : product.selling_price;
+    const withGst = discounted + (discounted * product.gst_percentage) / 100;
+    return withGst;
+  };
+
+  const formatPrice = (price: number) => {
+    return `₹${Math.round(price).toLocaleString('en-IN')}`;
+  };
+
+  const getShortName = (name: string) => name.split(' ')[0].replace(/'s/i, 'S').toUpperCase();
+  const tabs = ['ALL', ...categories.map(c => getShortName(c.name))];
+
+  if (loading && products.length === 0) {
+    return (
+      <section className="w-full bg-pure-white py-10 lg:py-16">
+        <div className="max-w-[1400px] mx-auto px-4 lg:px-8">
+          <div className="flex justify-center mb-6">
+            <h2 className="text-2xl lg:text-3xl font-heading font-bold tracking-widest uppercase text-deep-black">
+              NEW AND POPULAR
+            </h2>
+          </div>
+          <div className="flex justify-center">
+            <div className="animate-pulse text-gray-400">Loading products...</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="w-full bg-pure-white py-10 lg:py-16">
@@ -101,17 +150,31 @@ export default function NewAndPopular() {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-5">
+        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-5 transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
           {products.map((product) => (
             <div key={product.id} className="group cursor-pointer flex flex-col">
               
               {/* Product Image Box */}
               <div className="relative aspect-[3/4] bg-cold-white overflow-hidden mb-3 border border-transparent group-hover:border-cold-grey-light transition-colors">
-                <img 
-                  src={product.imgUrl} 
-                  alt={product.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+                <Link to={`/product/${product.slug}`}>
+                  <img 
+                    src={product.thumbnail_url} 
+                    alt={product.name}
+                    className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${product.stock_quantity > 0 ? 'group-hover:scale-105' : 'opacity-70 grayscale'}`}
+                  />
+                  {product.stock_quantity === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
+                      <span className="bg-deep-black text-pure-white px-3 py-1 text-xs font-bold uppercase tracking-widest">
+                        Out of Stock
+                      </span>
+                    </div>
+                  )}
+                  {product.discount_percentage > 0 && product.stock_quantity > 0 && (
+                    <div className="absolute top-3 left-3 bg-red-600 text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                      -{Math.round(product.discount_percentage)}%
+                    </div>
+                  )}
+                </Link>
                 
                 {/* Wishlist Heart Icon */}
                 <button className="absolute top-3 right-3 p-1 text-gray-500 hover:text-red-500 transition-colors z-10">
@@ -123,26 +186,31 @@ export default function NewAndPopular() {
 
               {/* Product Info */}
               <div className="flex flex-col flex-1 px-1">
-                <h3 className="text-xs sm:text-sm text-cold-grey font-medium truncate mb-1 uppercase tracking-wider" title={product.title}>
-                  {product.title}
+                <h3 className="text-xs sm:text-sm text-cold-grey font-medium truncate mb-1 uppercase tracking-wider" title={product.name}>
+                  {product.name}
                 </h3>
-                <span className="text-sm sm:text-base text-deep-black font-bold mb-2">
-                  {product.price}
+                <span className="text-sm sm:text-base text-deep-black font-bold mb-2 flex items-center gap-2">
+                  {formatPrice(calcPrice(product))}
+                  {product.discount_percentage > 0 && (
+                    <span className="text-[10px] sm:text-xs text-cold-grey line-through font-normal">
+                      {formatPrice(product.selling_price + (product.selling_price * product.gst_percentage / 100))}
+                    </span>
+                  )}
                 </span>
 
                 {/* Color Swatches (if any) */}
-                {product.colors && (
+                {product.colors && product.colors.length > 0 && (
                   <div className="flex items-center gap-1 mt-auto">
-                    {product.colors.map((color, idx) => (
+                    {product.colors.slice(0, 3).map((color, idx) => (
                       <div 
                         key={idx} 
                         className="w-3 h-3 sm:w-3.5 sm:h-3.5 border border-cold-grey-light"
                         style={{ backgroundColor: color }}
                       />
                     ))}
-                    {product.moreColors && (
+                    {product.colors.length > 3 && (
                       <span className="text-[10px] text-gray-500 ml-1 font-medium">
-                        {product.moreColors}
+                        +{product.colors.length - 3}
                       </span>
                     )}
                   </div>

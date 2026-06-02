@@ -298,13 +298,24 @@ export default function ProductDetailPage() {
               >
                 {addingToCart ? '✓ Added to Cart' : 'Add to Cart'}
               </button>
-              <button
-                onClick={handleBuyNow}
-                disabled={product.stock_status === 'out'}
-                className="w-full h-12 text-sm font-semibold uppercase tracking-[0.15em] border border-[#D4AF37] text-[#1A1A1A] hover:bg-[#D4AF37] hover:text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Buy Now
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    handleAddToCart();
+                    navigate('/cart');
+                  }}
+                  disabled={product.stock_status === 'out'}
+                  className="w-1/2 h-12 text-sm font-semibold uppercase tracking-[0.15em] border border-[#D4AF37] text-[#1A1A1A] hover:bg-[#D4AF37] hover:text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Buy Now
+                </button>
+                <button
+                  onClick={() => navigate('/cart')}
+                  className="w-1/2 h-12 text-sm font-semibold uppercase tracking-[0.15em] border border-gray-300 text-gray-700 hover:border-[#1A1A1A] hover:text-[#1A1A1A] transition-all duration-300"
+                >
+                  View Cart
+                </button>
+              </div>
             </div>
 
             {/* Divider */}
