@@ -73,6 +73,9 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Mobile filter drawer
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
   // Add Product Modal
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -203,10 +206,6 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     return (price * gstPercentage) / 100;
   };
 
-  // const calculatePriceWithGst = (price: number, gstPercentage: number) => {
-  //   return price + calculateGstAmount(price, gstPercentage);
-  // };
-
   const handleEditProduct = (productId: string) => {
     const product = products.find((p) => p.id === productId);
     if (product) setEditingProduct(product);
@@ -226,8 +225,6 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
       alert(`Failed to delete product: ${res.message}`);
     }
   };
-
-  // ─── Image Upload ──────────────────────────────────────────────────────
 
   const getAuthHeaders = (): HeadersInit => {
     const token = localStorage.getItem('accessToken');
@@ -275,8 +272,6 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   const removeImage = (index: number) => {
     setUploadedImages((prev) => prev.filter((_, i) => i !== index));
   };
-
-  // ─── Form Helpers ──────────────────────────────────────────────────────
 
   const handleFormChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -331,7 +326,6 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     let subcategoryName: string | null = null;
     let subcategoryId: string | null = formData.subcategory_id || null;
 
-    // If user typed a subcategory name (not a UUID), send as name instead
     if (subcategoryId && subcategoryId.length !== 36) {
       subcategoryName = subcategoryId;
       subcategoryId = null;
@@ -372,157 +366,221 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     }
   };
 
-  // ─── Render ────────────────────────────────────────────────────────────
+  const renderFilters = () => (
+    <>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-base lg:text-lg font-semibold text-[#F5F5F5]">Filters</h3>
+        <button onClick={clearFilters} className="text-xs lg:text-sm text-[#D4AF37] hover:underline bg-transparent border-none cursor-pointer">
+          Clear All
+        </button>
+      </div>
+
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-[#999] mb-2">Search</label>
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
+        />
+      </div>
+
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-[#999] mb-2">Category</label>
+        <select
+          value={selectedCategory}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm outline-none focus:border-[#D4AF37] transition-colors"
+        >
+          <option value="">All Categories</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.slug}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {subcategories.length > 0 && (
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-[#999] mb-2">Subcategory</label>
+          <select
+            value={selectedSubcategory}
+            onChange={(e) => {
+              setSelectedSubcategory(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm outline-none focus:border-[#D4AF37] transition-colors"
+          >
+            <option value="">All Subcategories</option>
+            {subcategories.map((sub) => (
+              <option key={sub.id} value={sub.slug}>
+                {sub.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-[#999] mb-2">Price Range</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            placeholder="Min"
+            value={minPrice}
+            onChange={(e) => {
+              setMinPrice(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
+          />
+          <span className="text-[#666]">-</span>
+          <input
+            type="number"
+            placeholder="Max"
+            value={maxPrice}
+            onChange={(e) => {
+              setMaxPrice(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
+          />
+        </div>
+      </div>
+
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-[#999] mb-2">Colors</label>
+        <div className="flex flex-wrap gap-2">
+          {availableColors.map((color) => (
+            <button
+              key={color}
+              onClick={() => toggleColor(color)}
+              className={`w-7 h-7 rounded-full cursor-pointer transition-all duration-200 ${selectedColors.includes(color) ? 'ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-[#1C1C1C]' : 'ring-1 ring-[#333] ring-offset-1 ring-offset-[#1C1C1C]'}`}
+              style={{ backgroundColor: color.toLowerCase() }}
+              title={color}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-[#999] mb-2">Sizes</label>
+        <div className="flex flex-wrap gap-2">
+          {availableSizes.map((size) => (
+            <button
+              key={size}
+              onClick={() => toggleSize(size)}
+              className={`px-3 py-1 text-xs font-medium rounded-md cursor-pointer transition-all duration-200 ${
+                selectedSizes.includes(size)
+                  ? 'bg-[#D4AF37] text-[#0F0F0F]'
+                  : 'bg-[#0F0F0F] text-[#F5F5F5] border border-[#333] hover:border-[#D4AF37]'
+              }`}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
+  const hasActiveFilters = selectedCategory || selectedSubcategory || searchQuery || minPrice || maxPrice || selectedColors.length > 0 || selectedSizes.length > 0;
 
   return (
     <div className="min-h-screen bg-rich-black">
       {/* Header */}
-      <div className="text-center pt-24 pb-12 px-4 bg-[#1C1C1C]">
-        <h1 className="text-4xl font-bold text-[#F5F5F5]">{isAdminMode ? 'Product Management' : 'Shop Our Collection'}</h1>
-        <p className="mt-4 text-[#999]">{isAdminMode ? 'Manage your product catalog' : 'Discover the latest trends in fashion'}</p>
+      <div className="text-center pt-20 sm:pt-24 pb-8 sm:pb-12 px-4 bg-[#1C1C1C]">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#F5F5F5]">
+          {isAdminMode ? 'Product Management' : 'Shop Our Collection'}
+        </h1>
+        <p className="mt-2 sm:mt-4 text-sm sm:text-base text-[#999]">
+          {isAdminMode ? 'Manage your product catalog' : 'Discover the latest trends in fashion'}
+        </p>
         {isAdminMode && (
           <button
             onClick={() => {
               resetForm();
               setShowModal(true);
             }}
-            className="mt-4 px-6 py-3 bg-[#D4AF37] text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 hover:brightness-110"
+            className="mt-4 px-5 sm:px-6 py-2.5 sm:py-3 bg-[#D4AF37] text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 hover:brightness-110"
           >
             + Add New Product
           </button>
         )}
       </div>
 
-      <div className="flex gap-8 px-6 py-8 max-w-[1440px] mx-auto">
-        {/* Sidebar Filters */}
-        <aside className="w-72 shrink-0 bg-[#1C1C1C] p-6 rounded-xl h-fit sticky top-24">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-[#F5F5F5]">Filters</h3>
-            <button onClick={clearFilters} className="text-sm text-[#D4AF37] hover:underline bg-transparent border-none cursor-pointer">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 px-4 sm:px-6 py-4 sm:py-8 max-w-[1440px] mx-auto">
+        {/* ─── Mobile Filter Bar ─── */}
+        <div className="lg:hidden flex items-center gap-3">
+          <button
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1C1C1C] border border-[#333] rounded-lg text-sm text-[#F5F5F5] cursor-pointer hover:border-[#D4AF37] transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm4 6a1 1 0 011-1h8a1 1 0 010 2H8a1 1 0 01-1-1zm2 6a1 1 0 011-1h4a1 1 0 010 2h-4a1 1 0 01-1-1z" />
+            </svg>
+            Filters
+            {hasActiveFilters && (
+              <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+            )}
+          </button>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-xs text-[#D4AF37] hover:underline bg-transparent border-none cursor-pointer"
+            >
               Clear All
             </button>
-          </div>
-
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-[#999] mb-2">Search</label>
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-            />
-          </div>
-
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-[#999] mb-2">Category</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => {
-                setSelectedCategory(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm outline-none focus:border-[#D4AF37] transition-colors"
-            >
-              <option value="">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.slug}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {subcategories.length > 0 && (
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-[#999] mb-2">Subcategory</label>
-              <select
-                value={selectedSubcategory}
-                onChange={(e) => {
-                  setSelectedSubcategory(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm outline-none focus:border-[#D4AF37] transition-colors"
-              >
-                <option value="">All Subcategories</option>
-                {subcategories.map((sub) => (
-                  <option key={sub.id} value={sub.slug}>
-                    {sub.name}
-                  </option>
-                ))}
-              </select>
-            </div>
           )}
+        </div>
 
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-[#999] mb-2">Price Range</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                placeholder="Min"
-                value={minPrice}
-                onChange={(e) => {
-                  setMinPrice(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-              />
-              <span className="text-[#666]">-</span>
-              <input
-                type="number"
-                placeholder="Max"
-                value={maxPrice}
-                onChange={(e) => {
-                  setMaxPrice(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-              />
-            </div>
-          </div>
-
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-[#999] mb-2">Colors</label>
-            <div className="flex flex-wrap gap-2">
-              {availableColors.map((color) => (
+        {/* ─── Mobile Filters Drawer ─── */}
+        {mobileFiltersOpen && (
+          <div className="lg:hidden">
+            <div
+              className="fixed inset-0 z-50 bg-black/60"
+              onClick={() => setMobileFiltersOpen(false)}
+            />
+            <div className="fixed inset-x-0 top-0 z-50 h-full max-h-[85vh] mt-16 bg-[#1C1C1C] rounded-t-2xl overflow-y-auto px-4 sm:px-6 py-5">
+              <div className="flex items-center justify-between mb-4 sticky top-0 bg-[#1C1C1C] pb-3 border-b border-[#333]">
+                <h3 className="text-base font-semibold text-[#F5F5F5]">Filters</h3>
                 <button
-                  key={color}
-                  onClick={() => toggleColor(color)}
-                  className={`w-7 h-7 rounded-full cursor-pointer transition-all duration-200 ${selectedColors.includes(color) ? 'ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-[#1C1C1C]' : 'ring-1 ring-[#333] ring-offset-1 ring-offset-[#1C1C1C]'}`}
-                  style={{ backgroundColor: color.toLowerCase() }}
-                  title={color}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-[#999] mb-2">Sizes</label>
-            <div className="flex flex-wrap gap-2">
-              {availableSizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => toggleSize(size)}
-                  className={`px-3 py-1 text-xs font-medium rounded-md cursor-pointer transition-all duration-200 ${
-                    selectedSizes.includes(size)
-                      ? 'bg-[#D4AF37] text-[#0F0F0F]'
-                      : 'bg-[#0F0F0F] text-[#F5F5F5] border border-[#333] hover:border-[#D4AF37]'
-                  }`}
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="text-2xl text-[#999] hover:text-[#F5F5F5] bg-transparent border-none cursor-pointer"
                 >
-                  {size}
+                  &times;
                 </button>
-              ))}
+              </div>
+              {renderFilters()}
+              <button
+                onClick={() => setMobileFiltersOpen(false)}
+                className="w-full mt-5 px-4 py-3 bg-[#D4AF37] text-[#0F0F0F] text-sm font-semibold rounded-lg cursor-pointer hover:brightness-110 transition-all border-none"
+              >
+                Apply Filters
+              </button>
             </div>
+            
           </div>
+        )}
+
+        {/* ─── Desktop Sidebar Filters ─── */}
+        <aside className="hidden lg:block w-72 shrink-0 bg-[#1C1C1C] p-6 rounded-xl h-fit sticky top-24">
+          {renderFilters()}
         </aside>
 
-        {/* Products Grid */}
+        {/* ─── Products Grid ─── */}
         <main className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-6">
-            <div className="text-sm text-[#999]">
+          {/* Sort Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div className="text-xs sm:text-sm text-[#999]">
               {pagination && (
                 <span>
                   Showing {(pagination.page - 1) * pagination.limit + 1}-
@@ -531,7 +589,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
               )}
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm text-[#999]">Sort by:</label>
+              <label className="text-xs sm:text-sm text-[#999] whitespace-nowrap">Sort by:</label>
               <select
                 value={`${sortBy}-${sortOrder}`}
                 onChange={(e) => {
@@ -539,7 +597,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                   setSortBy(field);
                   setSortOrder(order);
                 }}
-                className="px-3 py-2 bg-[#1C1C1C] border border-[#333] rounded-lg text-[#F5F5F5] text-sm outline-none focus:border-[#D4AF37] transition-colors"
+                className="px-3 py-2 bg-[#1C1C1C] border border-[#333] rounded-lg text-[#F5F5F5] text-xs sm:text-sm outline-none focus:border-[#D4AF37] transition-colors"
               >
                 <option value="created_at-desc">Newest First</option>
                 <option value="created_at-asc">Oldest First</option>
@@ -565,22 +623,27 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {products.map((product) => (
-                  <div key={product.id} className="bg-[#1C1C1C] rounded-xl overflow-hidden hover:shadow-lg hover:shadow-black/30 transition-all duration-300 group relative">
+                  <div
+                    key={product.id}
+                    className="bg-[#1C1C1C] rounded-xl overflow-hidden hover:shadow-lg hover:shadow-black/30 transition-all duration-300 group relative"
+                  >
                     {product.is_featured && <span className="absolute top-3 left-3 z-10 px-2 py-1 bg-[#D4AF37] text-[#0F0F0F] text-[10px] font-bold uppercase rounded">Featured</span>}
                     {product.discount_percentage > 0 && (
                       <span className="absolute top-3 right-3 z-10 px-2 py-1 bg-[#ef4444] text-white text-[10px] font-bold rounded">-{product.discount_percentage}%</span>
                     )}
 
-                    <div className="relative aspect-[4/3] overflow-hidden bg-[#0F0F0F]">
+                    <div className="relative aspect-[3/3] overflow-hidden bg-[#0F0F0F]">
                       <img
                         src={product.thumbnail_url || product.images[0]?.url || '/placeholder.png'}
                         alt={product.name}
                         loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2">
+
+                      {/* Desktop hover overlay */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 hidden lg:flex flex-col items-center justify-center gap-2">
                         <button
                           onClick={() => (window.location.href = `/products/${product.slug}`)}
                           className="px-5 py-2 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 transition-all border-none cursor-pointer"
@@ -590,19 +653,13 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                         {isAdminMode && (
                           <div className="flex gap-2 mt-2">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditProduct(product.id);
-                              }}
+                              onClick={() => handleEditProduct(product.id)}
                               className="px-3 py-1.5 bg-[#3b82f6] text-white text-xs font-medium rounded hover:brightness-110 transition-all border-none cursor-pointer"
                             >
                               Edit
                             </button>
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteProduct(product.id, product.name);
-                              }}
+                              onClick={() => handleDeleteProduct(product.id, product.name)}
                               className="px-3 py-1.5 bg-[#ef4444] text-white text-xs font-medium rounded hover:brightness-110 transition-all border-none cursor-pointer"
                             >
                               Delete
@@ -612,10 +669,36 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                       </div>
                     </div>
 
-                    <div className="p-5 space-y-3">
-                      <div className="text-xs font-medium text-[#D4AF37] uppercase tracking-wider">{product.category_name}</div>
-                      <h3 className="font-semibold text-[#F5F5F5] leading-tight">{product.name}</h3>
-                      <p className="text-xs text-[#999] leading-relaxed">
+                    {/* Mobile persistent buttons */}
+                    <div className="lg:hidden flex gap-2 px-2 sm:px-5 pt-2 pb-1">
+                      <button
+                        onClick={() => (window.location.href = `/products/${product.slug}`)}
+                        className="flex-1 px-3 py-2 bg-[#D4AF37] text-[#0F0F0F] text-xs font-semibold rounded-lg hover:brightness-110 transition-all border-none cursor-pointer text-center"
+                      >
+                        View Details
+                      </button>
+                      {isAdminMode && (
+                        <>
+                          <button
+                            onClick={() => handleEditProduct(product.id)}
+                            className="flex-1 px-3 py-2 bg-[#3b82f6] text-white text-xs font-semibold rounded-lg hover:brightness-110 transition-all border-none cursor-pointer text-center"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product.id, product.name)}
+                            className="flex-1 px-3 py-2 bg-[#ef4444] text-white text-xs font-semibold rounded-lg hover:brightness-110 transition-all border-none cursor-pointer text-center"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="p-4 sm:p-5 space-y-3">
+                      <div className="text-[10px] sm:text-xs font-medium text-[#D4AF37] uppercase tracking-wider">{product.category_name}</div>
+                      <h3 className="text-sm sm:text-base font-semibold text-[#F5F5F5] leading-tight">{product.name}</h3>
+                      <p className="text-[10px] sm:text-xs text-[#999] leading-relaxed">
                         {product.description?.substring(0, 80)}
                         {product.description?.length > 80 && '...'}
                       </p>
@@ -625,7 +708,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                           {product.colors.slice(0, 4).map((color, idx) => (
                             <span
                               key={idx}
-                              className="w-4 h-4 rounded-full border border-[#333] inline-block"
+                              className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border border-[#333] inline-block"
                               style={{ backgroundColor: color.toLowerCase() }}
                               title={color}
                             />
@@ -651,11 +734,11 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                               <div>
                                 {product.discount_percentage > 0 ? (
                                   <div className="flex items-baseline gap-2">
-                                    <span className="text-sm text-[#666] line-through">₹{basePrice.toFixed(2)}</span>
-                                    <span className="text-lg font-bold text-[#D4AF37]">₹{finalPrice.toFixed(2)}</span>
+                                    <span className="text-xs sm:text-sm text-[#666] line-through">₹{basePrice.toFixed(2)}</span>
+                                    <span className="text-sm sm:text-lg font-bold text-[#D4AF37]">₹{finalPrice.toFixed(2)}</span>
                                   </div>
                                 ) : (
-                                  <span className="text-lg font-bold text-[#D4AF37]">₹{finalPrice.toFixed(2)}</span>
+                                  <span className="text-sm sm:text-lg font-bold text-[#D4AF37]">₹{finalPrice.toFixed(2)}</span>
                                 )}
                                 {product.gst_percentage > 0 && (
                                   <div className="text-[10px] text-[#666]">
@@ -686,7 +769,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 bg-[#1C1C1C] text-[#F5F5F5] text-sm rounded-lg border border-[#333] hover:border-[#D4AF37] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                    className="px-3 sm:px-4 py-2 bg-[#1C1C1C] text-[#F5F5F5] text-xs sm:text-sm rounded-lg border border-[#333] hover:border-[#D4AF37] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                   >
                     Previous
                   </button>
@@ -696,7 +779,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-9 h-9 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                        className={`w-8 h-8 sm:w-9 sm:h-9 text-xs sm:text-sm font-medium rounded-lg transition-all cursor-pointer ${
                           currentPage === page
                             ? 'bg-[#D4AF37] text-[#0F0F0F]'
                             : 'bg-[#1C1C1C] text-[#999] border border-[#333] hover:border-[#D4AF37]'
@@ -710,7 +793,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(pagination.totalPages, p + 1))}
                     disabled={currentPage === pagination.totalPages}
-                    className="px-4 py-2 bg-[#1C1C1C] text-[#F5F5F5] text-sm rounded-lg border border-[#333] hover:border-[#D4AF37] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                    className="px-3 sm:px-4 py-2 bg-[#1C1C1C] text-[#F5F5F5] text-xs sm:text-sm rounded-lg border border-[#333] hover:border-[#D4AF37] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                   >
                     Next
                   </button>
@@ -721,17 +804,17 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
         </main>
       </div>
 
-      {/* Add Product Modal */}
+      {/* ─── Add Product Modal ─── */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto py-10" onClick={() => setShowModal(false)}>
-          <div className="w-full max-w-2xl bg-[#1C1C1C] rounded-2xl overflow-hidden mx-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#333]">
-              <h2 className="text-xl font-bold text-[#F5F5F5]">Add New Product</h2>
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto py-6 sm:py-10 px-3 sm:px-4" onClick={() => setShowModal(false)}>
+          <div className="w-full max-w-2xl bg-[#1C1C1C] rounded-2xl overflow-hidden mx-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#333]">
+              <h2 className="text-lg sm:text-xl font-bold text-[#F5F5F5]">Add New Product</h2>
               <button onClick={() => setShowModal(false)} className="text-2xl text-[#999] hover:text-[#F5F5F5] bg-transparent border-none cursor-pointer transition-colors">&times;</button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-sm font-medium text-[#999]">Category *</label>
                   <select
@@ -780,7 +863,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                 />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-sm font-medium text-[#999]">Buying Price</label>
                   <input
@@ -831,7 +914,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-sm font-medium text-[#999]">Stock Quantity</label>
                   <input
@@ -919,7 +1002,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                     onChange={handleImageUpload}
                     className="hidden"
                   />
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -933,7 +1016,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                 </div>
 
                 {uploadedImages.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2 mt-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
                     {uploadedImages.map((img, idx) => (
                       <div key={idx} className="relative aspect-square bg-[#0F0F0F] rounded-lg overflow-hidden group">
                         <img src={img.url} alt={`Product ${idx + 1}`} className="w-full h-full object-cover" />
@@ -952,21 +1035,21 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#333]">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-[#333]">
                 <button
                   type="button"
                   onClick={() => {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="px-6 py-2.5 bg-transparent text-[#999] text-sm font-medium rounded-lg border border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5] transition-all cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-transparent text-[#999] text-sm font-medium rounded-lg border border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5] transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting || uploading}
-                  className="px-6 py-2.5 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   {submitting ? 'Creating...' : 'Create Product'}
                 </button>

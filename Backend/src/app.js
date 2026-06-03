@@ -55,7 +55,7 @@ app.use(express.json({ limit: "10kb" }));        // Limit body size to prevent D
 app.use(express.urlencoded({ extended: false, limit: "10kb" }));
 
 // ─── Global Rate Limiter ──────────────────────────────────────────────────────
-app.use("/api", apiLimiter);
+// app.use("/api", apiLimiter);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
@@ -82,6 +82,12 @@ app.use("/api/v1/cart", cartRoutes);
 
 const reviewRoutes = require("./routes/review.routes");
 app.use("/api/v1/products", reviewRoutes);
+
+const analyticsRoutes = require("./routes/analytics.routes");
+app.use("/api/v1/admin/analytics", analyticsRoutes);
+
+const couponRoutes = require("./routes/coupon.routes");
+app.use("/api/v1/admin/coupons", couponRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => {

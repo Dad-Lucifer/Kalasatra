@@ -34,7 +34,9 @@ interface Product {
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { addItem } = useCart();
+ 
+    const { addItem, items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
+  const [cartOpen, setCartOpen] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -162,9 +164,19 @@ export default function ProductDetailPage() {
       <div className="h-20 lg:h-24" />
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
-        <Link to={`/products/${product.category_slug}`} className="text-xs uppercase tracking-[0.15em] text-gray-400 hover:text-[#D4AF37] transition-colors mb-6 inline-block">
-          &larr; Back to {product.category_name}
-        </Link>
+        <div className="flex items-center justify-between mb-8">
+          <Link to={`/products/${product.category_slug}`} className="text-xs uppercase tracking-[0.15em] text-gray-400 hover:text-[#D4AF37] transition-colors inline-block">
+            &larr; Back to {product.category_name}
+          </Link>
+          <button
+            onClick={() => setCartOpen(true)}
+            className="relative px-6 py-3 border border-gray-300 text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition-all duration-300"
+          >
+            <span className="text-sm font-semibold uppercase tracking-[0.15em]">Cart ({totalItems})</span>
+          </button>
+        </div>
+
+        
 
         <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 mt-4">
           {/* LEFT: Gallery */}
@@ -487,6 +499,105 @@ export default function ProductDetailPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Cart Drawer */}
+      <div
+        className={`fixed inset-0 z-50 transition-all duration-500 ${
+          cartOpen ? 'visible' : 'invisible'
+        }`}
+      >
+        <div
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-500 ${
+            cartOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={() => setCartOpen(false)}
+        />
+        <div
+          className={`absolute top-0 right-0 h-full w-full max-w-md bg-[#e1e1e1] border-l border-luxury-gold/20 transition-transform duration-500 ${
+            cartOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="flex items-center justify-between px-6 py-5 border-b border-luxury-gold/10">
+            <h2 className="font-heading text-xl font-bold text-soft-white">
+              Cart ({totalItems})
+            </h2>
+            <button
+              onClick={() => setCartOpen(false)}
+              className="text-soft-white/50 hover:text-soft-white text-2xl leading-none bg-transparent border-none p-0 cursor-pointer"
+            >
+              &times;
+            </button>
+          </div>
+
+          <div className="flex flex-col h-[calc(100%-140px)] overflow-y-auto px-6 py-6 space-y-4">
+            {items.length === 0 ? (
+              <p className="text-soft-white/40 text-center py-20">Your cart is empty.</p>
+            ) : (
+              items.map((item) => (
+                <div key={`${item.productId}-${item.size}-${item.color}`} className="flex gap-4 pb-4 border-b border-luxury-gold/10">
+                  <div className="w-20 h-20 shrink-0 bg-rich-black border border-luxury-gold/10 flex items-center justify-center overflow-hidden">
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-heading text-xl font-bold text-luxury-gold/30">K</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-soft-white truncate">{item.name}</p>
+                    <p className="text-xs text-soft-white/50 mt-0.5">
+                      {item.size} / {item.color}
+                    </p>
+                    <p className="text-sm font-bold text-luxury-gold mt-1">₹{item.price.toFixed(2)}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <div className="flex items-center border border-luxury-gold/20">
+                        <button
+                          onClick={() => updateQuantity(item.productId, item.size, item.color, -1)}
+                          className="px-2.5 py-1 text-soft-white/60 hover:text-soft-white bg-transparent border-none cursor-pointer text-sm"
+                        >
+                          −
+                        </button>
+                        <span className="px-3 py-1 text-sm text-soft-white min-w-[24px] text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.productId, item.size, item.color, 1)}
+                          className="px-2.5 py-1 text-soft-white/60 hover:text-soft-white bg-transparent border-none cursor-pointer text-sm"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => removeItem(item.productId, item.size, item.color)}
+                        className="text-xs text-soft-white/30 hover:text-red-400 transition-colors bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {items.length > 0 && (
+            <div className="absolute bottom-0 left-0 right-0 px-6 py-5 border-t border-luxury-gold/10 bg-dark-charcoal">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm text-soft-white/70">Total</span>
+                <span className="font-heading text-xl font-bold text-luxury-gold">₹{totalPrice.toFixed(2)}</span>
+              </div>
+              <button className="w-full px-6 py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500">
+                Checkout
+              </button>
+              <button
+                onClick={clearCart}
+                className="w-full mt-2 px-6 py-2.5 border border-luxury-gold/20 text-soft-white/50 font-semibold uppercase tracking-[0.1em] text-xs hover:text-red-400 hover:border-red-400/30 transition-all duration-300 bg-transparent cursor-pointer"
+              >
+                Clear Cart
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
