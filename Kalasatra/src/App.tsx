@@ -9,6 +9,7 @@ import LandingPage from './Pages/LandingPage';
 import CategoryProductsPage from './Pages/CategoryProductsPage';
 import ProductDetailPage from './Pages/ProductDetailPage';
 import CartPage from './Pages/CartPage';
+import WishlistPage from './Pages/WishlistPage';
 import './App.css';
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/products/:categorySlug" element={<CategoryProductsPage />} />
         <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path='/ownerauth' element={<AdminAuthPage onLoginSuccess={handleAdminLoginSuccess} />} />

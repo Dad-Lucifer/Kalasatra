@@ -89,6 +89,12 @@ app.use("/api/v1/admin/analytics", analyticsRoutes);
 const couponRoutes = require("./routes/coupon.routes");
 app.use("/api/v1/admin/coupons", couponRoutes);
 
+const couponPublicRoutes = require("./routes/couponPublic.routes");
+app.use("/api/v1/coupons", couponPublicRoutes);
+
+const wishlistRoutes = require("./routes/wishlist.routes");
+app.use("/api/v1/wishlist", wishlistRoutes);
+
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({

@@ -92,6 +92,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS state TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS pincode TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT DEFAULT 'India';
 
+-- Kalasatra Credits for coupon rewards
+ALTER TABLE users ADD COLUMN IF NOT EXISTS kalasatra_credits INTEGER DEFAULT 0;
+
 -- ─── Delete Policy (allow users to delete their own account) ──────────────
 
 DROP POLICY IF EXISTS "Users can delete their own data" ON users;

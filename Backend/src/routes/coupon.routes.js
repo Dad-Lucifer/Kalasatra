@@ -3,7 +3,7 @@
 const { Router } = require("express");
 const router = Router();
 
-const { createCoupon, getCoupons, deleteCoupon } = require("../controllers/coupon.controller");
+const { createCoupon, getCoupons, deleteCoupon, redeemCoupon } = require("../controllers/coupon.controller");
 const { authenticateToken } = require("../middlewares/auth.middleware");
 const { requireAdmin } = require("../middlewares/rbac.middleware");
 
@@ -41,6 +41,17 @@ router.delete(
   authenticateToken,
   requireAdmin,
   deleteCoupon
+);
+
+/**
+ * @route   POST /api/v1/coupons/redeem
+ * @desc    Redeem a coupon code (public auth)
+ * @access  Authenticated user
+ */
+router.post(
+  "/redeem",
+  authenticateToken,
+  redeemCoupon
 );
 
 module.exports = router;

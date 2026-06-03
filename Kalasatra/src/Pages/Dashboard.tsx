@@ -32,6 +32,7 @@ interface UserProfile {
   isActive: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  kalasatra_credits?: number;
 }
 
 export default function Dashboard({ onLogout }: DashboardProps) {
@@ -59,6 +60,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [editingEmail, setEditingEmail] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [couponMessage, setCouponMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -87,7 +93,15 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   useEffect(() => {
     fetchProfile();
+    fetchWishlistCount();
   }, []);
+
+  const fetchWishlistCount = async () => {
+    const res = await apiRequest('/wishlist');
+    if (res.success && Array.isArray(res.data)) {
+      setWishlistCount(res.data.length);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -144,6 +158,24 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
   };
 
+  const handleRedeemCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setRedeeming(true);
+    setCouponMessage(null);
+    const res = await apiRequest('/coupons/redeem', {
+      method: 'POST',
+      body: JSON.stringify({ code: couponCode.trim() }),
+    });
+    setRedeeming(false);
+    if (res.success && res.data) {
+      setCouponMessage({ type: 'success', text: res.message || `You earned ${res.data.coinsAwarded} Kalasatra coins!` });
+      setCouponCode('');
+      fetchProfile();
+    } else {
+      setCouponMessage({ type: 'error', text: res.message || 'Failed to redeem coupon.' });
+    }
+  };
+
   const handleLogout = async () => {
     setLoading(true);
     await apiRequest('/auth/logout', { method: 'POST' });
@@ -189,11 +221,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               </div>
 
               <div>
-                <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Credits</h3>
-                <ul className="space-y-3 text-sm text-deep-black">
-                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Coupons</a></li>
-                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Kalasatra Credit</a></li>
-                </ul>
+                  <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Credits</h3>
+                  <ul className="space-y-3 text-sm text-deep-black">
+                    <li><button onClick={() => setCouponModalOpen(true)} className="hover:text-accent-yellow transition-colors font-semibold cursor-pointer bg-transparent border-none p-0">Coupons</button></li>
+                    <li><span className="font-semibold text-cold-grey">Kalasatra Credit: {profile?.kalasatra_credits ?? 0}</span></li>
+                  </ul>
               </div>
 
               <div>
@@ -241,20 +273,22 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   </div>
 
                   {/* Card 2 */}
-                  <div className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
+                  <Link to="/wishlist" className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
                     <FiGrid size={32} className="text-deep-black" />
                     <div>
-                      <h4 className="font-bold text-deep-black text-sm uppercase tracking-wider">Collections & Wishlist</h4>
-                      <p className="text-xs text-cold-grey mt-1">All your curated collections</p>
+                      <h4 className="font-bold text-deep-black text-sm uppercase tracking-wider">Wishlist & Collections</h4>
+                      <p className="text-xs text-cold-grey mt-1">{wishlistCount} item{wishlistCount !== 1 ? 's' : ''} saved</p>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Card 3 */}
-                  <div className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
+                  <div onClick={() => setCouponModalOpen(true)} className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
                     <FiCreditCard size={32} className="text-deep-black" />
                     <div>
                       <h4 className="font-bold text-deep-black text-sm uppercase tracking-wider">Kalasatra Credit</h4>
-                      <p className="text-xs text-cold-grey mt-1">Manage refunds & gift cards</p>
+                      <p className="text-xs text-cold-grey mt-1">
+                        {profile?.kalasatra_credits ?? 0} coins available
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -528,15 +562,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           {activeView === 'overview' ? (
             <ul className="flex flex-col">
               {[
-                'Orders & Returns', 'Coupons', 'Kalasatra Credit', 'Profile', 
-                'Addresses', 'Terms of Use', 'Privacy Center'
-              ].map((item, index) => (
-                <li key={item} className="border-b border-cold-grey-light/50">
+                { label: 'Orders & Returns', action: undefined },
+                { label: 'Wishlist', action: () => navigate('/wishlist') },
+                { label: 'Coupons', action: () => setCouponModalOpen(true) },
+                { label: 'Kalasatra Credit', action: undefined },
+                { label: 'Profile', action: () => setActiveView('edit') },
+                { label: 'Addresses', action: undefined },
+                { label: 'Terms of Use', action: undefined },
+                { label: 'Privacy Center', action: undefined },
+              ].map((item) => (
+                <li key={item.label} className="border-b border-cold-grey-light/50">
                   <button 
-                    onClick={() => item === 'Profile' ? setActiveView('edit') : null}
+                    onClick={() => item.action ? item.action() : null}
                     className="w-full flex items-center justify-between px-5 py-4 hover:bg-cold-white transition-colors cursor-pointer"
                   >
-                    <span className="text-sm font-bold text-deep-black uppercase tracking-widest">{item}</span>
+                    <span className="text-sm font-bold text-deep-black uppercase tracking-widest">{item.label}</span>
                     <FiChevronRight className="text-cold-grey" />
                   </button>
                 </li>
@@ -769,6 +809,66 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
         <BottomMobileNav />
       </div>
+
+      {/* ─── Coupon Redeem Modal ─── */}
+      {couponModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center" onClick={() => { setCouponModalOpen(false); setCouponMessage(null); }}>
+          <div
+            className="bg-pure-white w-full sm:max-w-md rounded-t-2xl sm:rounded-lg shadow-xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-cold-grey-light">
+              <h3 className="text-base sm:text-lg font-bold text-deep-black">Redeem Coupon</h3>
+              <button
+                onClick={() => { setCouponModalOpen(false); setCouponMessage(null); }}
+                className="text-2xl text-cold-grey hover:text-deep-black bg-transparent border-none p-0 cursor-pointer leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="px-4 sm:px-6 py-5 sm:py-6">
+              {couponMessage && (
+                <div className={`mb-4 px-3 sm:px-4 py-3 text-xs sm:text-sm font-bold uppercase tracking-widest ${
+                  couponMessage.type === 'success'
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-red-50 text-red-600 border border-red-200'
+                }`}>
+                  {couponMessage.text}
+                </div>
+              )}
+
+              {profile && (
+                <div className="mb-4 px-3 sm:px-4 py-3 bg-cold-white border border-cold-grey-light flex items-center justify-between">
+                  <span className="text-[10px] sm:text-xs uppercase font-bold text-cold-grey tracking-widest">Your Balance</span>
+                  <span className="text-base sm:text-lg font-bold text-deep-black">{profile.kalasatra_credits ?? 0} coins</span>
+                </div>
+              )}
+
+              <label className="block text-[10px] sm:text-xs uppercase font-bold text-cold-grey tracking-widest mb-2">
+                Enter Coupon Code
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. KALASATRA50"
+                  className="w-full sm:flex-1 px-4 py-3 border border-cold-grey-light text-sm font-bold text-deep-black outline-none focus:border-deep-black transition-colors uppercase placeholder:normal-case"
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleRedeemCoupon(); }}
+                />
+                <button
+                  onClick={handleRedeemCoupon}
+                  disabled={redeeming || !couponCode.trim()}
+                  className="w-full sm:w-auto px-6 py-3 bg-deep-black text-pure-white text-sm font-bold uppercase tracking-widest hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all border-none cursor-pointer"
+                >
+                  {redeeming ? '...' : 'Redeem'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -45,6 +45,57 @@ export default function CategoryProductsPage() {
   const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
   const [rippleIds, setRippleIds] = useState<Set<string>>(new Set());
   const [cartBump, setCartBump] = useState(0);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
+  const [wishlistToggling, setWishlistToggling] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    loadWishlist();
+  }, []);
+
+  const loadWishlist = async () => {
+    const res = await apiRequest('/wishlist');
+    if (res.success && Array.isArray(res.data)) {
+      setWishlist(new Set(res.data.map((item: any) => item.product_id)));
+    }
+  };
+
+  const toggleWishlist = async (product: Product, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!localStorage.getItem('accessToken')) {
+      navigate('/auth');
+      return;
+    }
+    const pid = product.id;
+    if (wishlistToggling.has(pid)) return;
+    setWishlistToggling((prev) => new Set(prev).add(pid));
+    try {
+      if (wishlist.has(pid)) {
+        const res = await apiRequest(`/wishlist/${pid}`, { method: 'DELETE' });
+        if (res.success) {
+          setWishlist((prev) => { const next = new Set(prev); next.delete(pid); return next; });
+        }
+      } else {
+        const price = calcPrice(product);
+        const res = await apiRequest('/wishlist', {
+          method: 'POST',
+          body: JSON.stringify({
+            product_id: pid,
+            product_name: product.name,
+            product_price: price.final,
+            product_image: product.thumbnail_url || product.images[0]?.url || '',
+            product_slug: product.slug,
+          }),
+        });
+        if (res.success) {
+          setWishlist((prev) => new Set(prev).add(pid));
+        }
+      }
+    } finally {
+      setWishlistToggling((prev) => { const next = new Set(prev); next.delete(pid); return next; });
+    }
+  };
 
   const meta = categoryMeta[categorySlug || ''] || {
     title: 'Collection',
@@ -141,6 +192,89 @@ export default function CategoryProductsPage() {
   const allSizes = [...new Set(products.flatMap((p) => p.sizes))];
   const allColors = [...new Set(products.flatMap((p) => p.colors))];
 
+  const hasActiveFilters = selectedSizes.length > 0 || selectedColors.length > 0 || priceRange[0] > 0 || priceRange[1] < 99999;
+
+  const renderFilters = () => (
+    <>
+      <div>
+        <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Sort</h3>
+        <select
+          value={sortBy}
+          onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+          className="w-full px-4 py-3 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-sm outline-none focus:border-luxury-gold/60 transition-colors"
+        >
+          <option value="created_at-desc">Newest</option>
+          <option value="selling_price-asc">Price: Low to High</option>
+          <option value="selling_price-desc">Price: High to Low</option>
+          <option value="name-asc">Name: A-Z</option>
+        </select>
+      </div>
+
+      <div>
+        <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Price Range</h3>
+        <div className="flex gap-3">
+          <input
+            type="number"
+            placeholder="Min"
+            value={priceRange[0] || ''}
+            onChange={(e) => setPriceRange([Number(e.target.value) || 0, priceRange[1]])}
+            className="w-full px-4 py-3 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-sm outline-none focus:border-luxury-gold/60 transition-colors placeholder:text-soft-white/30"
+          />
+          <span className="text-soft-white/40 self-center">-</span>
+          <input
+            type="number"
+            placeholder="Max"
+            value={priceRange[1] === 99999 ? '' : priceRange[1]}
+            onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value) || 99999])}
+            className="w-full px-4 py-3 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-sm outline-none focus:border-luxury-gold/60 transition-colors placeholder:text-soft-white/30"
+          />
+        </div>
+      </div>
+
+      {allSizes.length > 0 && (
+        <div>
+          <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Size</h3>
+          <div className="flex flex-wrap gap-2">
+            {allSizes.map((size) => (
+              <button
+                key={size}
+                onClick={() => toggleSize(size)}
+                className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider border transition-all duration-300 ${
+                  selectedSizes.includes(size)
+                    ? 'bg-luxury-gold text-rich-black border-luxury-gold'
+                    : 'bg-transparent text-soft-white/60 border-luxury-gold/20 hover:border-luxury-gold/50 hover:text-soft-white'
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {allColors.length > 0 && (
+        <div>
+          <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Color</h3>
+          <div className="flex flex-wrap gap-3">
+            {allColors.map((color) => (
+              <button
+                key={color}
+                onClick={() => toggleColor(color)}
+                title={color}
+                className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${
+                  selectedColors.includes(color)
+                    ? 'border-luxury-gold scale-110'
+                    : 'border-transparent hover:scale-110'
+                }`}
+                style={{ backgroundColor: color.toLowerCase() }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-rich-black">
       {/* Navbar spacer */}
@@ -149,28 +283,28 @@ export default function CategoryProductsPage() {
       {/* Header */}
       <section className="relative border-b border-luxury-gold/10">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(212,175,55,0.06),transparent_70%)]" />
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-16 lg:py-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link to="/" className="text-xs uppercase tracking-[0.2em] text-luxury-gold/60 hover:text-luxury-gold transition-colors mb-4 inline-block">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-12 sm:py-16 lg:py-10">
+          <div className="flex items-start sm:items-center justify-between gap-4">
+            <div className="min-w-0">
+              <Link to="/" className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-luxury-gold/60 hover:text-luxury-gold transition-colors mb-2 sm:mb-4 inline-block">
                 ← Back to Home
               </Link>
-              <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold text-soft-white mt-2">
+              <h1 className="font-heading text-3xl sm:text-5xl lg:text-7xl font-bold text-soft-white mt-1 sm:mt-2 leading-tight">
                 {meta.title}
               </h1>
-              <p className="text-lg text-soft-white/60 mt-3 font-light">{meta.subtitle}</p>
+              <p className="text-sm sm:text-lg text-soft-white/60 mt-2 sm:mt-3 font-light">{meta.subtitle}</p>
             </div>
             <button
               onClick={() => setCartOpen(true)}
-              className="relative px-6 py-3 border border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-rich-black transition-all duration-300"
+              className="shrink-0 relative px-4 sm:px-6 py-2.5 sm:py-3 border border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-rich-black transition-all duration-300"
             >
-              <span className="text-sm font-semibold uppercase tracking-[0.15em]">Cart</span>
+              <span className="text-[10px] sm:text-sm font-semibold uppercase tracking-[0.15em]">Cart</span>
               {totalItems > 0 && (
                 <span
                   key={cartBump}
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-luxury-gold text-rich-black text-xs font-bold flex items-center justify-center animate-cart-bounce"
+                  className="absolute -top-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-luxury-gold text-rich-black text-[10px] sm:text-xs font-bold flex items-center justify-center animate-cart-bounce"
                 >
-                  {totalItems}
+                  {totalItems > 99 ? '99+' : totalItems}
                 </span>
               )}
             </button>
@@ -178,86 +312,71 @@ export default function CategoryProductsPage() {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-10">
-        <div className="flex flex-col lg:flex-row gap-10">
-          {/* Sidebar Filters */}
-          <aside className="lg:w-64 shrink-0 space-y-8">
-            <div>
-              <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Sort</h3>
-              <select
-                value={sortBy}
-                onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-                className="w-full px-4 py-3 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-sm outline-none focus:border-luxury-gold/60 transition-colors"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
+          {/* ─── Mobile Filter Toggle ─── */}
+          <div className="lg:hidden flex items-center gap-3 mb-2">
+            <button
+              onClick={() => setMobileFiltersOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-dark-charcoal border border-luxury-gold/20 rounded-lg text-sm text-soft-white cursor-pointer hover:border-luxury-gold/50 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm4 6a1 1 0 011-1h8a1 1 0 010 2H8a1 1 0 01-1-1zm2 6a1 1 0 011-1h4a1 1 0 010 2h-4a1 1 0 01-1-1z" />
+              </svg>
+              Filters
+              {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-luxury-gold" />}
+            </button>
+            {hasActiveFilters && (
+              <button
+                onClick={() => { setSelectedSizes([]); setSelectedColors([]); setPriceRange([0, 99999]); setPage(1); }}
+                className="text-xs text-luxury-gold/60 hover:text-luxury-gold bg-transparent border-none cursor-pointer"
               >
-                <option value="created_at-desc">Newest</option>
-                <option value="selling_price-asc">Price: Low to High</option>
-                <option value="selling_price-desc">Price: High to Low</option>
-                <option value="name-asc">Name: A-Z</option>
-              </select>
-            </div>
-
-            <div>
-              <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Price Range</h3>
-              <div className="flex gap-3">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={priceRange[0] || ''}
-                  onChange={(e) => setPriceRange([Number(e.target.value) || 0, priceRange[1]])}
-                  className="w-full px-4 py-3 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-sm outline-none focus:border-luxury-gold/60 transition-colors placeholder:text-soft-white/30"
-                />
-                <span className="text-soft-white/40 self-center">-</span>
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={priceRange[1] === 99999 ? '' : priceRange[1]}
-                  onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value) || 99999])}
-                  className="w-full px-4 py-3 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-sm outline-none focus:border-luxury-gold/60 transition-colors placeholder:text-soft-white/30"
-                />
-              </div>
-            </div>
-
-            {allSizes.length > 0 && (
-              <div>
-                <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Size</h3>
-                <div className="flex flex-wrap gap-2">
-                  {allSizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => toggleSize(size)}
-                      className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider border transition-all duration-300 ${
-                        selectedSizes.includes(size)
-                          ? 'bg-luxury-gold text-rich-black border-luxury-gold'
-                          : 'bg-transparent text-soft-white/60 border-luxury-gold/20 hover:border-luxury-gold/50 hover:text-soft-white'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                Clear All
+              </button>
             )}
+            <div className="flex-1" />
+            <select
+              value={sortBy}
+              onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+              className="px-3 py-2 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-xs outline-none focus:border-luxury-gold/60 transition-colors"
+            >
+              <option value="created_at-desc">Newest</option>
+              <option value="selling_price-asc">Price: Low-High</option>
+              <option value="selling_price-desc">Price: High-Low</option>
+              <option value="name-asc">A-Z</option>
+            </select>
+          </div>
 
-            {allColors.length > 0 && (
-              <div>
-                <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Color</h3>
-                <div className="flex flex-wrap gap-3">
-                  {allColors.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => toggleColor(color)}
-                      title={color}
-                      className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${
-                        selectedColors.includes(color)
-                          ? 'border-luxury-gold scale-110'
-                          : 'border-transparent hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: color.toLowerCase() }}
-                    />
-                  ))}
+          {/* ─── Mobile Filters Drawer ─── */}
+          {mobileFiltersOpen && (
+            <div className="lg:hidden">
+              <div className="fixed inset-0 z-50 bg-black/60" onClick={() => setMobileFiltersOpen(false)} />
+              <div className="fixed inset-x-0 top-0 z-50 h-full max-h-[85vh] mt-16 bg-dark-charcoal rounded-t-2xl overflow-y-auto px-4 sm:px-6 py-5">
+                <div className="flex items-center justify-between mb-4 sticky top-0 bg-dark-charcoal pb-3 border-b border-luxury-gold/10">
+                  <h3 className="text-base font-semibold text-soft-white">Filters</h3>
+                  <button
+                    onClick={() => setMobileFiltersOpen(false)}
+                    className="text-2xl text-soft-white/50 hover:text-soft-white bg-transparent border-none cursor-pointer"
+                  >
+                    &times;
+                  </button>
                 </div>
+                <div className="space-y-6">
+                  {renderFilters()}
+                </div>
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="w-full mt-5 px-4 py-3 bg-luxury-gold text-rich-black text-sm font-semibold rounded-lg cursor-pointer hover:brightness-110 transition-all border-none"
+                >
+                  Apply Filters
+                </button>
               </div>
-            )}
+            </div>
+          )}
+
+          {/* ─── Desktop Sidebar Filters ─── */}
+          <aside className="hidden lg:block lg:w-64 shrink-0 space-y-8">
+            {renderFilters()}
           </aside>
 
           {/* Products Grid */}
@@ -272,7 +391,7 @@ export default function CategoryProductsPage() {
               </div>
             ) : (
               <>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {products.map((product) => {
                     const price = calcPrice(product);
                     const variant = selectedVariants[product.id];
@@ -284,10 +403,30 @@ export default function CategoryProductsPage() {
                         h-fit bg-dark-charcoal border border-luxury-gold/10 hover:border-luxury-gold/40 transition-all duration-500 overflow-hidden flex flex-col"
                       >
                         {product.discount_percentage > 0 && (
-                          <span className="absolute top-3 right-3 z-10 px-3 py-1 bg-red-600/90 text-white text-xs font-bold uppercase tracking-wider">
+                          <span className="absolute top-2 sm:top-3 left-2 sm:left-3 z-10 px-2 sm:px-3 py-0.5 sm:py-1 bg-red-600/90 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                             -{product.discount_percentage}%
                           </span>
                         )}
+
+                        <button
+                          onClick={(e) => toggleWishlist(product, e)}
+                          disabled={wishlistToggling.has(product.id)}
+                          className="absolute top-2 sm:top-3 right-2 sm:right-3 z-10 w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-rich-black/70 hover:bg-rich-black border border-luxury-gold/20 hover:border-luxury-gold/60 rounded-full transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                        >
+                          <svg
+                            className={`w-4 h-4 sm:w-5 sm:h-5 transition-all duration-300 ${
+                              wishlist.has(product.id) ? 'scale-110' : 'scale-100'
+                            }`}
+                            viewBox="0 0 24 24"
+                            fill={wishlist.has(product.id) ? '#D4AF37' : 'none'}
+                            stroke={wishlist.has(product.id) ? '#D4AF37' : 'rgba(255,255,255,0.5)'}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                          </svg>
+                        </button>
 
                         <div className="aspect-4/3 bg-linear-to-b from-dark-charcoal via-rich-black to-dark-charcoal relative overflow-hidden">
                           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.08),transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -307,20 +446,20 @@ export default function CategoryProductsPage() {
                           <div className="absolute inset-0 bg-linear-to-t from-dark-charcoal via-transparent to-transparent" />
                         </div>
 
-                        <div className="p-4 flex flex-col flex-1 gap-2">
+                        <div className="p-3 sm:p-4 flex flex-col flex-1 gap-1.5 sm:gap-2">
                           <p className="text-[10px] uppercase tracking-[0.15em] text-luxury-gold/60 font-semibold">
                             {product.category_name}
                           </p>
-                          <h3 className="font-heading text-base font-bold text-soft-white group-hover:text-luxury-gold transition-colors duration-300 leading-tight">
+                          <h3 className="font-heading text-sm sm:text-base font-bold text-soft-white group-hover:text-luxury-gold transition-colors duration-300 leading-tight">
                             {product.name}
                           </h3>
-                          <p className="text-xs text-soft-white/50 line-clamp-1 leading-relaxed">
+                          <p className="text-[10px] sm:text-xs text-soft-white/50 line-clamp-1 leading-relaxed">
                             {product.description}
                           </p>
 
                           {product.sizes.length > 0 && (
                             <div>
-                              <p className="text-[10px] text-soft-white/40 uppercase tracking-wider mb-1.5">Size</p>
+                              <p className="text-[10px] text-soft-white/40 uppercase tracking-wider mb-1">Size</p>
                               <div className="flex flex-wrap gap-1">
                                 {product.sizes.map((size) => (
                                   <button
@@ -331,7 +470,7 @@ export default function CategoryProductsPage() {
                                         [product.id]: { ...prev[product.id], size, color: variant?.color || product.colors[0] || 'Black' },
                                       }))
                                     }
-                                    className={`px-2.5 py-1 text-[10px] font-semibold border transition-all ${
+                                    className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] font-semibold border transition-all ${
                                       (variant?.size || product.sizes[0]) === size
                                         ? 'bg-luxury-gold text-rich-black border-luxury-gold'
                                         : 'bg-transparent text-soft-white/50 border-luxury-gold/15 hover:border-luxury-gold/40'
@@ -346,7 +485,7 @@ export default function CategoryProductsPage() {
 
                           {product.colors.length > 0 && (
                             <div>
-                              <p className="text-[10px] text-soft-white/40 uppercase tracking-wider mb-1.5">Color</p>
+                              <p className="text-[10px] text-soft-white/40 uppercase tracking-wider mb-1">Color</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {product.colors.map((color) => (
                                   <button
@@ -358,7 +497,7 @@ export default function CategoryProductsPage() {
                                       }))
                                     }
                                     title={color}
-                                    className={`w-5 h-5 rounded-full border-2 transition-all ${
+                                    className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 transition-all ${
                                       (variant?.color || product.colors[0]) === color
                                         ? 'border-luxury-gold scale-110'
                                         : 'border-transparent hover:scale-110'
@@ -370,11 +509,11 @@ export default function CategoryProductsPage() {
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-luxury-gold/10">
+                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-luxury-gold/10 mt-1">
                             <div>
                               {product.discount_percentage > 0 ? (
                                 <div className="flex items-baseline gap-1.5">
-                                  <span className="font-heading text-lg font-bold text-luxury-gold">
+                                  <span className="font-heading text-base sm:text-lg font-bold text-luxury-gold">
                                     ₹{price.final.toFixed(2)}
                                   </span>
                                   <span className="text-[10px] text-soft-white/40 line-through">
@@ -382,7 +521,7 @@ export default function CategoryProductsPage() {
                                   </span>
                                 </div>
                               ) : (
-                                <span className="font-heading text-lg font-bold text-luxury-gold">
+                                <span className="font-heading text-base sm:text-lg font-bold text-luxury-gold">
                                   ₹{price.final.toFixed(2)}
                                 </span>
                               )}
@@ -396,25 +535,25 @@ export default function CategoryProductsPage() {
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex gap-1.5 sm:gap-2 mt-1">
                             <button
                               onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleAddToCart(product); }}
                               disabled={product.stock_status === 'out'}
-                              className="relative flex-1 px-3 py-2.5 border-2 border-luxury-gold text-luxury-gold font-bold uppercase tracking-[0.12em] text-[10px] hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
+                              className="relative flex-1 px-2 sm:px-3 py-2 sm:py-2.5 border-2 border-luxury-gold text-luxury-gold font-bold uppercase tracking-[0.12em] text-[9px] sm:text-[10px] hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
                             >
                               <span className={`transition-transform duration-300 inline-block ${animatingIds.has(product.id) ? 'scale-110' : ''}`}>
                                 Add to Cart
                               </span>
                               {rippleIds.has(product.id) && (
                                 <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                  <span className="w-8 h-8  rounded-full border-4 border-[#D4AF37] animate-ping absolute" />
+                                  <span className="w-8 h-8 rounded-full border-4 border-[#D4AF37] animate-ping absolute" />
                                 </span>
                               )}
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleBuyNow(product); }}
                               disabled={product.stock_status === 'out'}
-                              className="flex-1 px-3 py-2.5 bg-[#D4AF37] text-rich-black font-bold uppercase tracking-[0.12em] text-[10px] hover:bg-gold-light transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 bg-[#D4AF37] text-rich-black font-bold uppercase tracking-[0.12em] text-[9px] sm:text-[10px] hover:bg-gold-light transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               Buy Now
                             </button>
@@ -426,20 +565,20 @@ export default function CategoryProductsPage() {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-3 mt-12">
+                  <div className="flex justify-center items-center gap-2 sm:gap-3 mt-8 sm:mt-12">
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] border border-[#D4AF37]/30 text-luxury-gold hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.15em] border border-[#D4AF37]/30 text-luxury-gold hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2">
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                         <button
                           key={p}
                           onClick={() => setPage(p)}
-                          className={`w-10 h-10 text-sm font-semibold transition-all duration-300 ${
+                          className={`w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm font-semibold transition-all duration-300 ${
                             page === p
                               ? 'bg-[#D4AF37] text-rich-black'
                               : 'border border-[#D4AF37]/20 text-soft-white/60 hover:border-[#D4AF37]/50'
@@ -452,7 +591,7 @@ export default function CategoryProductsPage() {
                     <button
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] border border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.15em] border border-luxury-gold/30 text-luxury-gold hover:bg-luxury-gold hover:text-rich-black transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>
@@ -466,7 +605,7 @@ export default function CategoryProductsPage() {
 
       {/* Cart Drawer */}
       <div
-        className={`fixed inset-0 z-50 transition-all  duration-500 ${
+        className={`fixed inset-0 z-50 transition-all duration-500 ${
           cartOpen ? 'visible' : 'invisible'
         }`}
       >
@@ -477,12 +616,12 @@ export default function CategoryProductsPage() {
           onClick={() => setCartOpen(false)}
         />
         <div
-          className={`absolute top-0 right-0 h-full w-full max-w-md bg-[#e1e1e1] border-l  border-luxury-gold/20 transition-transform duration-500 ${
+          className={`absolute top-0 right-0 h-full w-full max-w-md bg-[#e1e1e1] border-l border-luxury-gold/20 transition-transform duration-500 ${
             cartOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
-          <div className="flex items-center justify-between px-6 py-5 border-b border-luxury-gold/10">
-            <h2 className="font-heading text-xl font-bold text-soft-white">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-luxury-gold/10">
+            <h2 className="font-heading text-lg sm:text-xl font-bold text-soft-white">
               Cart ({totalItems})
             </h2>
             <button
@@ -493,46 +632,46 @@ export default function CategoryProductsPage() {
             </button>
           </div>
 
-          <div className="flex flex-col h-[calc(100%-140px)] overflow-y-auto px-6 py-6 space-y-4">
+          <div className="flex flex-col h-[calc(100%-130px)] overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4">
             {items.length === 0 ? (
               <p className="text-soft-white/40 text-center py-20">Your cart is empty.</p>
             ) : (
               items.map((item) => (
-                <div key={`${item.productId}-${item.size}-${item.color}`} className="flex gap-4 pb-4 border-b border-luxury-gold/10">
-                  <div className="w-20 h-20 shrink-0 bg-rich-black border border-luxury-gold/10 flex items-center justify-center overflow-hidden">
+                <div key={`${item.productId}-${item.size}-${item.color}`} className="flex gap-3 sm:gap-4 pb-4 border-b border-luxury-gold/10">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-rich-black border border-luxury-gold/10 flex items-center justify-center overflow-hidden">
                     {item.image ? (
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="font-heading text-xl font-bold text-luxury-gold/30">K</span>
+                      <span className="font-heading text-lg sm:text-xl font-bold text-luxury-gold/30">K</span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-soft-white truncate">{item.name}</p>
-                    <p className="text-xs text-soft-white/50 mt-0.5">
+                    <p className="text-xs sm:text-sm font-semibold text-soft-white truncate">{item.name}</p>
+                    <p className="text-[10px] sm:text-xs text-soft-white/50 mt-0.5">
                       {item.size} / {item.color}
                     </p>
-                    <p className="text-sm font-bold text-luxury-gold mt-1">₹{item.price.toFixed(2)}</p>
-                    <div className="flex items-center gap-3 mt-2">
+                    <p className="text-xs sm:text-sm font-bold text-luxury-gold mt-1">₹{item.price.toFixed(2)}</p>
+                    <div className="flex items-center gap-2 sm:gap-3 mt-2">
                       <div className="flex items-center border border-luxury-gold/20">
                         <button
                           onClick={() => updateQuantity(item.productId, item.size, item.color, -1)}
-                          className="px-2.5 py-1 text-soft-white/60 hover:text-soft-white bg-transparent border-none cursor-pointer text-sm"
+                          className="px-2 sm:px-2.5 py-1 text-soft-white/60 hover:text-soft-white bg-transparent border-none cursor-pointer text-xs sm:text-sm"
                         >
                           −
                         </button>
-                        <span className="px-3 py-1 text-sm text-soft-white min-w-[24px] text-center">
+                        <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-soft-white min-w-[20px] sm:min-w-[24px] text-center">
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => updateQuantity(item.productId, item.size, item.color, 1)}
-                          className="px-2.5 py-1 text-soft-white/60 hover:text-soft-white bg-transparent border-none cursor-pointer text-sm"
+                          className="px-2 sm:px-2.5 py-1 text-soft-white/60 hover:text-soft-white bg-transparent border-none cursor-pointer text-xs sm:text-sm"
                         >
                           +
                         </button>
                       </div>
                       <button
                         onClick={() => removeItem(item.productId, item.size, item.color)}
-                        className="text-xs text-soft-white/30 hover:text-red-400 transition-colors bg-transparent border-none p-0 cursor-pointer"
+                        className="text-[10px] sm:text-xs text-soft-white/30 hover:text-red-400 transition-colors bg-transparent border-none p-0 cursor-pointer"
                       >
                         Remove
                       </button>
@@ -544,17 +683,17 @@ export default function CategoryProductsPage() {
           </div>
 
           {items.length > 0 && (
-            <div className="absolute bottom-0 left-0 right-0 px-6 py-5 border-t border-luxury-gold/10 bg-dark-charcoal">
+            <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 py-4 sm:py-5 border-t border-luxury-gold/10 bg-dark-charcoal">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm text-soft-white/70">Total</span>
-                <span className="font-heading text-xl font-bold text-luxury-gold">₹{totalPrice.toFixed(2)}</span>
+                <span className="text-xs sm:text-sm text-soft-white/70">Total</span>
+                <span className="font-heading text-lg sm:text-xl font-bold text-luxury-gold">₹{totalPrice.toFixed(2)}</span>
               </div>
-              <button className="w-full px-6 py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500">
+              <button className="w-full px-6 py-3 sm:py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-xs sm:text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500">
                 Checkout
               </button>
               <button
                 onClick={clearCart}
-                className="w-full mt-2 px-6 py-2.5 border border-luxury-gold/20 text-soft-white/50 font-semibold uppercase tracking-[0.1em] text-xs hover:text-red-400 hover:border-red-400/30 transition-all duration-300 bg-transparent cursor-pointer"
+                className="w-full mt-2 px-6 py-2 sm:py-2.5 border border-luxury-gold/20 text-soft-white/50 font-semibold uppercase tracking-[0.1em] text-[10px] sm:text-xs hover:text-red-400 hover:border-red-400/30 transition-all duration-300 bg-transparent cursor-pointer"
               >
                 Clear Cart
               </button>
