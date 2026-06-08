@@ -39,7 +39,29 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<'overview' | 'edit'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'edit' | 'profile'>('overview');
+
+  // ─── Alternate Addresses ──────────────────────────────────────────────────
+  type AlterAddress = {
+    id: string;
+    full_name: string;
+    address_line1: string;
+    address_line2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  };
+  const [alterAddresses, setAlterAddresses] = useState<AlterAddress[]>([]);
+  const [loadingAlter, setLoadingAlter] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [makingDefaultId, setMakingDefaultId] = useState<string | null>(null);
+  const [showNewAddrForm, setShowNewAddrForm] = useState(false);
+  const [savingNewAddr, setSavingNewAddr] = useState(false);
+  const [newAddr, setNewAddr] = useState({
+    full_name: '', address_line1: '', address_line2: '', pincode: '', city: '', state: '',
+  });
+  const [addrMsg, setAddrMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -91,10 +113,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
   };
 
+  const fetchAlterAddresses = async () => {
+    setLoadingAlter(true);
+    const res = await apiRequest('/addresses') as any;
+    if (res.success) setAlterAddresses(res.data || []);
+    setLoadingAlter(false);
+  };
+
   useEffect(() => {
     fetchProfile();
     fetchWishlistCount();
   }, []);
+
+  useEffect(() => {
+    if (activeView === 'profile') fetchAlterAddresses();
+  }, [activeView]);
 
   const fetchWishlistCount = async () => {
     const res = await apiRequest('/wishlist');
@@ -184,6 +217,82 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     onLogout();
   };
 
+  const handleDeleteAlterAddress = async (id: string) => {
+    if (!window.confirm('Remove this address?')) return;
+    setDeletingId(id);
+    const res = await apiRequest(`/addresses/${id}`, { method: 'DELETE' }) as any;
+    if (res.success) setAlterAddresses(prev => prev.filter(a => a.id !== id));
+    setDeletingId(null);
+  };
+
+  const handlePincodeForNewAddr = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setNewAddr(prev => ({ ...prev, pincode: val }));
+    if (val.length === 6) {
+      try {
+        const res = await apiRequest<any>(`/pincode/${val}`) as any;
+        if (res.success && res.postOffices?.length > 0) {
+          setNewAddr(prev => ({ ...prev, city: res.postOffices[0].District, state: res.postOffices[0].State }));
+        }
+      } catch { /* ignore */ }
+    }
+  };
+
+  const handleSaveNewAddr = async () => {
+    if (!newAddr.full_name || !newAddr.address_line1 || !newAddr.pincode || !newAddr.city || !newAddr.state) {
+      setAddrMsg({ type: 'error', text: 'Please fill all required fields.' });
+      return;
+    }
+    setSavingNewAddr(true);
+    setAddrMsg(null);
+    const res = await apiRequest('/addresses', {
+      method: 'POST',
+      body: JSON.stringify({ ...newAddr }),
+    }) as any;
+    setSavingNewAddr(false);
+    if (res.success) {
+      setAlterAddresses(prev => [res.data, ...prev]);
+      setNewAddr({ full_name: '', address_line1: '', address_line2: '', pincode: '', city: '', state: '' });
+      setShowNewAddrForm(false);
+      setAddrMsg({ type: 'success', text: 'New address saved.' });
+    } else {
+      setAddrMsg({ type: 'error', text: res.message || 'Failed to save address.' });
+    }
+  };
+
+  const handleMakeDefault = async (addr: AlterAddress) => {
+    if (!window.confirm(`Make "${addr.full_name}" your default delivery address?`)) return;
+    setMakingDefaultId(addr.id);
+    const res = await apiRequest('/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify({
+        first_name: profile?.name || addr.full_name,
+        address_line_1: addr.address_line1,
+        address_line_2: addr.address_line2 || '',
+        city: addr.city,
+        state: addr.state,
+        pincode: addr.pincode,
+        country: addr.country || 'India',
+      }),
+    }) as any;
+    setMakingDefaultId(null);
+    if (res.success) {
+      // Update local profile state so the Default Address card refreshes immediately
+      setProfile(prev => prev ? {
+        ...prev,
+        address_line1: addr.address_line1,
+        address_line2: addr.address_line2,
+        city: addr.city,
+        state: addr.state,
+        pincode: addr.pincode,
+        country: addr.country,
+      } : prev);
+      setAddrMsg({ type: 'success', text: `"${addr.full_name}" is now your default address.` });
+    } else {
+      setAddrMsg({ type: 'error', text: res.message || 'Failed to update default address.' });
+    }
+  };
+
   if (loading && !profile) {
     return (
       <div className="min-h-screen bg-cold-white flex items-center justify-center">
@@ -231,8 +340,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               <div>
                 <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Account</h3>
                 <ul className="space-y-3 text-sm text-deep-black">
-                  <li><button onClick={() => setActiveView('edit')} className={`transition-colors font-semibold cursor-pointer ${activeView === 'edit' ? 'text-accent-yellow' : 'hover:text-accent-yellow'}`}>Profile</button></li>
-                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Addresses</a></li>
+                  <li><button onClick={() => setActiveView('edit')} className={`transition-colors font-semibold cursor-pointer ${activeView === 'edit' ? 'text-accent-yellow' : 'hover:text-accent-yellow'}`}>Edit Details</button></li>
+                  <li><button onClick={() => setActiveView('profile')} className={`transition-colors font-semibold cursor-pointer ${activeView === 'profile' ? 'text-accent-yellow' : 'hover:text-accent-yellow'}`}>Profile & Addresses</button></li>
                   <li><button onClick={handleLogout} className="text-red-500 hover:text-red-600 transition-colors font-semibold cursor-pointer">Log Out</button></li>
                 </ul>
               </div>
@@ -249,7 +358,133 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
           {/* Main Content Area */}
           <div className="flex-1 min-w-0 pb-10">
-            {activeView === 'overview' ? (
+            {activeView === 'profile' ? (
+              <div className="max-w-3xl">
+                <h2 className="text-2xl font-bold text-deep-black mb-8">Profile & Addresses</h2>
+
+                {/* ── Primary Info Card ── */}
+                <div className="bg-pure-white border border-cold-grey-light shadow-sm mb-6">
+                  <div className="px-6 py-4 border-b border-cold-grey-light flex items-center justify-between">
+                    <h3 className="font-bold text-sm uppercase tracking-widest text-deep-black">Personal Information</h3>
+                    <button onClick={() => setActiveView('edit')} className="text-[10px] font-bold uppercase tracking-widest border border-cold-grey-light px-4 py-1.5 hover:border-deep-black transition-colors cursor-pointer">Edit</button>
+                  </div>
+                  <div className="px-6 py-5 grid grid-cols-2 gap-x-8 gap-y-4">
+                    {[
+                      { label: 'Full Name', value: profile?.name },
+                      { label: 'Email', value: profile?.email },
+                      { label: 'Phone', value: profile?.phone },
+                      { label: 'Gender', value: profile?.gender },
+                      { label: 'Birthday', value: profile?.birthday },
+                      { label: 'Alternate Phone', value: profile?.alternate_phone },
+                      { label: 'Kalasatra Credits', value: profile?.kalasatra_credits ?? 0 },
+                    ].map(({ label, value }) => (
+                      <div key={label}>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey block mb-0.5">{label}</span>
+                        <span className="text-sm font-bold text-deep-black">{value || <span className="text-cold-grey font-normal italic">Not set</span>}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── Default Address Card ── */}
+                <div className="bg-pure-white border border-cold-grey-light shadow-sm mb-6">
+                  <div className="px-6 py-4 border-b border-cold-grey-light flex items-center justify-between">
+                    <h3 className="font-bold text-sm uppercase tracking-widest text-deep-black">Default Address</h3>
+                    <span className="text-[10px] bg-accent-yellow text-deep-black px-2 py-0.5 font-bold tracking-widest uppercase">Primary</span>
+                  </div>
+                  {profile?.address_line1 ? (
+                    <div className="px-6 py-5">
+                      <p className="text-sm font-bold text-deep-black">{profile.address_line1}</p>
+                      {profile.address_line2 && <p className="text-sm text-cold-grey">{profile.address_line2}</p>}
+                      <p className="text-sm text-cold-grey">{profile.city}, {profile.state} — {profile.pincode}</p>
+                      <p className="text-sm text-cold-grey">{profile.country || 'India'}</p>
+                    </div>
+                  ) : (
+                    <div className="px-6 py-5">
+                      <p className="text-sm text-cold-grey italic">No default address set.</p>
+                      <button onClick={() => setActiveView('edit')} className="mt-2 text-xs font-bold underline underline-offset-2 cursor-pointer">Add via Edit Details →</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Alternate Addresses ── */}
+                <div className="bg-pure-white border border-cold-grey-light shadow-sm">
+                  <div className="px-6 py-4 border-b border-cold-grey-light flex items-center justify-between">
+                    <h3 className="font-bold text-sm uppercase tracking-widest text-deep-black">Alternate Addresses</h3>
+                    <button
+                      onClick={() => { setShowNewAddrForm(v => !v); setAddrMsg(null); }}
+                      className="text-[10px] font-bold uppercase tracking-widest border border-cold-grey-light px-4 py-1.5 hover:border-deep-black transition-colors cursor-pointer"
+                    >
+                      {showNewAddrForm ? 'Cancel' : '+ Add New'}
+                    </button>
+                  </div>
+
+                  {/* New address form */}
+                  {showNewAddrForm && (
+                    <div className="px-6 py-5 border-b border-cold-grey-light bg-cold-white">
+                      {addrMsg && (
+                        <div className={`mb-3 p-3 text-xs font-bold uppercase tracking-widest ${
+                          addrMsg.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'
+                        }`}>{addrMsg.text}</div>
+                      )}
+                      <div className="space-y-3">
+                        <input type="text" placeholder="Full Name *" value={newAddr.full_name} onChange={e => setNewAddr(p => ({ ...p, full_name: e.target.value }))}
+                          className="w-full border border-cold-grey-light px-4 py-2.5 text-sm font-bold text-deep-black outline-none focus:border-deep-black bg-pure-white placeholder:text-cold-grey placeholder:font-normal" />
+                        <div className="grid grid-cols-2 gap-3">
+                          <input type="text" placeholder="Pincode *" value={newAddr.pincode} onChange={handlePincodeForNewAddr}
+                            className="border border-cold-grey-light px-4 py-2.5 text-sm font-bold text-deep-black outline-none focus:border-deep-black bg-pure-white placeholder:text-cold-grey placeholder:font-normal tracking-widest" />
+                          <input type="text" placeholder="City (auto-filled)" value={newAddr.city} readOnly
+                            className="border border-cold-grey-light px-4 py-2.5 text-sm text-cold-grey bg-cold-grey-light/20 cursor-not-allowed tracking-widest" />
+                        </div>
+                        <input type="text" placeholder="House No., Building, Street *" value={newAddr.address_line1} onChange={e => setNewAddr(p => ({ ...p, address_line1: e.target.value }))}
+                          className="w-full border border-cold-grey-light px-4 py-2.5 text-sm font-bold text-deep-black outline-none focus:border-deep-black bg-pure-white placeholder:text-cold-grey placeholder:font-normal" />
+                        <input type="text" placeholder="Locality / Landmark (Optional)" value={newAddr.address_line2} onChange={e => setNewAddr(p => ({ ...p, address_line2: e.target.value }))}
+                          className="w-full border border-cold-grey-light px-4 py-2.5 text-sm font-bold text-deep-black outline-none focus:border-deep-black bg-pure-white placeholder:text-cold-grey placeholder:font-normal" />
+                        <button onClick={handleSaveNewAddr} disabled={savingNewAddr}
+                          className="w-full py-3 bg-deep-black text-pure-white text-xs font-bold uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer">
+                          {savingNewAddr ? 'Saving...' : 'Save Address'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* List alternate addresses */}
+                  {loadingAlter ? (
+                    <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-cold-grey-light border-t-deep-black rounded-full animate-spin" /></div>
+                  ) : alterAddresses.length === 0 ? (
+                    <div className="px-6 py-5 text-sm text-cold-grey italic">No alternate addresses yet.</div>
+                  ) : (
+                    <ul className="divide-y divide-cold-grey-light">
+                      {alterAddresses.map((addr) => (
+                        <li key={addr.id} className="px-6 py-5 flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-bold text-deep-black uppercase tracking-wide">{addr.full_name}</p>
+                            <p className="text-xs text-cold-grey mt-0.5">{addr.address_line1}{addr.address_line2 ? `, ${addr.address_line2}` : ''}</p>
+                            <p className="text-xs text-cold-grey">{addr.city}, {addr.state} — {addr.pincode}</p>
+                          </div>
+                          <div className="flex flex-col gap-2 shrink-0">
+                            <button
+                              onClick={() => handleMakeDefault(addr)}
+                              disabled={makingDefaultId === addr.id}
+                              className="text-[10px] font-bold uppercase tracking-widest text-deep-black border border-deep-black px-3 py-1.5 hover:bg-deep-black hover:text-pure-white transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {makingDefaultId === addr.id ? '...' : 'Make Default'}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteAlterAddress(addr.id)}
+                              disabled={deletingId === addr.id}
+                              className="text-[10px] font-bold uppercase tracking-widest text-red-500 border border-red-200 px-3 py-1.5 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {deletingId === addr.id ? '...' : 'Delete'}
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            ) : activeView === 'overview' ? (
               <>
                 {/* Profile Summary Card */}
                 <div className="bg-cold-white border border-cold-grey-light p-8 flex items-center justify-between mb-8 shadow-sm">
@@ -566,8 +801,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 { label: 'Wishlist', action: () => navigate('/wishlist') },
                 { label: 'Coupons', action: () => setCouponModalOpen(true) },
                 { label: 'Kalasatra Credit', action: undefined },
-                { label: 'Profile', action: () => setActiveView('edit') },
-                { label: 'Addresses', action: undefined },
+                { label: 'Profile & Addresses', action: () => setActiveView('profile') },
+                { label: 'Edit Details', action: () => setActiveView('edit') },
                 { label: 'Terms of Use', action: undefined },
                 { label: 'Privacy Center', action: undefined },
               ].map((item) => (
@@ -592,6 +827,111 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 </button>
               </li>
             </ul>
+          ) : activeView === 'profile' ? (
+            <div className="p-4 bg-pure-white">
+              <button onClick={() => setActiveView('overview')} className="text-sm font-bold text-deep-black mb-6 uppercase tracking-widest flex items-center gap-2 cursor-pointer">
+                <FiChevronRight className="rotate-180" /> Back
+              </button>
+              <h2 className="text-xl font-bold text-deep-black mb-4">Profile & Addresses</h2>
+
+              {/* Personal Info */}
+              <div className="border border-cold-grey-light mb-4">
+                <div className="px-4 py-3 border-b border-cold-grey-light flex justify-between items-center bg-cold-white">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-deep-black">Personal Info</span>
+                  <button onClick={() => setActiveView('edit')} className="text-[10px] font-bold uppercase tracking-widest underline cursor-pointer">Edit</button>
+                </div>
+                <div className="px-4 py-4 space-y-2">
+                  {[{ label: 'Name', value: profile?.name }, { label: 'Email', value: profile?.email }, { label: 'Phone', value: profile?.phone }, { label: 'Gender', value: profile?.gender }, { label: 'Credits', value: profile?.kalasatra_credits ?? 0 }].map(({ label, value }) => (
+                    <div key={label} className="flex justify-between">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey">{label}</span>
+                      <span className="text-sm font-bold text-deep-black">{value || <span className="text-cold-grey font-normal italic text-xs">Not set</span>}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Default Address */}
+              <div className="border border-cold-grey-light mb-4">
+                <div className="px-4 py-3 border-b border-cold-grey-light bg-cold-white flex justify-between items-center">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-deep-black">Default Address</span>
+                  <span className="text-[9px] bg-accent-yellow text-deep-black px-2 py-0.5 font-bold tracking-widest uppercase">Primary</span>
+                </div>
+                <div className="px-4 py-4">
+                  {profile?.address_line1 ? (
+                    <>
+                      <p className="text-sm font-bold text-deep-black">{profile.address_line1}</p>
+                      {profile.address_line2 && <p className="text-xs text-cold-grey">{profile.address_line2}</p>}
+                      <p className="text-xs text-cold-grey">{profile.city}, {profile.state} — {profile.pincode}</p>
+                    </>
+                  ) : <p className="text-xs text-cold-grey italic">No default address. <button onClick={() => setActiveView('edit')} className="underline cursor-pointer">Add via Edit Details.</button></p>}
+                </div>
+              </div>
+
+              {/* Alternate Addresses */}
+              <div className="border border-cold-grey-light mb-4">
+                <div className="px-4 py-3 border-b border-cold-grey-light bg-cold-white flex justify-between items-center">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-deep-black">Alternate Addresses</span>
+                  <button onClick={() => { setShowNewAddrForm(v => !v); setAddrMsg(null); }} className="text-[10px] font-bold uppercase tracking-widest border border-cold-grey-light px-3 py-1 cursor-pointer">
+                    {showNewAddrForm ? 'Cancel' : '+ Add'}
+                  </button>
+                </div>
+
+                {showNewAddrForm && (
+                  <div className="px-4 py-4 border-b border-cold-grey-light bg-cold-white space-y-3">
+                    {addrMsg && <div className={`p-2 text-xs font-bold ${addrMsg.type === 'success' ? 'text-green-700' : 'text-red-600'}`}>{addrMsg.text}</div>}
+                    <input type="text" placeholder="Full Name *" value={newAddr.full_name} onChange={e => setNewAddr(p => ({ ...p, full_name: e.target.value }))}
+                      className="w-full border border-cold-grey-light px-3 py-2.5 text-sm font-bold outline-none focus:border-deep-black" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="text" placeholder="Pincode *" value={newAddr.pincode} onChange={handlePincodeForNewAddr}
+                        className="border border-cold-grey-light px-3 py-2.5 text-sm font-bold outline-none focus:border-deep-black tracking-widest" />
+                      <input type="text" placeholder="City" value={newAddr.city} readOnly className="border border-cold-grey-light px-3 py-2.5 text-sm text-cold-grey bg-cold-grey-light/20 cursor-not-allowed" />
+                    </div>
+                    <input type="text" placeholder="Street / Building *" value={newAddr.address_line1} onChange={e => setNewAddr(p => ({ ...p, address_line1: e.target.value }))}
+                      className="w-full border border-cold-grey-light px-3 py-2.5 text-sm font-bold outline-none focus:border-deep-black" />
+                    <input type="text" placeholder="Locality (Optional)" value={newAddr.address_line2} onChange={e => setNewAddr(p => ({ ...p, address_line2: e.target.value }))}
+                      className="w-full border border-cold-grey-light px-3 py-2.5 text-sm font-bold outline-none focus:border-deep-black" />
+                    <button onClick={handleSaveNewAddr} disabled={savingNewAddr}
+                      className="w-full py-2.5 bg-deep-black text-pure-white text-xs font-bold uppercase tracking-widest cursor-pointer disabled:opacity-50">
+                      {savingNewAddr ? 'Saving...' : 'Save Address'}
+                    </button>
+                  </div>
+                )}
+
+                {loadingAlter ? (
+                  <div className="flex justify-center py-6"><div className="w-5 h-5 border-2 border-cold-grey-light border-t-deep-black rounded-full animate-spin" /></div>
+                ) : alterAddresses.length === 0 ? (
+                  <p className="px-4 py-4 text-xs text-cold-grey italic">No alternate addresses yet.</p>
+                ) : (
+                  <ul className="divide-y divide-cold-grey-light">
+                    {alterAddresses.map(addr => (
+                      <li key={addr.id} className="px-4 py-4 flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-deep-black">{addr.full_name}</p>
+                          <p className="text-xs text-cold-grey">{addr.address_line1}{addr.address_line2 ? `, ${addr.address_line2}` : ''}</p>
+                          <p className="text-xs text-cold-grey">{addr.city}, {addr.state} — {addr.pincode}</p>
+                        </div>
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                          <button
+                            onClick={() => handleMakeDefault(addr)}
+                            disabled={makingDefaultId === addr.id}
+                            className="text-[10px] font-bold text-deep-black border border-deep-black px-2 py-1 hover:bg-deep-black hover:text-pure-white transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            {makingDefaultId === addr.id ? '...' : 'Set Default'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAlterAddress(addr.id)}
+                            disabled={deletingId === addr.id}
+                            className="text-[10px] font-bold text-red-500 border border-red-200 px-2 py-1 hover:bg-red-50 cursor-pointer disabled:opacity-50"
+                          >
+                            {deletingId === addr.id ? '...' : 'Delete'}
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           ) : (
             <div className="p-4 bg-pure-white">
               <button onClick={() => setActiveView('overview')} className="text-sm font-bold text-deep-black mb-6 uppercase tracking-widest flex items-center gap-2 cursor-pointer">

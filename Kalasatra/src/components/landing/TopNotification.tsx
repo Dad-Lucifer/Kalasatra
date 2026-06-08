@@ -48,10 +48,7 @@ export default function TopNotification() {
             <div className="w-10 h-10 flex items-center justify-center overflow-hidden">
               <img src={logoImg} alt="Kalastra App Logo" className="w-full h-full object-contain" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold font-heading text-deep-black leading-tight uppercase tracking-wide">Kalastra App</span>
-              <span className="text-xs text-cold-grey mt-0.5 tracking-widest uppercase">Extra 10% off | Code : KALA10</span>
-            </div>
+            
           </div>
           <div className="flex items-center gap-4">
             <button className="bg-accent-yellow text-deep-black text-xs font-bold px-5 py-2 uppercase tracking-widest hover:bg-deep-black hover:text-pure-white transition-colors shadow-sm cursor-pointer">

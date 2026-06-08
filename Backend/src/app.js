@@ -101,6 +101,9 @@ app.use("/api/v1/payment", paymentRoutes);
 const userRoutes = require("./routes/user.routes");
 app.use("/api/v1/user", userRoutes);
 
+const addressRoutes = require("./routes/address.routes");
+app.use("/api/v1/addresses", addressRoutes);
+
 const { pincodeRouter } = require("../pincode-api");
 app.use("/api/v1/pincode", pincodeRouter);
 

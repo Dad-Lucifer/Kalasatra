@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { apiRequest } from '../utils/api';
 import { useCart } from '../context/CartContext';
 import { useCheckout } from '../hooks/useCheckout';
@@ -41,6 +42,11 @@ export default function CategoryProductsPage() {
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 99999]);
+
+  const [draftSortBy, setDraftSortBy] = useState('created_at-desc');
+  const [draftSelectedSizes, setDraftSelectedSizes] = useState<string[]>([]);
+  const [draftSelectedColors, setDraftSelectedColors] = useState<string[]>([]);
+  const [draftPriceRange, setDraftPriceRange] = useState<[number, number]>([0, 99999]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, { size: string; color: string }>>({});
@@ -131,12 +137,34 @@ export default function CategoryProductsPage() {
   };
 
   const toggleSize = (size: string) => {
-    setSelectedSizes((prev) => prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]);
-    setPage(1);
+    setDraftSelectedSizes((prev) => prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]);
   };
 
   const toggleColor = (color: string) => {
-    setSelectedColors((prev) => prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]);
+    setDraftSelectedColors((prev) => prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]);
+  };
+
+  const handleApplyFilters = () => {
+    setSortBy(draftSortBy);
+    setSelectedSizes(draftSelectedSizes);
+    setSelectedColors(draftSelectedColors);
+    setPriceRange(draftPriceRange);
+    setPage(1);
+    setMobileFiltersOpen(false);
+    if (window.innerWidth >= 1024) {
+      window.scrollTo({ top: 350, behavior: 'smooth' });
+    }
+  };
+
+  const clearFilters = () => {
+    setDraftSelectedSizes([]);
+    setDraftSelectedColors([]);
+    setDraftPriceRange([0, 99999]);
+    setDraftSortBy('created_at-desc');
+    setSelectedSizes([]);
+    setSelectedColors([]);
+    setPriceRange([0, 99999]);
+    setSortBy('created_at-desc');
     setPage(1);
   };
 
@@ -195,15 +223,20 @@ export default function CategoryProductsPage() {
   const allColors = [...new Set(products.flatMap((p) => p.colors))];
 
   const hasActiveFilters = selectedSizes.length > 0 || selectedColors.length > 0 || priceRange[0] > 0 || priceRange[1] < 99999;
+  const hasActiveDraftFilters = draftSelectedSizes.length > 0 || draftSelectedColors.length > 0 || draftPriceRange[0] > 0 || draftPriceRange[1] < 99999;
 
-  const renderFilters = () => (
+  const renderFilters = (isMobile = false) => (
     <>
       <div>
-        <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Sort</h3>
+        <h3 className={`text-xs uppercase tracking-[0.2em] font-bold mb-4 ${isMobile ? 'text-deep-black' : 'text-luxury-gold'}`}>Sort</h3>
         <select
-          value={sortBy}
-          onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-          className="w-full px-4 py-3 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-sm outline-none focus:border-luxury-gold/60 transition-colors"
+          value={draftSortBy}
+          onChange={(e) => setDraftSortBy(e.target.value)}
+          className={`w-full px-4 py-3 border text-sm outline-none transition-colors rounded-lg shadow-sm ${
+            isMobile 
+              ? 'bg-white border-gray-200 text-deep-black focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]' 
+              : 'bg-dark-charcoal border-luxury-gold/20 text-soft-white focus:border-luxury-gold/60'
+          }`}
         >
           <option value="created_at-desc">Newest</option>
           <option value="selling_price-asc">Price: Low to High</option>
@@ -213,38 +246,48 @@ export default function CategoryProductsPage() {
       </div>
 
       <div>
-        <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Price Range</h3>
+        <h3 className={`text-xs uppercase tracking-[0.2em] font-bold mb-4 ${isMobile ? 'text-deep-black' : 'text-luxury-gold'}`}>Price Range</h3>
         <div className="flex gap-3">
           <input
             type="number"
             placeholder="Min"
-            value={priceRange[0] || ''}
-            onChange={(e) => setPriceRange([Number(e.target.value) || 0, priceRange[1]])}
-            className="w-full px-4 py-3 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-sm outline-none focus:border-luxury-gold/60 transition-colors placeholder:text-soft-white/30"
+            value={draftPriceRange[0] || ''}
+            onChange={(e) => setDraftPriceRange([Number(e.target.value) || 0, draftPriceRange[1]])}
+            className={`w-full px-4 py-3 border text-sm outline-none transition-colors rounded-lg shadow-sm ${
+              isMobile 
+                ? 'bg-white border-gray-200 text-deep-black placeholder:text-gray-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]' 
+                : 'bg-dark-charcoal border-luxury-gold/20 text-soft-white placeholder:text-soft-white/30 focus:border-luxury-gold/60'
+            }`}
           />
-          <span className="text-soft-white/40 self-center">-</span>
+          <span className={`self-center ${isMobile ? 'text-gray-500' : 'text-soft-white/40'}`}>-</span>
           <input
             type="number"
             placeholder="Max"
-            value={priceRange[1] === 99999 ? '' : priceRange[1]}
-            onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value) || 99999])}
-            className="w-full px-4 py-3 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-sm outline-none focus:border-luxury-gold/60 transition-colors placeholder:text-soft-white/30"
+            value={draftPriceRange[1] === 99999 ? '' : draftPriceRange[1]}
+            onChange={(e) => setDraftPriceRange([draftPriceRange[0], Number(e.target.value) || 99999])}
+            className={`w-full px-4 py-3 border text-sm outline-none transition-colors rounded-lg shadow-sm ${
+              isMobile 
+                ? 'bg-white border-gray-200 text-deep-black placeholder:text-gray-400 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]' 
+                : 'bg-dark-charcoal border-luxury-gold/20 text-soft-white placeholder:text-soft-white/30 focus:border-luxury-gold/60'
+            }`}
           />
         </div>
       </div>
 
       {allSizes.length > 0 && (
         <div>
-          <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Size</h3>
+          <h3 className={`text-xs uppercase tracking-[0.2em] font-bold mb-4 ${isMobile ? 'text-deep-black' : 'text-luxury-gold'}`}>Size</h3>
           <div className="flex flex-wrap gap-2">
             {allSizes.map((size) => (
               <button
                 key={size}
                 onClick={() => toggleSize(size)}
-                className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider border transition-all duration-300 ${
-                  selectedSizes.includes(size)
-                    ? 'bg-luxury-gold text-rich-black border-luxury-gold'
-                    : 'bg-transparent text-soft-white/60 border-luxury-gold/20 hover:border-luxury-gold/50 hover:text-soft-white'
+                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border rounded-md transition-all duration-300 ${
+                  draftSelectedSizes.includes(size)
+                    ? 'bg-[#D4AF37] text-black border-[#D4AF37] shadow-md'
+                    : isMobile
+                      ? 'bg-white text-gray-600 border-gray-200 hover:border-[#D4AF37] hover:text-black'
+                      : 'bg-transparent text-soft-white/60 border-luxury-gold/20 hover:border-luxury-gold/50 hover:text-soft-white'
                 }`}
               >
                 {size}
@@ -256,17 +299,17 @@ export default function CategoryProductsPage() {
 
       {allColors.length > 0 && (
         <div>
-          <h3 className="text-xs uppercase tracking-[0.2em] text-luxury-gold font-semibold mb-4">Color</h3>
+          <h3 className={`text-xs uppercase tracking-[0.2em] font-bold mb-4 ${isMobile ? 'text-deep-black' : 'text-luxury-gold'}`}>Color</h3>
           <div className="flex flex-wrap gap-3">
             {allColors.map((color) => (
               <button
                 key={color}
                 onClick={() => toggleColor(color)}
                 title={color}
-                className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${
-                  selectedColors.includes(color)
-                    ? 'border-luxury-gold scale-110'
-                    : 'border-transparent hover:scale-110'
+                className={`w-8 h-8 rounded-full border-2 shadow-sm transition-all duration-300 ${
+                  draftSelectedColors.includes(color)
+                    ? 'border-[#D4AF37] scale-110 shadow-md'
+                    : isMobile ? 'border-gray-200 hover:scale-110' : 'border-transparent hover:scale-110'
                 }`}
                 style={{ backgroundColor: color.toLowerCase() }}
               />
@@ -280,7 +323,6 @@ export default function CategoryProductsPage() {
   return (
     <div className="min-h-screen bg-rich-black">
       {/* Navbar spacer */}
-      <div className="h-20 lg:h-24" />
 
       {/* Header */}
       <section className="relative border-b border-luxury-gold/10">
@@ -317,68 +359,118 @@ export default function CategoryProductsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
           {/* ─── Mobile Filter Toggle ─── */}
-          <div className="lg:hidden flex items-center gap-3 mb-2">
+          <div className="lg:hidden flex items-center justify-between gap-3 mb-4">
             <button
-              onClick={() => setMobileFiltersOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-dark-charcoal border border-luxury-gold/20 rounded-lg text-sm text-soft-white cursor-pointer hover:border-luxury-gold/50 transition-colors"
+              onClick={() => {
+                setDraftSortBy(sortBy);
+                setDraftSelectedSizes(selectedSizes);
+                setDraftSelectedColors(selectedColors);
+                setDraftPriceRange(priceRange);
+                setMobileFiltersOpen(true);
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 bg-cold-white border border-gray-200 shadow-sm rounded-full text-sm font-bold text-deep-black hover:shadow-md hover:border-[#D4AF37] transition-all active:scale-95 cursor-pointer"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-deep-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm4 6a1 1 0 011-1h8a1 1 0 010 2H8a1 1 0 01-1-1zm2 6a1 1 0 011-1h4a1 1 0 010 2h-4a1 1 0 01-1-1z" />
               </svg>
-              Filters
-              {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-luxury-gold" />}
+              FILTERS
+              {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.8)] animate-pulse" />}
             </button>
-            {hasActiveFilters && (
-              <button
-                onClick={() => { setSelectedSizes([]); setSelectedColors([]); setPriceRange([0, 99999]); setPage(1); }}
-                className="text-xs text-luxury-gold/60 hover:text-luxury-gold bg-transparent border-none cursor-pointer"
+            
+            <div className="flex items-center gap-3">
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-xs font-bold uppercase tracking-wider text-red-500 hover:text-red-600 transition-colors cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+              <select
+                value={sortBy}
+                onChange={(e) => { 
+                  setSortBy(e.target.value); 
+                  setDraftSortBy(e.target.value);
+                  setPage(1); 
+                }}
+                className="px-4 py-2.5 bg-cold-white border border-gray-200 shadow-sm rounded-full text-deep-black text-xs font-bold uppercase outline-none focus:border-[#D4AF37] transition-all"
               >
-                Clear All
-              </button>
-            )}
-            <div className="flex-1" />
-            <select
-              value={sortBy}
-              onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-              className="px-3 py-2 bg-dark-charcoal border border-luxury-gold/20 text-soft-white text-xs outline-none focus:border-luxury-gold/60 transition-colors"
-            >
-              <option value="created_at-desc">Newest</option>
-              <option value="selling_price-asc">Price: Low-High</option>
-              <option value="selling_price-desc">Price: High-Low</option>
-              <option value="name-asc">A-Z</option>
-            </select>
+                <option value="created_at-desc">NEWEST</option>
+                <option value="selling_price-asc">PRICE: LOW-HIGH</option>
+                <option value="selling_price-desc">PRICE: HIGH-LOW</option>
+                <option value="name-asc">A-Z</option>
+              </select>
+            </div>
           </div>
 
           {/* ─── Mobile Filters Drawer ─── */}
-          {mobileFiltersOpen && (
-            <div className="lg:hidden">
-              <div className="fixed inset-0 z-50 bg-black/60" onClick={() => setMobileFiltersOpen(false)} />
-              <div className="fixed inset-x-0 top-0 z-50 h-full max-h-[85vh] mt-16 bg-dark-charcoal rounded-t-2xl overflow-y-auto px-4 sm:px-6 py-5">
-                <div className="flex items-center justify-between mb-4 sticky top-0 bg-dark-charcoal pb-3 border-b border-luxury-gold/10">
-                  <h3 className="text-base font-semibold text-soft-white">Filters</h3>
-                  <button
-                    onClick={() => setMobileFiltersOpen(false)}
-                    className="text-2xl text-soft-white/50 hover:text-soft-white bg-transparent border-none cursor-pointer"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="space-y-6">
-                  {renderFilters()}
-                </div>
-                <button
-                  onClick={() => setMobileFiltersOpen(false)}
-                  className="w-full mt-5 px-4 py-3 bg-luxury-gold text-rich-black text-sm font-semibold rounded-lg cursor-pointer hover:brightness-110 transition-all border-none"
+          <AnimatePresence>
+            {mobileFiltersOpen && (
+              <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+                  onClick={() => setMobileFiltersOpen(false)} 
+                />
+                <motion.div 
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                  className="relative w-full max-h-[85vh] bg-cold-white rounded-t-[2rem] overflow-hidden flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
                 >
-                  Apply Filters
-                </button>
+                  <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 bg-cold-white shrink-0">
+                    <h3 className="text-base font-black text-deep-black uppercase tracking-widest">Filters</h3>
+                    <button
+                      onClick={() => setMobileFiltersOpen(false)}
+                      className="p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-deep-black transition-colors"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 bg-cold-white">
+                    {renderFilters(true)}
+                  </div>
+                  <div className="p-6 border-t border-gray-200 bg-cold-white shrink-0">
+                    <button
+                      onClick={handleApplyFilters}
+                      className="w-full px-6 py-4 bg-[#D4AF37] text-black text-sm font-black tracking-widest uppercase rounded-full shadow-[0_4px_20px_rgba(212,175,55,0.4)] active:scale-95 transition-all"
+                    >
+                      Show Results
+                    </button>
+                  </div>
+                </motion.div>
               </div>
-            </div>
-          )}
+            )}
+          </AnimatePresence>
 
           {/* ─── Desktop Sidebar Filters ─── */}
-          <aside className="hidden lg:block lg:w-64 shrink-0 space-y-8">
-            {renderFilters()}
+          <aside className="hidden lg:block lg:w-64 shrink-0 space-y-6 sticky top-32 h-fit">
+            <div className="flex items-center justify-between pb-4 border-b border-luxury-gold/10">
+              <h3 className="text-sm font-black text-soft-white uppercase tracking-widest">Filters</h3>
+              {hasActiveDraftFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+            <div className="space-y-8 pb-2">
+              {renderFilters(false)}
+            </div>
+            <button
+              onClick={handleApplyFilters}
+              className="w-full mt-4 px-6 py-3.5 bg-[#D4AF37] text-black text-sm font-black tracking-widest uppercase rounded-sm shadow-[0_4px_15px_rgba(212,175,55,0.2)] hover:shadow-[0_4px_25px_rgba(212,175,55,0.4)] active:scale-95 transition-all cursor-pointer border-none"
+            >
+              Apply Filters
+            </button>
           </aside>
 
           {/* Products Grid */}
@@ -430,13 +522,13 @@ export default function CategoryProductsPage() {
                           </svg>
                         </button>
 
-                        <div className="aspect-4/3 bg-linear-to-b from-dark-charcoal via-rich-black to-dark-charcoal relative overflow-hidden">
+                        <div className="aspect-4/3 bg-linear-to-b relative overflow-hidden">
                           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.08),transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                           {product.thumbnail_url || product.images[0]?.url ? (
                             <img
                               src={product.thumbnail_url || product.images[0]?.url}
                               alt={product.name}
-                              className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
+                              className="w-full h-full object-cover transition-all duration-700"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">

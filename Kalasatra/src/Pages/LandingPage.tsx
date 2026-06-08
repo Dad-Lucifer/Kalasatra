@@ -1,4 +1,3 @@
-import TopNotification from '../components/landing/TopNotification';
 import Navbar from '../components/landing/Navbar';
 import CategoryNav from '../components/landing/CategoryNav';
 import HeroSection from '../components/landing/HeroSection';
@@ -12,7 +11,6 @@ export default function LandingPage() {
     <div className="min-h-screen bg-cold-white text-deep-black font-sans pb-16 lg:pb-0">
       {/* Top UI */}
       <div className="sticky top-0 z-50">
-        <TopNotification />
         <Navbar />
         <CategoryNav />
       </div>

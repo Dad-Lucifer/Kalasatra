@@ -113,36 +113,8 @@ export default function Footer() {
             ))}
           </div>
 
-          {/* Newsletter Signup */}
-          <div className="relative p-8 lg:p-10 mb-16 border border-luxury-gold/15 bg-gradient-to-r from-dark-charcoal/50 to-rich-black/50 overflow-hidden group">
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-luxury-gold/5 rounded-full blur-2xl opacity-30 group-hover:opacity-60 transition-opacity duration-700" />
-            
-            <div className="relative grid lg:grid-cols-2 gap-8 items-center">
-              <div className="space-y-3">
-                <h3 className="font-heading text-2xl font-bold text-soft-white">
-                  Get 15% Off Your First Order
-                </h3>
-                <p className="text-soft-white/60 text-sm">
-                  Join our newsletter and stay updated with latest drops and exclusives.
-                </p>
-              </div>
-              
-              <form className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  className="flex-1 px-5 py-3 bg-rich-black/60 border border-luxury-gold/20 text-soft-white text-sm placeholder:text-soft-white/30 outline-none focus:border-luxury-gold/60 transition-all duration-300"
-                />
-                <button className="group/btn relative px-6 py-3 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.1em] text-sm hover:shadow-[0_0_25px_rgba(212,175,55,0.4)] transition-all duration-500">
-                  <span className="relative z-10">Subscribe</span>
-                  <span className="absolute inset-0 bg-gold-light scale-x-0 group-hover/btn:scale-x-100 transition-transform duration-500 origin-left" />
-                </button>
-              </form>
-            </div>
-          </div>
 
-          {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-luxury-gold/20 to-transparent mb-8" />
+
         </div>
 
         {/* Bottom Footer */}

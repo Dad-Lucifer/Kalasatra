@@ -75,42 +75,9 @@ export default function SidebarMenu({ isOpen, onClose }: SidebarMenuProps) {
             <li><Link to="/new-arrivals" className="block px-4 py-3 hover:bg-gray-50">NEW ARRIVALS</Link></li>
             <li><Link to="/view-all" className="block px-4 py-3 hover:bg-gray-50">VIEW ALL</Link></li>
             <li><Link to="/bestsellers" className="block px-4 py-3 hover:bg-gray-50">BESTSELLERS</Link></li>
-            <li><Link to="/shirts" className="block px-4 py-3 hover:bg-gray-50">SHIRTS</Link></li>
-            <li><Link to="/tshirts-polo" className="block px-4 py-3 hover:bg-gray-50">T-SHIRTS | POLO</Link></li>
-            <li><Link to="/jeans" className="block px-4 py-3 hover:bg-gray-50">JEANS</Link></li>
-            <li><Link to="/trousers" className="block px-4 py-3 hover:bg-gray-50">TROUSERS</Link></li>
-            <li><Link to="/linen-edit" className="block px-4 py-3 hover:bg-gray-50">LINEN EDIT</Link></li>
-            <li><Link to="/footwear" className="block px-4 py-3 hover:bg-gray-50">FOOTWEAR</Link></li>
-            <li><Link to="/cargo-pants" className="block px-4 py-3 hover:bg-gray-50">CARGO PANTS</Link></li>
-            <li><Link to="/joggers" className="block px-4 py-3 hover:bg-gray-50">JOGGERS</Link></li>
-            <li><Link to="/shorts" className="block px-4 py-3 hover:bg-gray-50">SHORTS</Link></li>
-            <li><Link to="/overshirts" className="block px-4 py-3 hover:bg-gray-50">OVERSHIRTS</Link></li>
-            
-            <li>
-              <Link to="/perfumes" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
-                PERFUMES
-                <span className="text-[10px] bg-orange-50 text-[#d35a38] px-2 py-0.5 rounded font-bold">FLAT 50% OFF</span>
-              </Link>
-            </li>
-            
-            <li>
-              <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                <span>ACCESSORIES</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </div>
-            </li>
-            
-            <li><Link to="/belts" className="block px-4 py-3 hover:bg-gray-50">BELTS</Link></li>
-            <li><Link to="/bags" className="block px-4 py-3 hover:bg-gray-50">BAGS</Link></li>
-            
-            <li>
-              <Link to="/sunglasses" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
-                SUNGLASSES
-                <span className="text-[10px] bg-orange-50 text-[#d35a38] px-2 py-0.5 rounded font-bold">AT ₹ 999</span>
-              </Link>
-            </li>
+            <li><Link to="/shirts" className="block px-4 py-3 hover:bg-gray-50">Mens</Link></li>
+            <li><Link to="/tshirts-polo" className="block px-4 py-3 hover:bg-gray-50">Women</Link></li>
+            <li><Link to="/jeans" className="block px-4 py-3 hover:bg-gray-50">Kids</Link></li>
           </ul>
 
         </div>

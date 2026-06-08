@@ -2,78 +2,102 @@
 
 const { supabase } = require("../../database/supabase");
 
-// Get the user's profile information
+// GET /api/v1/user/profile
+// Fetch the authenticated user's profile from the 'users' table (keyed by uid = Cognito sub)
 exports.getProfile = async (req, res, next) => {
   try {
-    const userId = req.user.sub; // Cognito user sub is the UUID
+    const uid = req.user.sub; // Cognito sub
 
     const { data, error } = await supabase
-      .from("user_info")
+      .from("users")
       .select("*")
-      .eq("id", userId)
+      .eq("uid", uid)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
+    if (error && error.code !== "PGRST116") {
+      // PGRST116 = no rows found, which is fine (new user)
       throw error;
     }
 
     return res.status(200).json({
       success: true,
-      data: data || null // null if no profile exists yet
+      data: data || null,
     });
-
   } catch (error) {
     console.error("[getProfile Error]:", error);
     next(error);
   }
 };
 
-// Update or create the user's profile information
+// PUT /api/v1/user/profile
+// Upsert address + name into the 'users' table for the authenticated user
 exports.updateProfile = async (req, res, next) => {
   try {
-    const userId = req.user.sub;
+    const uid = req.user.sub;
     const {
       first_name,
-      last_name,
-      email,
-      phone_number,
       address_line_1,
       address_line_2,
       city,
       state,
-      country,
-      pincode
+      pincode,
     } = req.body;
 
+    // Build only the fields we want to update
+    const updates = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (first_name)      updates.name          = first_name;
+    if (address_line_1)  updates.address_line1 = address_line_1;
+    if (address_line_2)  updates.address_line2 = address_line_2;
+    if (city)            updates.city          = city;
+    if (state)           updates.state         = state;
+    if (pincode)         updates.pincode       = pincode;
+
+    // Try to update first (user should already exist in 'users' from Cognito signup flow)
     const { data, error } = await supabase
-      .from("user_info")
-      .upsert({
-        id: userId,
-        first_name: first_name || "User",
-        last_name,
-        email: email || req.user.email || "no-email@placeholder.com",
-        phone_number,
-        address_line_1,
-        address_line_2,
-        city,
-        state,
-        country: country || "India",
-        pincode,
-        updated_at: new Date()
-      }, { onConflict: 'id' })
+      .from("users")
+      .update(updates)
+      .eq("uid", uid)
       .select()
       .single();
 
     if (error) {
+      // If no row exists yet (shouldn't happen normally), insert a minimal row
+      if (error.code === "PGRST116") {
+        const email = req.user.email || req.user["cognito:username"] || "";
+        const { data: insertData, error: insertError } = await supabase
+          .from("users")
+          .insert({
+            uid,
+            email,
+            name: first_name || "User",
+            address_line1: address_line_1,
+            address_line2: address_line_2,
+            city,
+            state,
+            pincode,
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+
+        return res.status(200).json({
+          success: true,
+          message: "Profile created and address saved.",
+          data: insertData,
+        });
+      }
       throw error;
     }
 
     return res.status(200).json({
       success: true,
-      message: "Profile updated successfully",
-      data
+      message: "Address saved successfully.",
+      data,
     });
-
   } catch (error) {
     console.error("[updateProfile Error]:", error);
     next(error);

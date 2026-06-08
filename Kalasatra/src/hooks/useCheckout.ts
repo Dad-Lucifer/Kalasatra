@@ -78,6 +78,14 @@ export const useCheckout = () => {
         theme: {
           color: '#D4AF37', // Luxury gold
         },
+        modal: {
+          confirm_close: false, // Bypasses the buggy native exit modal
+          escape: true,
+          handleback: true,
+          ondismiss: function() {
+            setIsCheckingOut(false);
+          }
+        }
       };
 
       const paymentObject = new (window as any).Razorpay(options);
@@ -91,7 +99,6 @@ export const useCheckout = () => {
     } catch (error) {
       console.error(error);
       alert('An error occurred during checkout');
-    } finally {
       setIsCheckingOut(false);
     }
   };
