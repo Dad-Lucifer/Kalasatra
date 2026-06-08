@@ -95,6 +95,15 @@ app.use("/api/v1/coupons", couponPublicRoutes);
 const wishlistRoutes = require("./routes/wishlist.routes");
 app.use("/api/v1/wishlist", wishlistRoutes);
 
+const paymentRoutes = require("./routes/payment.routes");
+app.use("/api/v1/payment", paymentRoutes);
+
+const userRoutes = require("./routes/user.routes");
+app.use("/api/v1/user", userRoutes);
+
+const { pincodeRouter } = require("../pincode-api");
+app.use("/api/v1/pincode", pincodeRouter);
+
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({

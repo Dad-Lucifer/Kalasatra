@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
 import { useCart } from '../context/CartContext';
+import { useCheckout } from '../hooks/useCheckout';
 
 interface Review {
   id: string;
@@ -36,6 +37,7 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
  
     const { addItem, items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
+  const { handleCheckout, isCheckingOut } = useCheckout();
   const [cartOpen, setCartOpen] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,9 +108,6 @@ export default function ProductDetailPage() {
     setTimeout(() => setAddingToCart(false), 1200);
   };
 
-  const handleBuyNow = () => {
-    handleAddToCart();
-  };
 
   const handleSubmitReview = async () => {
     if (!reviewForm.review.trim()) return;
@@ -586,8 +585,11 @@ export default function ProductDetailPage() {
                 <span className="text-sm text-soft-white/70">Total</span>
                 <span className="font-heading text-xl font-bold text-luxury-gold">₹{totalPrice.toFixed(2)}</span>
               </div>
-              <button className="w-full px-6 py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500">
-                Checkout
+              <button 
+                onClick={handleCheckout}
+                disabled={isCheckingOut || totalPrice === 0}
+                className="w-full px-6 py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                {isCheckingOut ? 'Processing...' : 'Checkout'}
               </button>
               <button
                 onClick={clearCart}

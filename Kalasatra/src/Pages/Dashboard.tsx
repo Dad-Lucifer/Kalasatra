@@ -5,8 +5,8 @@ import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 import BottomMobileNav from '../components/landing/BottomMobileNav';
 import { 
-  FiPackage, FiGrid, FiCreditCard, FiAward, FiSmartphone,
-  FiChevronRight, FiGift, FiStar, FiUser, FiMapPin, FiSettings, FiCheckCircle
+  FiPackage, FiGrid, FiCreditCard,
+  FiChevronRight, FiGift, FiStar, FiUser, FiCheckCircle
 } from 'react-icons/fi';
 
 interface DashboardProps {

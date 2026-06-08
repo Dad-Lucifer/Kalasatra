@@ -1,11 +1,100 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useCheckout } from '../hooks/useCheckout';
+import { apiRequest } from '../utils/api';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice, syncing } = useCart();
+  const { handleCheckout, isCheckingOut } = useCheckout();
+  const navigate = useNavigate();
+
+  const [checkingAddress, setCheckingAddress] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [addressForm, setAddressForm] = useState({
+    first_name: '',
+    address_line_1: '',
+    address_line_2: '',
+    pincode: '',
+    city: '',
+    state: ''
+  });
+
+  const onProceedToCheckout = async () => {
+    if (!localStorage.getItem('accessToken')) {
+      navigate('/auth');
+      return;
+    }
+
+    setCheckingAddress(true);
+    try {
+      const res = await apiRequest('/user/profile');
+      if (res.success && res.data && res.data.address_line_1 && res.data.city) {
+        // Address exists, proceed to Razorpay
+        handleCheckout();
+      } else {
+        // No complete address found, show modal
+        setShowAddressModal(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setShowAddressModal(true); // fallback to asking for address
+    } finally {
+      setCheckingAddress(false);
+    }
+  };
+
+  const handlePincodeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setAddressForm(prev => ({ ...prev, pincode: val }));
+
+    if (val.length === 6) {
+      try {
+        const res = await apiRequest<any>(`/pincode/${val}`);
+        const payload = res as any;
+        if (payload.success && payload.postOffices && payload.postOffices.length > 0) {
+          const po = payload.postOffices[0];
+          setAddressForm(prev => ({
+            ...prev,
+            city: po.District,
+            state: po.State
+          }));
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+  };
+
+  const submitAddress = async () => {
+    if (!addressForm.first_name || !addressForm.address_line_1 || !addressForm.city || !addressForm.pincode) {
+      alert("Please fill in all required fields (Name, Address, Pincode).");
+      return;
+    }
+
+    setSavingAddress(true);
+    try {
+      const res = await apiRequest('/user/profile', {
+        method: 'PUT',
+        body: JSON.stringify(addressForm)
+      });
+
+      if (res.success) {
+        setShowAddressModal(false);
+        handleCheckout(); // Address saved, proceed to checkout
+      } else {
+        alert(res.message || "Failed to save address");
+      }
+    } catch (err) {
+      alert("An error occurred while saving the address.");
+    } finally {
+      setSavingAddress(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-rich-black">
+    <div className="min-h-screen bg-rich-black relative">
       <div className="h-20 lg:h-24" />
 
       <section className="relative border-b border-luxury-gold/10">
@@ -137,8 +226,11 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <button className="w-full mt-4 sm:mt-6 px-4 sm:px-6 py-3 sm:py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-xs sm:text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500">
-                  Proceed to Checkout
+                <button 
+                  onClick={onProceedToCheckout}
+                  disabled={isCheckingOut || checkingAddress || totalPrice === 0}
+                  className="w-full mt-4 sm:mt-6 px-4 sm:px-6 py-3 sm:py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-xs sm:text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {checkingAddress ? 'Checking Info...' : isCheckingOut ? 'Processing...' : 'Proceed to Checkout'}
                 </button>
 
                 <Link
@@ -152,6 +244,83 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      {/* Address Modal - Matching Pincode Popup Theme */}
+      {showAddressModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-deep-black/50 backdrop-blur-sm p-4">
+          <div className="bg-pure-white p-6 md:p-8 w-full max-w-lg relative shadow-2xl border border-cold-grey-light">
+            <button 
+              onClick={() => setShowAddressModal(false)} 
+              className="absolute top-4 right-4 text-cold-grey hover:text-deep-black transition-colors cursor-pointer"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            
+            <h3 className="text-lg font-bold font-heading uppercase tracking-widest text-deep-black mb-2">
+              Delivery Details
+            </h3>
+            <p className="text-xs text-cold-grey tracking-widest uppercase mb-6">
+              Enter your shipping information
+            </p>
+            
+            <div className="flex flex-col gap-4">
+              <input 
+                type="text" 
+                value={addressForm.first_name}
+                onChange={(e) => setAddressForm({ ...addressForm, first_name: e.target.value })}
+                placeholder="FULL NAME *"
+                className="w-full px-4 py-3 bg-cold-white border border-cold-grey-light text-sm font-bold text-deep-black placeholder-cold-grey focus:outline-none focus:border-accent-yellow transition-colors tracking-widest"
+              />
+
+              <div className="flex gap-4">
+                <input 
+                  type="text" 
+                  value={addressForm.pincode}
+                  onChange={handlePincodeChange}
+                  placeholder="PINCODE *"
+                  className="w-1/2 px-4 py-3 bg-cold-white border border-cold-grey-light text-sm font-bold text-deep-black placeholder-cold-grey focus:outline-none focus:border-accent-yellow transition-colors tracking-widest"
+                />
+                
+                <input 
+                  type="text" 
+                  value={addressForm.city}
+                  readOnly
+                  placeholder="CITY"
+                  className="w-1/2 px-4 py-3 bg-cold-grey-light/30 border border-cold-grey-light text-sm font-bold text-cold-grey cursor-not-allowed tracking-widest"
+                />
+              </div>
+
+              <input 
+                type="text" 
+                value={addressForm.address_line_1}
+                onChange={(e) => setAddressForm({ ...addressForm, address_line_1: e.target.value })}
+                placeholder="HOUSE NO., BUILDING, STREET *"
+                className="w-full px-4 py-3 bg-cold-white border border-cold-grey-light text-sm font-bold text-deep-black placeholder-cold-grey focus:outline-none focus:border-accent-yellow transition-colors tracking-widest"
+              />
+
+              <input 
+                type="text" 
+                value={addressForm.address_line_2}
+                onChange={(e) => setAddressForm({ ...addressForm, address_line_2: e.target.value })}
+                placeholder="LOCALITY / LANDMARK (OPTIONAL)"
+                className="w-full px-4 py-3 bg-cold-white border border-cold-grey-light text-sm font-bold text-deep-black placeholder-cold-grey focus:outline-none focus:border-accent-yellow transition-colors tracking-widest"
+              />
+
+              <button 
+                onClick={submitAddress}
+                disabled={savingAddress}
+                className="w-full mt-2 bg-accent-yellow text-deep-black py-3 font-bold text-xs tracking-widest uppercase hover:bg-deep-black hover:text-pure-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {savingAddress ? 'Saving...' : 'Save & Continue'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 
 const decodeJwt = (token: string) => {
@@ -11,34 +11,23 @@ const decodeJwt = (token: string) => {
 };
 
 export default function BottomMobileNav() {
-  const navigate = useNavigate();
   const { totalItems } = useCart();
-  const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const idToken = localStorage.getItem('idToken');
   const isLoggedIn = !!localStorage.getItem('accessToken');
   const tokenPayload = isLoggedIn && idToken ? decodeJwt(idToken) : null;
   const userName = tokenPayload?.name || tokenPayload?.email || 'User';
-  const userEmail = tokenPayload?.email || '';
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setProfileOpen(false);
+        // Was setProfileOpen(false)
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('idToken');
-    setProfileOpen(false);
-    navigate('/');
-  };
 
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-pure-white border-t border-cold-grey-light">
