@@ -153,22 +153,33 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-rich-black flex items-center justify-center px-4 py-10">
-      <div className="w-full  bg-dark-charcoal rounded-2xl p-8 animate-fade-in">
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center px-4 py-10 relative overflow-hidden font-sans">
+      {/* Background glow effects */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#D4AF37] opacity-[0.03] rounded-full blur-[120px] mix-blend-screen pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-[#D4AF37] opacity-[0.02] rounded-full blur-[100px] mix-blend-screen pointer-events-none"></div>
 
-        <div className="text-center mb-8">
-          <div className="text-3xl mb-2">🛡️ Admin Portal</div>
-          <div className="text-sm text-[#999]">Kalasatra Admin Authentication</div>
+      <div className="w-full max-w-md bg-[#0A0A0A]/80 backdrop-blur-xl border border-[#D4AF37]/10 shadow-[0_0_50px_rgba(0,0,0,0.9)] rounded-sm p-10 relative z-10 transition-all duration-500">
+        
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-12 h-12 mb-5">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="opacity-80">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h2 className="text-2xl font-light tracking-[0.2em] text-[#FDFBF7] uppercase">Admin Portal</h2>
+          <div className="h-[1px] w-12 bg-[#D4AF37]/40 mx-auto mt-4 mb-3"></div>
+          <p className="text-[10px] tracking-widest text-[#FDFBF7]/40 uppercase">Kalasatra Security</p>
         </div>
 
         {message && (
-          <div className={`mb-5 px-4 py-3 rounded-lg text-sm ${message.type === 'success'
-              ? 'bg-green-900/30 text-green-400 border border-green-800/50'
-              : 'bg-red-900/30 text-red-400 border border-red-800/50'
+          <div className={`mb-8 px-4 py-3 text-[11px] uppercase tracking-wider text-center border-l-2 ${message.type === 'success'
+              ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/5'
+              : 'border-red-500 text-red-400 bg-red-900/10'
             }`}>
             <span>{message.text}</span>
             {message.list && message.list.length > 0 && (
-              <ul className="mt-2 space-y-1 list-disc list-inside">
+              <ul className="mt-2 space-y-1 list-none opacity-80">
                 {message.list.map((err, i) => <li key={i}>{err}</li>)}
               </ul>
             )}
@@ -176,209 +187,204 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
         )}
 
         {isVerifyingOtp ? (
-          <form onSubmit={handleVerifyOtp} className="space-y-5">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-[#F5F5F5]">Verify Your Admin Email</h3>
-              <p className="text-sm text-[#999]">
-                We sent a 6-digit verification code to <strong className="text-[#D4AF37]">{otpEmail || email}</strong>
+          <form onSubmit={handleVerifyOtp} className="space-y-8 animate-fade-in">
+            <div className="text-center space-y-3 mb-8">
+              <h3 className="text-[11px] tracking-[0.2em] text-[#D4AF37] uppercase">Verify Identity</h3>
+              <p className="text-[11px] text-[#FDFBF7]/50 leading-relaxed tracking-wider">
+                Code dispatched to <br/><span className="text-[#FDFBF7] mt-1 inline-block">{otpEmail || email}</span>
               </p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#999]">Verification OTP Code</label>
+            <div className="space-y-2">
               <input
                 type="text"
                 maxLength={6}
-                placeholder="123456"
-                className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-lg text-center tracking-[8px] font-bold outline-none focus:border-[#D4AF37] transition-colors"
+                placeholder="• • • • • •"
+                className="w-full px-0 py-4 bg-transparent border-b border-[#FDFBF7]/10 text-[#D4AF37] text-2xl text-center tracking-[16px] font-light outline-none focus:border-[#D4AF37] transition-all duration-500 placeholder-[#FDFBF7]/10"
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                 required
               />
             </div>
 
-            <button type="submit" className="w-full px-6 py-3 bg-[#D4AF37] text-[#0F0F0F] text-sm font-semibold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none" disabled={loading}>
-              {loading ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}
-              {loading ? 'Verifying...' : 'Confirm Admin Registration'}
+            <button type="submit" className="group relative w-full py-4 mt-4 bg-[#D4AF37] text-[#050505] text-[10px] tracking-[0.2em] font-bold uppercase hover:bg-[#FDFBF7] transition-all duration-500 overflow-hidden cursor-pointer border-none" disabled={loading}>
+              <span className="relative z-10 flex items-center justify-center">
+                {loading ? <span className="w-3 h-3 border-2 border-[#050505] border-t-transparent rounded-full animate-spin mr-3" /> : null}
+                {loading ? 'Verifying...' : 'Authenticate'}
+              </span>
             </button>
 
-            <div className="text-center text-sm text-[#999]">
-              Didn't get the code?{' '}
+            {/* Resend / Back */}
+            <div className="flex flex-col items-center gap-5 mt-8">
               <button
                 type="button"
                 onClick={handleResendOtp}
                 disabled={loading || resendTimer > 0}
-                className="bg-transparent border-none text-[#D4AF37] hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-[9px] bg-transparent border-none tracking-widest uppercase text-[#D4AF37]/60 hover:text-[#D4AF37] transition-colors disabled:opacity-30 cursor-pointer"
               >
-                {resendTimer > 0 ? `Resend OTP (${resendTimer}s)` : 'Resend Code'}
+                {resendTimer > 0 ? `Resend Code (${resendTimer}s)` : 'Resend Code'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsVerifyingOtp(false)}
+                className="text-[9px] bg-transparent border-none tracking-widest uppercase text-[#FDFBF7]/30 hover:text-[#FDFBF7]/70 transition-colors cursor-pointer"
+              >
+                Return to Login
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsVerifyingOtp(false)}
-              className="w-full px-6 py-2.5 bg-transparent text-[#999] text-sm font-medium rounded-lg border border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5] transition-all cursor-pointer"
-            >
-              Back to Auth Form
-            </button>
           </form>
         ) : (
-          <>
-            <div className="flex rounded-lg overflow-hidden border border-[#333] mb-6">
+          <div className="animate-fade-in">
+            <div className="flex mb-10 border-b border-[#FDFBF7]/10">
               <button
                 onClick={() => handleTabChange('login')}
-                className={`flex-1 py-2.5 text-sm font-medium transition-all cursor-pointer border-none ${tab === 'login'
-                    ? 'bg-[#D4AF37] text-[#0F0F0F]'
-                    : 'bg-transparent text-[#999] hover:text-[#F5F5F5]'
+                className={`flex-1 pb-4 text-[10px] tracking-[0.2em] uppercase transition-all duration-500 bg-transparent border-none cursor-pointer ${tab === 'login'
+                    ? 'text-[#D4AF37] border-b border-[#D4AF37]'
+                    : 'text-[#FDFBF7]/30 hover:text-[#FDFBF7]/60'
                   }`}
               >
-                Admin Login
+                Authorize
               </button>
               <button
                 onClick={() => handleTabChange('signup')}
-                className={`flex-1 py-2.5 text-sm font-medium transition-all cursor-pointer border-none ${tab === 'signup'
-                    ? 'bg-[#D4AF37] text-[#0F0F0F]'
-                    : 'bg-transparent text-[#999] hover:text-[#F5F5F5]'
+                className={`flex-1 pb-4 text-[10px] tracking-[0.2em] uppercase transition-all duration-500 bg-transparent border-none cursor-pointer ${tab === 'signup'
+                    ? 'text-[#D4AF37] border-b border-[#D4AF37]'
+                    : 'text-[#FDFBF7]/30 hover:text-[#FDFBF7]/60'
                   }`}
               >
-                Admin Signup
+                Register
               </button>
             </div>
 
             {tab === 'login' && (
-              <form onSubmit={handleAdminLogin} className="space-y-5">
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-[#999]">Admin Email Address</label>
+              <form onSubmit={handleAdminLogin} className="space-y-8">
+                <div className="space-y-2 group">
+                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Admin Email</label>
                   <input
                     type="email"
-                    placeholder="admin@example.com"
-                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
+                    placeholder="admin@kalasatra.com"
+                    className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
 
-               <div className="flex flex-col gap-2 relative">
-                    <label className="text-xs uppercase tracking-[0.15em] text-soft-white/60 font-semibold">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="w-full px-5 py-3 pr-12 bg-rich-black/80 border border-luxury-gold/20 text-soft-white text-sm placeholder:text-soft-white/30 outline-none focus:border-luxury-gold/60 transition-all duration-300"
-                      />
-                      <button
-                        type="button"
-                        onClick={togglePasswordVisibility}
-                        className="absolute top-1/2 right-3 -translate-y-1/2 text-soft-white/50 hover:text-luxury-gold transition-colors bg-transparent border-none p-0 cursor-pointer"
-                      >
-                        {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-                      </button>
-                    </div>
+                <div className="space-y-2 group relative">
+                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Passcode</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full px-0 py-3 pr-10 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute top-1/2 right-0 -translate-y-1/2 text-[#FDFBF7]/20 hover:text-[#D4AF37] transition-colors bg-transparent border-none cursor-pointer"
+                    >
+                      {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                    </button>
                   </div>
-                <button type="submit" className="w-full px-6 py-3 bg-[#D4AF37] text-[#0F0F0F] text-sm font-semibold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none" disabled={loading}>
-                  {loading ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}
-                  {loading ? 'Logging in...' : '🔐 Admin Login'}
+                </div>
+
+                <button type="submit" className="w-full mt-10 py-4 bg-[#D4AF37] text-[#050505] text-[10px] tracking-[0.2em] font-bold uppercase hover:bg-[#FDFBF7] hover:shadow-[0_0_30px_rgba(212,175,55,0.15)] transition-all duration-500 cursor-pointer border-none" disabled={loading}>
+                  <span className="flex items-center justify-center">
+                    {loading ? <span className="w-3 h-3 border-2 border-[#050505] border-t-transparent rounded-full animate-spin mr-3" /> : null}
+                    {loading ? 'Establishing Link...' : 'Access Portal'}
+                  </span>
                 </button>
 
-                <p className="text-center text-xs text-[#999]">
-                  If your admin account isn't confirmed yet,{' '}
-                  <span
-                    onClick={() => {
-                      setOtpEmail(email);
-                      setIsVerifyingOtp(true);
-                    }}
-                    className="text-[#D4AF37] hover:underline cursor-pointer"
-                  >
-                    verify code here
-                  </span>
-                </p>
-
-                <div className="mt-5 p-3 bg-blue-950/30 border border-blue-900/30 rounded-xl text-xs text-[#999]">
-                  <strong>ℹ️ Note:</strong> Only users with the Admin role can access this portal.
+                <div className="text-center mt-8">
+                  <p className="text-[9px] tracking-[0.2em] text-[#FDFBF7]/30 uppercase">
+                    Pending Verification?{' '}
+                    <span
+                      onClick={() => {
+                        setOtpEmail(email);
+                        setIsVerifyingOtp(true);
+                      }}
+                      className="text-[#D4AF37]/70 hover:text-[#D4AF37] cursor-pointer transition-colors ml-1"
+                    >
+                      Verify Now
+                    </span>
+                  </p>
                 </div>
               </form>
             )}
 
             {tab === 'signup' && (
-              <form onSubmit={handleAdminSignup} className="space-y-5">
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-[#999]">Full Name</label>
+              <form onSubmit={handleAdminSignup} className="space-y-8">
+                <div className="space-y-2 group">
+                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Designation</label>
                   <input
                     type="text"
-                    placeholder="John Doe"
-                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
+                    placeholder="Full Name"
+                    className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-[#999]">Email Address</label>
+                <div className="space-y-2 group">
+                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Admin Email</label>
                   <input
                     type="email"
-                    placeholder="admin@example.com"
-                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
+                    placeholder="admin@kalasatra.com"
+                    className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-[#999]">Phone Number (Optional, E.164 format)</label>
+                <div className="space-y-2 group">
+                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Secure Line</label>
                   <input
                     type="tel"
-                    placeholder="+919876543210"
-                    className="w-full px-3 py-2.5 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
+                    placeholder="+1 234 567 890 (Optional)"
+                    className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
                 </div>
 
-                <div className="flex flex-col gap-2 relative">
-                    <label className="text-xs uppercase tracking-[0.15em] text-soft-white/60 font-semibold">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="w-full px-5 py-3 pr-12 bg-rich-black/80 border border-luxury-gold/20 text-soft-white text-sm placeholder:text-soft-white/30 outline-none focus:border-luxury-gold/60 transition-all duration-300"
-                      />
-                      <button
-                        type="button"
-                        onClick={togglePasswordVisibility}
-                        className="absolute top-1/2 right-3 -translate-y-1/2 text-soft-white/50 hover:text-luxury-gold transition-colors bg-transparent border-none p-0 cursor-pointer"
-                      >
-                        {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-                      </button>
-                    </div>
-                    <p className="text-[11px] text-soft-white/40 mt-1">
-                      Min 8 characters. Must contain uppercase, lowercase, number, and special character.
-                    </p>
+                <div className="space-y-2 group relative">
+                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Passcode</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full px-0 py-3 pr-10 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute top-1/2 right-0 -translate-y-1/2 text-[#FDFBF7]/20 hover:text-[#D4AF37] transition-colors bg-transparent border-none cursor-pointer"
+                    >
+                      {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                    </button>
                   </div>
-
-                <button type="submit" className="w-full px-6 py-3 bg-[#D4AF37] text-[#0F0F0F] text-sm font-semibold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer border-none" disabled={loading}>
-                  {loading ? <span className="inline-block w-4 h-4 border-2 border-[#0F0F0F] border-t-transparent rounded-full animate-spin align-middle mr-2" /> : null}
-                  {loading ? 'Creating...' : '✨ Create Admin Account'}
-                </button>
-
-                <div className="p-3 bg-blue-950/30 border border-blue-900/30 rounded-xl text-xs text-[#999]">
-                  <strong>ℹ️ Note:</strong> All admin accounts will be assigned the "Admin" role after email verification.
+                  <p className="text-[8px] text-[#FDFBF7]/20 mt-3 uppercase tracking-[0.15em] leading-relaxed">
+                    Min 8 chars • Uppercase • Lowercase • Number • Symbol
+                  </p>
                 </div>
+
+                <button type="submit" className="w-full mt-10 py-4 bg-[#D4AF37] text-[#050505] text-[10px] tracking-[0.2em] font-bold uppercase hover:bg-[#FDFBF7] hover:shadow-[0_0_30px_rgba(212,175,55,0.15)] transition-all duration-500 cursor-pointer border-none" disabled={loading}>
+                  <span className="flex items-center justify-center">
+                    {loading ? <span className="w-3 h-3 border-2 border-[#050505] border-t-transparent rounded-full animate-spin mr-3" /> : null}
+                    {loading ? 'Initializing...' : 'Request Clearance'}
+                  </span>
+                </button>
               </form>
             )}
-          </>
+          </div>
         )}
 
       </div>

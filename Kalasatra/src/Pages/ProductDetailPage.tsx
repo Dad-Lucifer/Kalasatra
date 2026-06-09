@@ -96,15 +96,18 @@ export default function ProductDetailPage() {
     if (!localStorage.getItem('accessToken')) { navigate('/auth'); return; }
     if (!product) return;
     setAddingToCart(true);
-    addItem({
-      productId: product.id,
-      name: product.name,
-      price: calcPrice().final,
-      size: selectedSize || product.sizes[0] || 'M',
-      color: selectedColor || product.colors[0] || 'Black',
-      image: product.thumbnail_url || product.images[0]?.url || '',
-      slug: product.slug,
-    });
+    addItem(
+      {
+        productId: product.id,
+        name: product.name,
+        price: calcPrice().final,
+        size: selectedSize || product.sizes[0] || 'M',
+        color: selectedColor || product.colors[0] || 'Black',
+        image: product.thumbnail_url || product.images[0]?.url || '',
+        slug: product.slug,
+      },
+      quantity  // pass the user-selected quantity
+    );
     setTimeout(() => setAddingToCart(false), 1200);
   };
 

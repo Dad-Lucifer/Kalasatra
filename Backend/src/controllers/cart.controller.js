@@ -36,12 +36,19 @@ const getCart = async (req, res) => {
 
 /**
  * POST /api/v1/cart
- * Add item to cart (or increment quantity if exists)
+ * Add item to cart.
+ *
+ * Body fields:
+ *   required: productId, name, price, size, color
+ *   optional: quantity  — when provided the value is used directly (useful for
+ *             guest→auth merge and product-page multi-qty adds). When omitted,
+ *             the cart behaves as before: +1 if item exists, insert with qty 1
+ *             if new.
  */
 const addToCart = async (req, res) => {
   try {
     const { sub } = req.user;
-    const { productId, name, price, size, color, image, slug } = req.body;
+    const { productId, name, price, size, color, image, slug, quantity } = req.body;
 
     if (!productId || !name || price == null || !size || !color) {
       return res.status(400).json({
@@ -49,6 +56,9 @@ const addToCart = async (req, res) => {
         message: "Missing required fields: productId, name, price, size, color",
       });
     }
+
+    // Explicit quantity supplied by the client (merge / multi-qty add)
+    const explicitQty = quantity != null ? Math.max(1, parseInt(quantity, 10) || 1) : null;
 
     const { data: existing, error: findError } = await supabase
       .from("cart_items")
@@ -62,9 +72,15 @@ const addToCart = async (req, res) => {
     if (findError) throw findError;
 
     if (existing) {
+      // If an explicit quantity was given we ADD it to what's already there
+      // (merge-add semantics). Without explicit qty we just do the original +1.
+      const newQty = explicitQty != null
+        ? existing.quantity + explicitQty
+        : existing.quantity + 1;
+
       const { error: updateError } = await supabase
         .from("cart_items")
-        .update({ quantity: existing.quantity + 1, updated_at: new Date().toISOString() })
+        .update({ quantity: newQty, updated_at: new Date().toISOString() })
         .eq("id", existing.id);
 
       if (updateError) throw updateError;
@@ -82,7 +98,7 @@ const addToCart = async (req, res) => {
       price,
       size,
       color,
-      quantity: 1,
+      quantity: explicitQty ?? 1,
       image: image || null,
       slug: slug || null,
     });

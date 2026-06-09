@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiRequest } from '../utils/api';
 import { useCart } from '../context/CartContext';
@@ -31,7 +31,9 @@ const categoryMeta: Record<string, { title: string; subtitle: string }> = {
 
 export default function CategoryProductsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { categorySlug } = useParams<{ categorySlug: string }>();
+  const searchQuery = new URLSearchParams(location.search).get('search') || '';
   const { addItem, items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
   const { handleCheckout, isCheckingOut } = useCheckout();
   const [cartOpen, setCartOpen] = useState(false);
@@ -105,14 +107,13 @@ export default function CategoryProductsPage() {
     }
   };
 
-  const meta = categoryMeta[categorySlug || ''] || {
-    title: 'Collection',
-    subtitle: 'Premium streetwear',
-  };
+  const meta = searchQuery
+    ? { title: `Search: "${searchQuery}"`, subtitle: `Showing results for "${searchQuery}"` }
+    : categoryMeta[categorySlug || ''] || { title: 'All Products', subtitle: 'Explore our full collection' };
 
   useEffect(() => {
     loadProducts();
-  }, [categorySlug, sortBy, selectedSizes, selectedColors, priceRange, page]);
+  }, [categorySlug, sortBy, selectedSizes, selectedColors, priceRange, page, searchQuery]);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -128,6 +129,7 @@ export default function CategoryProductsPage() {
     params.append('page', page.toString());
     params.append('limit', '12');
 
+    if (searchQuery) params.append('search', searchQuery);
     const res = await apiRequest(`/products?${params.toString()}`);
     setLoading(false);
     if (res.success && res.data) {

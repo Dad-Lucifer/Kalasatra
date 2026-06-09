@@ -93,6 +93,7 @@ export const useCheckout = () => {
 
       // Handle failed payment case
       paymentObject.on('payment.failed', function (response: any) {
+        setIsCheckingOut(false);
         alert('Payment Failed: ' + response.error.description);
       });
 

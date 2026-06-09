@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import hero1Img from '../../assets/hero-1.jpeg';
 
 const carouselItems = [
   {
     id: 1,
     title: 'THE SUMMER EDIT',
     subtitle: 'BREATHABLE LUXURY. STARTING AT ₹899',
-    imgUrl: 'https://images.unsplash.com/photo-1596755094514-f87e32f85e2c?q=80&w=1600&auto=format&fit=crop',
+    imgUrl: hero1Img,
     cta: 'SHOP SHIRTS',
   },
   {

@@ -53,6 +53,7 @@ function App() {
         <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/products" element={<CategoryProductsPage />} />
         <Route path="/products/:categorySlug" element={<CategoryProductsPage />} />
         <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path='/ownerauth' element={<AdminAuthPage onLoginSuccess={handleAdminLoginSuccess} />} />

@@ -178,7 +178,7 @@ export default function NewAndPopular() {
   };
 
   return (
-    <section className="w-full bg-black py-20 lg:py-32">
+    <section id="new-popular" className="w-full bg-black py-20 lg:py-32">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
         
         {/* Section Title */}

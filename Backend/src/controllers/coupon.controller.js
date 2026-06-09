@@ -139,7 +139,7 @@ const redeemCoupon = async (req, res) => {
     const startDate = new Date(coupon.start_date);
     const endDate = new Date(coupon.end_date);
 
-    // Check dates
+    // Check validity window first — gives the clearest error to the user
     if (now < startDate) {
       return res.status(400).json({
         success: false,
@@ -153,6 +153,25 @@ const redeemCoupon = async (req, res) => {
         message: "This coupon has expired.",
       });
     }
+
+    // ── Duplicate-redemption guard ────────────────────────────────────────
+    // Each user can redeem a given coupon ONLY ONCE on their account.
+    const { data: existing, error: dupCheckError } = await supabase
+      .from("coupon_redemptions")
+      .select("id")
+      .eq("coupon_id", coupon.id)
+      .eq("user_uid", userUid)
+      .maybeSingle();
+
+    if (dupCheckError) throw dupCheckError;
+
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already redeemed this coupon code.",
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     // Credit coins to user
     const { data: user, error: userError } = await supabase
@@ -177,6 +196,23 @@ const redeemCoupon = async (req, res) => {
       .eq("uid", userUid);
 
     if (updateError) throw updateError;
+
+    // ── Record the redemption (DB UNIQUE constraint is the final safety net) ─
+    const { error: insertError } = await supabase
+      .from("coupon_redemptions")
+      .insert({ coupon_id: coupon.id, user_uid: userUid });
+
+    if (insertError) {
+      // 23505 = unique_violation: concurrent request already inserted first
+      if (insertError.code === "23505") {
+        return res.status(409).json({
+          success: false,
+          message: "You have already redeemed this coupon code.",
+        });
+      }
+      throw insertError;
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     return res.status(200).json({
       success: true,
