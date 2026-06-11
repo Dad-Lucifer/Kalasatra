@@ -103,3 +103,54 @@ exports.updateProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+// GET /api/v1/user/orders
+// Fetch orders for the authenticated user from order_confirmed
+exports.getUserOrders = async (req, res, next) => {
+  try {
+    const uid = req.user.sub;
+
+    const { data, error } = await supabase
+      .from("order_confirmed")
+      .select("*")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    const normalised = (data || []).map((order) => {
+      let items = order.items;
+      if (typeof items === "string") {
+        try { items = JSON.parse(items); } catch { items = []; }
+      }
+      if (!Array.isArray(items)) items = [];
+
+      return {
+        ...order,
+        items,
+        shipping_address: {
+          full_name: order.shipping_full_name || order.user_name || "—",
+          line1:     order.address_line1 || "—",
+          line2:     order.address_line2 || null,
+          city:      order.city  || "—",
+          state:     order.state || "—",
+          pincode:   order.pincode || "—",
+          country:   order.country || "India",
+        },
+        user_uid:       order.user_id,
+        user_name:      order.user_name  || "—",
+        user_email:     order.user_email || "—",
+        user_phone:     order.user_phone || null,
+        total_amount:   Number(order.payment_amount) || 0,
+        payment_method: order.payment_mode || "online",
+        payment_status: order.payment_status || "paid",
+      };
+    });
+
+    return res.status(200).json({ success: true, data: normalised });
+  } catch (error) {
+    console.error("[getUserOrders Error]:", error);
+    next(error);
+  }
+};
+

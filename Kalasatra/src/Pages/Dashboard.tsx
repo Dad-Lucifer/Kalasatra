@@ -325,7 +325,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               <div>
                 <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Orders</h3>
                 <ul className="space-y-3 text-sm text-deep-black">
-                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Orders & Returns</a></li>
+                  <li><Link to="/user-orders" className="hover:text-accent-yellow transition-colors font-semibold">Orders & Returns</Link></li>
                 </ul>
               </div>
 
@@ -499,13 +499,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 {/* Widgets Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Card 1 */}
-                  <div className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
+                  <Link to="/user-orders" className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
                     <FiPackage size={32} className="text-deep-black" />
                     <div>
                       <h4 className="font-bold text-deep-black text-sm uppercase tracking-wider">Orders</h4>
                       <p className="text-xs text-cold-grey mt-1">Check your order status</p>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Card 2 */}
                   <Link to="/wishlist" className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
@@ -797,7 +797,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           {activeView === 'overview' ? (
             <ul className="flex flex-col">
               {[
-                { label: 'Orders & Returns', action: undefined },
+                { label: 'Orders & Returns', action: () => navigate('/user-orders') },
                 { label: 'Wishlist', action: () => navigate('/wishlist') },
                 { label: 'Coupons', action: () => setCouponModalOpen(true) },
                 { label: 'Kalasatra Credit', action: undefined },

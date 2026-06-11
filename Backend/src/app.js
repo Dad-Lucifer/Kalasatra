@@ -92,6 +92,9 @@ app.use("/api/v1/admin/coupons", couponRoutes);
 const couponPublicRoutes = require("./routes/couponPublic.routes");
 app.use("/api/v1/coupons", couponPublicRoutes);
 
+const ordersRoutes = require("./routes/orders.routes");
+app.use("/api/v1/admin/orders", ordersRoutes);
+
 const wishlistRoutes = require("./routes/wishlist.routes");
 app.use("/api/v1/wishlist", wishlistRoutes);
 

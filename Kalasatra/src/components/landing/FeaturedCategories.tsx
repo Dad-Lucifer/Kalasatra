@@ -1,34 +1,45 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import mensMobileImg from '../../assets/collection/collection-1-m.png';
+import kidsMobileImg from '../../assets/collection/collection-2-m.png';
+import womensMobileImg from '../../assets/collection/collection-3-m.png';
+import accessoriesMobileImg from '../../assets/collection/collection-4-m.png';
+import kidPcImg from '../../assets/collection/collection-2-p.png';
+import mensPcImg from '../../assets/collection/collection-1-p.png';
+import womensPcImg from '../../assets/collection/collection-3-p.png';
 
 const categories = [
   {
     id: 'mens-collection',
     name: 'MENS',
     subtitle: 'SHARP & REFINED',
-    imgUrl: 'https://images.unsplash.com/photo-1596755094514-f87e32f85e2c?q=80&w=1200&auto=format&fit=crop',
+    imgUrl: mensPcImg,
+    mobileImgUrl: mensMobileImg,
     className: 'md:col-span-2 md:row-span-2',
   },
   {
     id: 'womens-collection',
     name: 'WOMENS',
     subtitle: 'ELEGANCE REDEFINED',
-    imgUrl: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=1200&auto=format&fit=crop',
+    imgUrl: womensPcImg,
+    mobileImgUrl: womensMobileImg,
     className: 'md:col-span-1 md:row-span-2',
-  },
-  {
-    id: 'accessories',
-    name: 'ACCESSORIES',
-    subtitle: 'THE FINAL TOUCH',
-    imgUrl: 'https://images.unsplash.com/photo-1523293115678-d2906201736b?q=80&w=1200&auto=format&fit=crop',
-    className: 'md:col-span-1 md:row-span-1',
   },
   {
     id: 'kids-collection',
     name: 'KIDS',
     subtitle: 'PLAYFUL SPIRIT',
-    imgUrl: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=1200&auto=format&fit=crop',
+    imgUrl: kidPcImg,
+    mobileImgUrl: kidsMobileImg,
     className: 'md:col-span-2 md:row-span-1',
+  },
+  {
+    id: 'accessories',
+    name: 'ACCESSORIES',
+    subtitle: 'THE FINAL TOUCH',
+    imgUrl: accessoriesMobileImg,
+    mobileImgUrl: accessoriesMobileImg,
+    className: 'md:col-span-1 md:row-span-1',
   },
 ];
 
@@ -95,8 +106,15 @@ export default function FeaturedCategories() {
                   <img 
                     src={category.imgUrl} 
                     alt={category.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                    className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 ${category.mobileImgUrl ? 'hidden md:block' : ''}`}
                   />
+                  {category.mobileImgUrl && (
+                    <img 
+                      src={category.mobileImgUrl} 
+                      alt={`${category.name} Mobile`}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 md:hidden"
+                    />
+                  )}
 
                   {/* Gradients */}
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-500"></div>

@@ -4,6 +4,38 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { apiRequest } from '../../utils/api';
 
+// ─── Cache helpers ────────────────────────────────────────────────────────────
+// localStorage-backed cache with TTL.
+// Cross-tab reads are instant; stale entries are silently evicted on access.
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function cacheGet<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw) as { ts: number; data: T };
+    if (Date.now() - ts > CACHE_TTL_MS) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function cacheSet<T>(key: string, data: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  } catch {
+    // localStorage full — skip silently
+  }
+}
+
+const CACHE_KEY_CATEGORIES = 'kls_nap_categories';
+const cacheKeyProducts = (tab: string) => `kls_nap_products_${tab}`;
+
 interface Category {
   id: string;
   name: string;
@@ -72,9 +104,17 @@ export default function NewAndPopular() {
   }, [activeTab, categories]);
 
   const fetchCategories = async () => {
+    // ── Cache read ──
+    const cached = cacheGet<Category[]>(CACHE_KEY_CATEGORIES);
+    if (cached) {
+      setCategories(cached);
+      return;
+    }
+    // ── Network ──
     const res = await apiRequest('/products/categories');
     if (res.success && res.data) {
       setCategories(res.data);
+      cacheSet(CACHE_KEY_CATEGORIES, res.data);
     }
   };
 
@@ -82,8 +122,17 @@ export default function NewAndPopular() {
     // Only load if categories are fetched (to avoid race conditions on initial load)
     if (categories.length === 0 && activeTab !== 'ALL') return;
 
+    // ── Cache read (per tab) ──
+    const cacheKey = cacheKeyProducts(activeTab);
+    const cached = cacheGet<Product[]>(cacheKey);
+    if (cached) {
+      setProducts(cached);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    
+
     const params = new URLSearchParams();
     params.append('sortBy', 'created_at');
     params.append('sortOrder', 'desc');
@@ -92,7 +141,7 @@ export default function NewAndPopular() {
 
     // If activeTab is not ALL, find the category based on short names
     const getShortName = (name: string) => name.split(' ')[0].replace(/'s/i, 'S').toUpperCase();
-    
+
     const activeCategory = categories.find(c => getShortName(c.name) === activeTab);
     if (activeCategory) {
       params.append('category', activeCategory.slug);
@@ -102,7 +151,7 @@ export default function NewAndPopular() {
     setLoading(false);
     if (res.success && res.data) {
       const allowedSlugs = categories.map(c => c.slug);
-      
+
       const seen = new Set<string>();
       const uniqueProducts = res.data.filter((p: Product) => {
         // Only show products that match the active categories strictly
@@ -118,7 +167,10 @@ export default function NewAndPopular() {
         seen.add(identifier);
         return true;
       });
+
       setProducts(uniqueProducts);
+      // ── Cache write ──
+      cacheSet(cacheKey, uniqueProducts);
     }
   };
 

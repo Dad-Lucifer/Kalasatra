@@ -13,4 +13,8 @@ router.get("/profile", authenticateToken, userController.getProfile);
 // Upsert the authenticated user's profile (including address)
 router.put("/profile", authenticateToken, userController.updateProfile);
 
+// GET /api/v1/user/orders
+// Fetch the authenticated user's orders
+router.get("/orders", authenticateToken, userController.getUserOrders);
+
 module.exports = router;

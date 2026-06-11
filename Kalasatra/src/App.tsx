@@ -10,6 +10,7 @@ import CategoryProductsPage from './Pages/CategoryProductsPage';
 import ProductDetailPage from './Pages/ProductDetailPage';
 import CartPage from './Pages/CartPage';
 import WishlistPage from './Pages/WishlistPage';
+import UserOrdersPage from './Pages/UserOrdersPage';
 import './App.css';
 
 function App() {
@@ -60,6 +61,10 @@ function App() {
         <Route
           path="/dashboard"
           element={isAuthenticated ? <Dashboard onLogout={handleLogoutSuccess} /> : <Navigate to="/auth" />}
+        />
+        <Route
+          path="/user-orders"
+          element={isAuthenticated ? <UserOrdersPage /> : <Navigate to="/auth" />}
         />
         <Route path="/admin" element={<AdminAuthPage onLoginSuccess={handleAdminLoginSuccess} />} />
         <Route

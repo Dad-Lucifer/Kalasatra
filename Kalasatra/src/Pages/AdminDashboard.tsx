@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiRequest, clearTokens } from '../utils/api';
 import ProductsPage from './ProductsPage';
 import CouponPage from './CouponPage';
+import OrdersPage from './OrdersPage';
 import logoImg from '../assets/kalastra-logo.png';
 
 interface AdminUser {
@@ -31,7 +32,7 @@ interface AnalyticsData {
   onlineVsCod: { online: number; cod: number };
 }
 
-type SidebarTab = 'dashboard' | 'products' | 'coupons';
+type SidebarTab = 'dashboard' | 'products' | 'coupons' | 'orders';
 
 const customStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Outfit:wght@300;400;500;600&display=swap');
@@ -155,6 +156,7 @@ export default function AdminDashboard() {
     { id: 'dashboard' as SidebarTab, label: 'Dashboard' },
     { id: 'products' as SidebarTab, label: 'Products' },
     { id: 'coupons' as SidebarTab, label: 'Coupons' },
+    { id: 'orders' as SidebarTab, label: 'Orders' },
   ];
 
   if (loading) {
@@ -535,6 +537,12 @@ export default function AdminDashboard() {
         {activeTab === 'coupons' && (
           <div className="p-6 sm:p-10 lg:p-16 animate-fade-in">
             <CouponPage />
+          </div>
+        )}
+
+        {activeTab === 'orders' && (
+          <div className="p-6 sm:p-10 lg:p-16 animate-fade-in">
+            <OrdersPage />
           </div>
         )}
       </main>

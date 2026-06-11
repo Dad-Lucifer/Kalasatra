@@ -4,12 +4,41 @@ import { apiRequest } from '../utils/api';
 import { loadRazorpayScript } from '../utils/razorpay';
 import { useNavigate } from 'react-router-dom';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface ShippingAddress {
+  full_name:    string;
+  line1:        string;
+  line2?:       string;
+  city:         string;
+  state:        string;
+  pincode:      string;
+  country?:     string;
+}
+
 export const useCheckout = () => {
-  const { totalPrice, clearCart } = useCart();
+  const { items, totalPrice, clearCart } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const navigate = useNavigate();
 
-  const handleCheckout = async () => {
+  /**
+   * handleCheckout
+   * @param shippingAddress - optional; if omitted the order is saved with placeholder address.
+   *                          Pass the address selected / filled by the user on checkout.
+   */
+  const handleCheckout = async (shippingAddress?: ShippingAddress) => {
+    // Guard: if caller accidentally passed an event object (e.g. onClick={handleCheckout}
+    // without the arrow wrapper), discard it — it would cause a circular JSON error.
+    if (
+      shippingAddress !== null &&
+      shippingAddress !== undefined &&
+      (typeof (shippingAddress as any).preventDefault === 'function' ||
+       typeof (shippingAddress as any).nativeEvent !== 'undefined' ||
+       (shippingAddress as any) instanceof Event)
+    ) {
+      shippingAddress = undefined;
+    }
+
     if (!localStorage.getItem('accessToken')) {
       navigate('/auth');
       return;
@@ -20,15 +49,15 @@ export const useCheckout = () => {
     setIsCheckingOut(true);
 
     try {
-      // 1. Load Razorpay script
-      const res = await loadRazorpayScript();
-      if (!res) {
+      // ── 1. Load Razorpay SDK ───────────────────────────────────────────────
+      const sdkLoaded = await loadRazorpayScript();
+      if (!sdkLoaded) {
         alert('Razorpay SDK failed to load. Are you online?');
         setIsCheckingOut(false);
         return;
       }
 
-      // 2. Create Order on backend
+      // ── 2. Create Razorpay Order on backend ───────────────────────────────
       const orderRes = await apiRequest('/payment/create-order', {
         method: 'POST',
         body: JSON.stringify({ amount: totalPrice }),
@@ -40,58 +69,90 @@ export const useCheckout = () => {
         return;
       }
 
-      const order = orderRes.data;
+      const razorpayOrder = orderRes.data;
 
-      // 3. Initialize Razorpay Checkout
+      // ── 3. Snapshot cart items for the order record ───────────────────────
+      // Captured HERE so if user modifies cart while payment modal is open
+      // we still record what was actually purchased.
+      const orderItems = items.map((item) => ({
+        product_id:   item.productId,
+        product_name: item.name,
+        slug:         item.slug,
+        price:        item.price,
+        quantity:     item.quantity,
+        size:         item.size,
+        color:        item.color,
+        image:        item.image,
+      }));
+
+      // ── 4. Open Razorpay Checkout ─────────────────────────────────────────
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Enter the Key ID generated from the Dashboard
-        amount: order.amount,
-        currency: order.currency,
-        name: 'Kalasatra',
+        key:         import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount:      razorpayOrder.amount,
+        currency:    razorpayOrder.currency,
+        name:        'Kalasatra',
         description: 'Store Purchase',
-        order_id: order.id,
+        order_id:    razorpayOrder.id,
+
         handler: async function (response: any) {
-          // 4. Verify Payment on backend
+          // ── 5. Verify payment + persist order ───────────────────────────
+          // IMPORTANT: Destructure ONLY the three known-safe string fields
+          // from the Razorpay response object BEFORE JSON.stringify.
+          // In dev/sandbox, Razorpay attaches DOM references and React fiber
+          // properties to the response object, which causes a circular
+          // structure error if the full object is serialised.
+          const razorpay_order_id   = String(response.razorpay_order_id   ?? '');
+          const razorpay_payment_id = String(response.razorpay_payment_id ?? '');
+          const razorpay_signature  = String(response.razorpay_signature  ?? '');
+
           const verifyRes = await apiRequest('/payment/verify', {
             method: 'POST',
             body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
+              razorpay_order_id,
+              razorpay_payment_id,
+              razorpay_signature,
+
+              // Order metadata saved to order_confirmed table
+              amount:           totalPrice,
+              items:            orderItems,
+              shipping_address: shippingAddress ?? null,
             }),
           });
 
           if (verifyRes.success) {
-            alert('Payment Successful!');
             clearCart();
-            // Optional: redirect to success page
-            // navigate('/success');
+            alert('Payment Successful! Your order has been confirmed.');
+            navigate('/user-orders');
           } else {
             alert(verifyRes.message || 'Payment Verification Failed');
           }
+
+          setIsCheckingOut(false);
         },
+
         prefill: {
-          name: 'Customer', // Can be dynamic
-          email: 'customer@example.com', // Can be dynamic
-          contact: '9999999999',
+          name:    shippingAddress?.full_name || 'Customer',
+          email:   '',   // populated from user profile if available
+          contact: '',
         },
+
         theme: {
-          color: '#D4AF37', // Luxury gold
+          color: '#D4AF37', // Kalasatra gold
         },
+
         modal: {
-          confirm_close: false, // Bypasses the buggy native exit modal
-          escape: true,
-          handleback: true,
-          ondismiss: function() {
+          confirm_close: false,
+          escape:        true,
+          handleback:    true,
+          ondismiss: function () {
             setIsCheckingOut(false);
-          }
-        }
+          },
+        },
       };
 
       const paymentObject = new (window as any).Razorpay(options);
       paymentObject.open();
 
-      // Handle failed payment case
       paymentObject.on('payment.failed', function (response: any) {
         setIsCheckingOut(false);
         alert('Payment Failed: ' + response.error.description);

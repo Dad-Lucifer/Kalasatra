@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import hero1Img from '../../assets/hero-1.jpeg';
+import hero1Img from '../../assets/men-hero-1.png';
 
 const carouselItems = [
   {
