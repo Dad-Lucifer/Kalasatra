@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import hero1Img from '../../assets/men-hero-1.png';
+import hero2Img from '../../assets/women-hero-1.png';
+import hero3Img from '../../assets/kid-hero-1.png';
 
 const carouselItems = [
   {
@@ -16,14 +18,14 @@ const carouselItems = [
     id: 2,
     title: 'TAILORED FIT',
     subtitle: 'PRECISION CRAFTED TROUSERS.',
-    imgUrl: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=1600&auto=format&fit=crop',
+    imgUrl: hero2Img,
     cta: 'DISCOVER TROUSERS',
   },
   {
     id: 3,
     title: 'SIGNATURE SCENT',
     subtitle: 'LEAVE A LASTING IMPRESSION. FLAT 50% OFF.',
-    imgUrl: 'https://images.unsplash.com/photo-1523293115678-d2906201736b?q=80&w=1600&auto=format&fit=crop',
+    imgUrl: hero3Img,
     badge: 'NEW ARRIVAL',
     cta: 'EXPLORE PERFUMES',
   }
