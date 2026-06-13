@@ -33,6 +33,7 @@ interface UserProfile {
   createdAt: string;
   lastLoginAt?: string;
   kalastra_coins?: number;
+  kalasatra_credits?: number;
 }
 
 export default function Dashboard({ onLogout }: DashboardProps) {

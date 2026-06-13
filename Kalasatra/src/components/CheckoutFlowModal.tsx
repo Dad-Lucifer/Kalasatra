@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useCheckout } from '../hooks/useCheckout';
 import type { ShippingAddress } from '../hooks/useCheckout';

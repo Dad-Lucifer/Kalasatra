@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api/v1';
+const API_BASE_URL = 'https://orchid-quail-987185.hostingersite.com/api/v1';
 
 export interface ApiResponse<T = any> {
   success: boolean;
