@@ -135,7 +135,8 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       setTokens(accessToken, idToken, refreshToken);
       onLoginSuccess();
     } else {
-      showMessage('error', res.message || 'Login failed');
+      const detail = (res as any).cognitoCode ? ` [${(res as any).cognitoCode}: ${(res as any).detail}]` : '';
+      showMessage('error', (res.message || 'Login failed') + detail);
     }
   };
 

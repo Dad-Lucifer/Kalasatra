@@ -38,7 +38,7 @@ const computeSecretHash = (username) => {
  * Standardised error handler — never leaks internal stack traces to client.
  */
 const handleCognitoError = (res, err, context = "") => {
-  console.error(`[AUTH CONTROLLER] ${context}:`, err);
+  console.error(`[AUTH CONTROLLER] ${context}: name=${err.name} __type=${err.__type} msg=${err.message}`);
 
   const code = err.name || err.__type || "";
 
@@ -59,7 +59,8 @@ const handleCognitoError = (res, err, context = "") => {
   };
 
   const [status, message] = errorMap[code] || [500, "An internal error occurred."];
-  return res.status(status).json({ success: false, message });
+  const extra = process.env.NODE_ENV !== "production" ? { cognitoCode: code, detail: err.message } : {};
+  return res.status(status).json({ success: false, message, ...extra });
 };
 
 /**
@@ -316,20 +317,29 @@ const login = async (req, res) => {
  * Refreshes the access token using a valid refresh token.
  */
 const refreshToken = async (req, res) => {
-  const { refreshToken: token } = req.body;
+  const { refreshToken: token, username } = req.body;
 
   try {
+    const AuthParameters = {
+      REFRESH_TOKEN: token,
+    };
+    
+    if (username) {
+      const secretHash = computeSecretHash(username);
+      if (secretHash) {
+        AuthParameters.SECRET_HASH = secretHash;
+      }
+    }
+
     const result = await cognitoClient.send(
       new InitiateAuthCommand({
         AuthFlow: "REFRESH_TOKEN_AUTH",
         ClientId: COGNITO_CLIENT_ID,
-        AuthParameters: {
-          REFRESH_TOKEN: token,
-        },
+        AuthParameters,
       })
     );
 
-    const { AccessToken, IdToken, ExpiresIn } = result.AuthenticationResult;
+    const { AccessToken, IdToken, ExpiresIn, RefreshToken } = result.AuthenticationResult;
 
     return res.status(200).json({
       success: true,
@@ -338,6 +348,7 @@ const refreshToken = async (req, res) => {
         accessToken: AccessToken,
         idToken: IdToken,
         expiresIn: ExpiresIn,
+        refreshToken: RefreshToken || token,
         tokenType: "Bearer",
       },
     });

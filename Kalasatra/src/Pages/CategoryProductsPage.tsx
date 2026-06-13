@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiRequest } from '../utils/api';
 import { useCart } from '../context/CartContext';
-import { useCheckout } from '../hooks/useCheckout';
+import { useCheckoutFlow } from '../context/CheckoutFlowContext';
 
 interface Product {
   id: string;
@@ -35,7 +35,7 @@ export default function CategoryProductsPage() {
   const { categorySlug } = useParams<{ categorySlug: string }>();
   const searchQuery = new URLSearchParams(location.search).get('search') || '';
   const { addItem, items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
-  const { handleCheckout, isCheckingOut } = useCheckout();
+  const { startCheckout } = useCheckoutFlow();
   const [cartOpen, setCartOpen] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -785,10 +785,10 @@ export default function CategoryProductsPage() {
                 <span className="font-heading text-lg sm:text-xl font-bold text-luxury-gold">₹{totalPrice.toFixed(2)}</span>
               </div>
               <button 
-                onClick={() => handleCheckout()}
-                disabled={isCheckingOut || totalPrice === 0}
+                onClick={() => startCheckout()}
+                disabled={totalPrice === 0}
                 className="w-full px-6 py-3 sm:py-3.5 bg-luxury-gold text-rich-black font-bold uppercase tracking-[0.2em] text-xs sm:text-sm hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                {isCheckingOut ? 'Processing...' : 'Checkout'}
+                Checkout
               </button>
               <button
                 onClick={clearCart}

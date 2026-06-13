@@ -72,12 +72,72 @@ export default function SidebarMenu({ isOpen, onClose }: SidebarMenuProps) {
 
           {/* Categories List */}
           <ul className="flex flex-col text-sm uppercase tracking-wider font-medium text-black">
-            <li><Link to="/new-arrivals" className="block px-4 py-3 hover:bg-gray-50">NEW ARRIVALS</Link></li>
-            <li><Link to="/view-all" className="block px-4 py-3 hover:bg-gray-50">VIEW ALL</Link></li>
-            <li><Link to="/bestsellers" className="block px-4 py-3 hover:bg-gray-50">BESTSELLERS</Link></li>
-            <li><Link to="/shirts" className="block px-4 py-3 hover:bg-gray-50">Mens</Link></li>
-            <li><Link to="/tshirts-polo" className="block px-4 py-3 hover:bg-gray-50">Women</Link></li>
-            <li><Link to="/jeans" className="block px-4 py-3 hover:bg-gray-50">Kids</Link></li>
+            <li>
+              <button 
+                onClick={() => {
+                  onClose();
+                  window.location.href = '/#new-popular';
+                }} 
+                className="w-full text-left block px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              >
+                NEW ARRIVALS
+              </button>
+            </li>
+            <li>
+              <button 
+                onClick={() => {
+                  onClose();
+                  window.location.href = '/#new-popular';
+                }} 
+                className="w-full text-left block px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              >
+                VIEW ALL
+              </button>
+            </li>
+            <li>
+              <button 
+                onClick={() => {
+                  onClose();
+                  window.location.href = '/#new-popular';
+                }} 
+                className="w-full text-left block px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              >
+                BESTSELLERS
+              </button>
+            </li>
+            <li>
+              <button 
+                onClick={() => {
+                  onClose();
+                  window.location.href = '/products/mens-collection';
+                }} 
+                className="w-full text-left block px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              >
+                Mens
+              </button>
+            </li>
+            <li>
+              <button 
+                onClick={() => {
+                  onClose();
+                  window.location.href = '/products/womens-collection';
+                }} 
+                className="w-full text-left block px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              >
+                Women
+              </button>
+            </li>
+            <li>
+              <button 
+                onClick={() => {
+                  onClose();
+                  window.location.href = '/products/kids-collection';
+                }} 
+                className="w-full text-left block px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              >
+                Kids
+              </button>
+            </li>
           </ul>
 
         </div>

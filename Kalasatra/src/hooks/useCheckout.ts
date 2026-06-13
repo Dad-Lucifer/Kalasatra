@@ -16,6 +16,12 @@ export interface ShippingAddress {
   country?:     string;
 }
 
+export interface CheckoutExtras {
+  coinsUsed: number;
+  coinsDiscount: number;
+  deliveryCharge: number;
+}
+
 export const useCheckout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -23,10 +29,15 @@ export const useCheckout = () => {
 
   /**
    * handleCheckout
-   * @param shippingAddress - optional; if omitted the order is saved with placeholder address.
-   *                          Pass the address selected / filled by the user on checkout.
+   * @param shippingAddress  - delivery address selected by user
+   * @param extras           - { coinsUsed, coinsDiscount, deliveryCharge }
+   * @param onSuccess        - callback invoked when payment verification succeeds
    */
-  const handleCheckout = async (shippingAddress?: ShippingAddress) => {
+  const handleCheckout = async (
+    shippingAddress?: ShippingAddress,
+    extras?: CheckoutExtras,
+    onSuccess?: (earnedCoins: number) => void
+  ) => {
     // Guard: if caller accidentally passed an event object (e.g. onClick={handleCheckout}
     // without the arrow wrapper), discard it — it would cause a circular JSON error.
     if (
@@ -58,9 +69,14 @@ export const useCheckout = () => {
       }
 
       // ── 2. Create Razorpay Order on backend ───────────────────────────────
+      const coinsUsed = extras?.coinsUsed ?? 0;
+      const coinsDiscount = extras?.coinsDiscount ?? 0;
+      const deliveryCharge = extras?.deliveryCharge ?? 0;
+      const finalAmount = Math.max(0, totalPrice - coinsDiscount + deliveryCharge);
+
       const orderRes = await apiRequest('/payment/create-order', {
         method: 'POST',
-        body: JSON.stringify({ amount: totalPrice }),
+        body: JSON.stringify({ amount: finalAmount }),
       });
 
       if (!orderRes.success || !orderRes.data) {
@@ -113,16 +129,18 @@ export const useCheckout = () => {
               razorpay_signature,
 
               // Order metadata saved to order_confirmed table
-              amount:           totalPrice,
+              amount:           finalAmount,
               items:            orderItems,
               shipping_address: shippingAddress ?? null,
+              coins_used:       coinsUsed,
+              coins_discount:   coinsDiscount,
+              delivery_charge:  deliveryCharge,
             }),
           });
 
           if (verifyRes.success) {
             clearCart();
-            alert('Payment Successful! Your order has been confirmed.');
-            navigate('/user-orders');
+            if (onSuccess) onSuccess(verifyRes.data?.earned_coins ?? 0);
           } else {
             alert(verifyRes.message || 'Payment Verification Failed');
           }

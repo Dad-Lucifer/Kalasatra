@@ -24,6 +24,7 @@ interface OrderItem {
 interface Order {
   id: string;
   created_at: string;
+  updated_at?: string;
   total_amount: number;
   payment_method: string;
   payment_status: string;
@@ -58,7 +59,16 @@ export default function UserOrdersPage() {
     const res = await apiRequest('/user/orders');
     setLoading(false);
     if (res.success && Array.isArray(res.data)) {
-      setOrders(res.data);
+      const now = new Date().getTime();
+      const visibleOrders = res.data.filter((order: Order) => {
+        if (order.delivery_status === 'delivered') {
+          const lastUpdate = new Date(order.updated_at || order.created_at).getTime();
+          const hoursSince = (now - lastUpdate) / (1000 * 60 * 60);
+          return hoursSince <= 24;
+        }
+        return true;
+      });
+      setOrders(visibleOrders);
     }
   };
 

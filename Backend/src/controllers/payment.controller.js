@@ -3,16 +3,28 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const { supabase } = require("../../database/supabase");
+const coinsCtrl = require("./coins.controller");
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+// Safe coin helpers (graceful if kalastra_coins column missing)
+async function safeGetCoins(uid) {
+  try {
+    const { data, error } = await supabase.from("users").select("kalastra_coins").eq("uid", uid).single();
+    if (error && error.code !== "PGRST116") { console.warn("[payment] safeGetCoins:", error.message); return 0; }
+    return data?.kalastra_coins ?? 0;
+  } catch (e) { return 0; }
+}
+async function safeSetCoins(uid, balance) {
+  try {
+    await supabase.from("users").update({ kalastra_coins: balance, updated_at: new Date().toISOString() }).eq("uid", uid);
+  } catch (e) { console.warn("[payment] safeSetCoins:", e.message); }
+}
+
 // ─── Create Razorpay Order ────────────────────────────────────────────────────
-// POST /api/v1/payment/create-order
-// Body: { amount }
-// ─────────────────────────────────────────────────────────────────────────────
 exports.createOrder = async (req, res, next) => {
   try {
     const { amount } = req.body;
@@ -22,13 +34,12 @@ exports.createOrder = async (req, res, next) => {
     }
 
     const options = {
-      amount: Math.round(amount * 100), // paise
+      amount: Math.round(amount * 100),
       currency: "INR",
       receipt: `rcpt_${Date.now()}`,
     };
 
     const order = await razorpay.orders.create(options);
-
     return res.status(200).json({ success: true, data: order });
   } catch (error) {
     console.error("[Razorpay Create Order Error]:", error);
@@ -37,16 +48,7 @@ exports.createOrder = async (req, res, next) => {
 };
 
 // ─── Verify Payment + Save Order ──────────────────────────────────────────────
-// POST /api/v1/payment/verify
-//
-// Body:
-//   razorpay_order_id   – from Razorpay handler response
-//   razorpay_payment_id – from Razorpay handler response
-//   razorpay_signature  – from Razorpay handler response
-//   amount              – final INR amount (not paise)
-//   items               – [{product_id, product_name, slug, price, quantity, size, color, image}]
-//   shipping_address    – {full_name, line1, line2, city, state, pincode, country}
-// ─────────────────────────────────────────────────────────────────────────────
+// Body extras: coins_used, coins_discount, delivery_charge
 exports.verifyPayment = async (req, res, next) => {
   try {
     const {
@@ -56,20 +58,21 @@ exports.verifyPayment = async (req, res, next) => {
       amount,
       items,
       shipping_address,
+      coins_used = 0,
+      coins_discount = 0,
+      delivery_charge = 0,
     } = req.body;
 
     // ── 1. Validate required payment fields ──────────────────────────────────
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing required payment details" });
+      return res.status(400).json({ success: false, message: "Missing required payment details" });
     }
 
-    // ── 2. Cryptographic signature verification ──────────────────────────────
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    // ── 2. Signature verification ────────────────────────────────────────────
+    const bodyStr = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body)
+      .update(bodyStr)
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
@@ -79,19 +82,28 @@ exports.verifyPayment = async (req, res, next) => {
       });
     }
 
-    // ── 3. Build order record ────────────────────────────────────────────────
-    const user = req.user; // set by authenticateToken middleware
+    const user = req.user;
 
-    // Fetch Razorpay payment details to get the actual payment method
+    // ── 3. Fetch payment method from Razorpay ────────────────────────────────
     let paymentMode = "online";
     try {
       const paymentDetails = await razorpay.payments.fetch(razorpay_payment_id);
-      paymentMode = paymentDetails.method || "online"; // card | upi | netbanking | wallet | cod
+      paymentMode = paymentDetails.method || "online";
     } catch (rzErr) {
-      // Non-fatal — we still save the order, just default to "online"
-      console.warn("[verifyPayment] Could not fetch Razorpay payment details:", rzErr.message);
+      console.warn("[verifyPayment] Could not fetch payment details:", rzErr.message);
     }
 
+    // ── 4. Deduct coins from user balance (if any redeemed) ──────────────────
+    const coinsUsedNum = parseInt(coins_used, 10) || 0;
+    const coinsDiscountNum = parseFloat(coins_discount) || 0;
+    const deliveryChargeNum = parseFloat(delivery_charge) || 0;
+
+    // ── 4a. Deduct redeemed coins via safe helper ─────────────────────────────
+    if (coinsUsedNum > 0) {
+      await coinsCtrl.deductCoins(user.sub, coinsUsedNum, null); // order ID added below after insert
+    }
+
+    // ── 5. Build + save order record ─────────────────────────────────────────
     const addr = shipping_address || {};
     const orderRecord = {
       razorpay_payment_id,
@@ -107,7 +119,7 @@ exports.verifyPayment = async (req, res, next) => {
       user_email: user.email || "—",
       user_phone: user.phone || null,
 
-      shipping_full_name: addr.full_name  || addr.full_name || user.name || "—",
+      shipping_full_name: addr.full_name  || user.name || "—",
       address_line1:      addr.line1      || addr.address_line1 || "—",
       address_line2:      addr.line2      || addr.address_line2 || null,
       city:               addr.city       || "—",
@@ -117,10 +129,13 @@ exports.verifyPayment = async (req, res, next) => {
 
       items: Array.isArray(items) ? items : [],
 
+      coins_used:      coinsUsedNum,
+      coins_discount:  coinsDiscountNum,
+      delivery_charge: deliveryChargeNum,
+
       delivery_status: "order_confirmed",
     };
 
-    // ── 4. Insert into order_confirmed ───────────────────────────────────────
     const { data: savedOrder, error: insertError } = await supabase
       .from("order_confirmed")
       .insert(orderRecord)
@@ -129,7 +144,6 @@ exports.verifyPayment = async (req, res, next) => {
 
     if (insertError) {
       console.error("[verifyPayment] Failed to save order:", insertError);
-      // Payment WAS verified — return success but flag the save failure
       return res.status(200).json({
         success: true,
         message: "Payment verified. Order save failed — please contact support.",
@@ -139,6 +153,25 @@ exports.verifyPayment = async (req, res, next) => {
 
     console.log(`[verifyPayment] Order saved: ${savedOrder.id} | Payment: ${razorpay_payment_id}`);
 
+    // ── 6. Grant reward coins (0–15 random) ────────────────────────────────────
+    const rewardCoins = Math.floor(Math.random() * 16); // 0–15
+    const currentBalance = await safeGetCoins(user.sub);
+    const newBalance = currentBalance + rewardCoins;
+    await safeSetCoins(user.sub, newBalance);
+
+    // Log reward transaction (non-fatal)
+    try {
+      await supabase.from("coin_transactions").insert({
+        user_id: user.sub,
+        order_id: savedOrder.id,
+        type: "earned",
+        coins: rewardCoins,
+        balance_after: newBalance,
+        description: "Order reward",
+        created_at: new Date().toISOString(),
+      });
+    } catch (_) { /* non-fatal if table missing */ }
+
     return res.status(200).json({
       success: true,
       message: "Payment verified and order confirmed.",
@@ -147,6 +180,8 @@ exports.verifyPayment = async (req, res, next) => {
         razorpay_payment_id,
         razorpay_order_id,
         delivery_status:    savedOrder.delivery_status,
+        earned_coins:       rewardCoins,
+        coin_balance:       newBalance,
       },
     });
   } catch (error) {

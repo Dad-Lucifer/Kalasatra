@@ -92,22 +92,33 @@ export async function apiRequest<T = any>(
   }
 }
 
+function decodeJwtForRefresh(token: string) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
+
 async function attemptTokenRefresh(): Promise<boolean> {
-  const { refreshToken } = getTokens();
+  const { refreshToken, accessToken, idToken } = getTokens();
   if (!refreshToken) return false;
+
+  const payload = idToken ? decodeJwtForRefresh(idToken) : (accessToken ? decodeJwtForRefresh(accessToken) : null);
+  const username = payload ? (payload['cognito:username'] || payload.email) : null;
 
   try {
     const res = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify({ refreshToken, username }),
     });
 
     if (!res.ok) return false;
 
     const data = await res.json();
     if (data.success && data.data) {
-      setTokens(data.data.accessToken, data.data.idToken);
+      setTokens(data.data.accessToken, data.data.idToken, data.data.refreshToken);
       return true;
     }
     return false;

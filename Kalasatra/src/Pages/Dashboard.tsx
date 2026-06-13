@@ -32,7 +32,7 @@ interface UserProfile {
   isActive: boolean;
   createdAt: string;
   lastLoginAt?: string;
-  kalasatra_credits?: number;
+  kalastra_coins?: number;
 }
 
 export default function Dashboard({ onLogout }: DashboardProps) {
@@ -333,7 +333,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Credits</h3>
                   <ul className="space-y-3 text-sm text-deep-black">
                     <li><button onClick={() => setCouponModalOpen(true)} className="hover:text-accent-yellow transition-colors font-semibold cursor-pointer bg-transparent border-none p-0">Coupons</button></li>
-                    <li><span className="font-semibold text-cold-grey">Kalasatra Credit: {profile?.kalasatra_credits ?? 0}</span></li>
+                    <li><span className="font-semibold text-cold-grey">Kalastra Coins: {profile?.kalastra_coins ?? 0}</span></li>
                   </ul>
               </div>
 
@@ -376,7 +376,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       { label: 'Gender', value: profile?.gender },
                       { label: 'Birthday', value: profile?.birthday },
                       { label: 'Alternate Phone', value: profile?.alternate_phone },
-                      { label: 'Kalasatra Credits', value: profile?.kalasatra_credits ?? 0 },
+                      { label: 'Kalastra Coins', value: profile?.kalastra_coins ?? 0 },
                     ].map(({ label, value }) => (
                       <div key={label}>
                         <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey block mb-0.5">{label}</span>
@@ -520,9 +520,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   <div onClick={() => setCouponModalOpen(true)} className="bg-pure-white border border-cold-grey-light p-6 flex flex-col items-center justify-center text-center gap-3 hover:border-deep-black transition-colors cursor-pointer shadow-sm hover:shadow-[4px_4px_0px_0px_rgba(11,12,16,1)] group">
                     <FiCreditCard size={32} className="text-deep-black" />
                     <div>
-                      <h4 className="font-bold text-deep-black text-sm uppercase tracking-wider">Kalasatra Credit</h4>
+                      <h4 className="font-bold text-deep-black text-sm uppercase tracking-wider">Kalastra Coins</h4>
                       <p className="text-xs text-cold-grey mt-1">
-                        {profile?.kalasatra_credits ?? 0} coins available
+                        {profile?.kalastra_coins ?? 0} coins available
                       </p>
                     </div>
                   </div>

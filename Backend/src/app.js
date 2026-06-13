@@ -110,6 +110,9 @@ app.use("/api/v1/addresses", addressRoutes);
 const { pincodeRouter } = require("../pincode-api");
 app.use("/api/v1/pincode", pincodeRouter);
 
+const coinsRoutes = require("./routes/coins.routes");
+app.use("/api/v1/coins", coinsRoutes);
+
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
+import { CheckoutFlowProvider } from './context/CheckoutFlowContext';
 import AuthPage from './Pages/AuthPage';
 import Dashboard from './Pages/Dashboard';
 import AdminAuthPage from './Pages/AdminAuthPage';
@@ -48,31 +49,32 @@ function App() {
 
   return (
     <CartProvider>
-     
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/wishlist" element={<WishlistPage />} />
-        <Route path="/products" element={<CategoryProductsPage />} />
-        <Route path="/products/:categorySlug" element={<CategoryProductsPage />} />
-        <Route path="/product/:slug" element={<ProductDetailPage />} />
-        <Route path='/ownerauth' element={<AdminAuthPage onLoginSuccess={handleAdminLoginSuccess} />} />
-        <Route
-          path="/dashboard"
-          element={isAuthenticated ? <Dashboard onLogout={handleLogoutSuccess} /> : <Navigate to="/auth" />}
-        />
-        <Route
-          path="/user-orders"
-          element={isAuthenticated ? <UserOrdersPage /> : <Navigate to="/auth" />}
-        />
-        <Route path="/admin" element={<AdminAuthPage onLoginSuccess={handleAdminLoginSuccess} />} />
-        <Route
-          path="/admin/dashboard"
-          element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/admin" />}
-        />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      <CheckoutFlowProvider>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/products" element={<CategoryProductsPage />} />
+          <Route path="/products/:categorySlug" element={<CategoryProductsPage />} />
+          <Route path="/product/:slug" element={<ProductDetailPage />} />
+          <Route path='/ownerauth' element={<AdminAuthPage onLoginSuccess={handleAdminLoginSuccess} />} />
+          <Route
+            path="/dashboard"
+            element={isAuthenticated ? <Dashboard onLogout={handleLogoutSuccess} /> : <Navigate to="/auth" />}
+          />
+          <Route
+            path="/user-orders"
+            element={isAuthenticated ? <UserOrdersPage /> : <Navigate to="/auth" />}
+          />
+          <Route path="/admin" element={<AdminAuthPage onLoginSuccess={handleAdminLoginSuccess} />} />
+          <Route
+            path="/admin/dashboard"
+            element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/admin" />}
+          />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </CheckoutFlowProvider>
     </CartProvider>
   );
 }
