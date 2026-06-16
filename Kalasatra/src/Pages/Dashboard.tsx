@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiRequest, clearTokens } from '../utils/api';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 import BottomMobileNav from '../components/landing/BottomMobileNav';
+import { useCart } from '../context/CartContext';
 import { 
   FiPackage, FiGrid, FiCreditCard,
-  FiChevronRight, FiGift, FiStar, FiUser, FiCheckCircle
+  FiChevronRight, FiGift, FiStar, FiUser, FiCheckCircle, FiShoppingBag, FiX
 } from 'react-icons/fi';
 
 interface DashboardProps {
@@ -36,13 +37,101 @@ interface UserProfile {
   kalasatra_credits?: number;
 }
 
+// ─── Free-Item Progress Constants ────────────────────────────────────────────
+const FREE_ITEM_THRESHOLD = 5000;
+const SPEND_STORAGE_KEY = 'kalasatra_free_spend';
+
+function getSavedSpend(): number {
+  try { return Number(localStorage.getItem(SPEND_STORAGE_KEY) || '0'); } catch { return 0; }
+}
+function setSavedSpend(v: number) {
+  try { localStorage.setItem(SPEND_STORAGE_KEY, String(v)); } catch { /* noop */ }
+}
+
 export default function Dashboard({ onLogout }: DashboardProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState<'overview' | 'edit' | 'profile'>('overview');
 
-  // ─── Alternate Addresses ──────────────────────────────────────────────────
+  // ─── Free-Item Feature ────────────────────────────────────────────────────
+  const { totalPrice, addItem } = useCart();
+  const [spendProgress, setSpendProgress] = useState<number>(getSavedSpend);
+  const [freeItemModalOpen, setFreeItemModalOpen] = useState(false);
+  const [freeProducts, setFreeProducts] = useState<any[]>([]);
+  const [loadingFreeProducts, setLoadingFreeProducts] = useState(false);
+  const [freeItemClaimed, setFreeItemClaimed] = useState(false);
+  const [claimingFree, setClaimingFree] = useState(false);
+
+  // Sync spendProgress with the live cart total so it always reflects reality
+  useEffect(() => {
+    setSpendProgress(totalPrice);
+    setSavedSpend(totalPrice);
+  }, [totalPrice]);
+
+  const progressPct = Math.min((spendProgress / FREE_ITEM_THRESHOLD) * 100, 100);
+  const isThresholdMet = spendProgress >= FREE_ITEM_THRESHOLD;
+  const remainingAmount = Math.max(FREE_ITEM_THRESHOLD - spendProgress, 0);
+
+  const fetchFreeProducts = useCallback(async () => {
+    setLoadingFreeProducts(true);
+    const res = await apiRequest<any[]>('/products?limit=12') as any;
+    if (res.success && res.data) {
+      const products = Array.isArray(res.data) ? res.data : (res.data.products || []);
+      setFreeProducts(products.slice(0, 12));
+    }
+    setLoadingFreeProducts(false);
+  }, []);
+
+  const handleOpenFreeModal = () => {
+    if (!isThresholdMet || freeItemClaimed) return;
+    fetchFreeProducts();
+    setFreeItemModalOpen(true);
+  };
+
+  const handleClaimFreeItem = async (product: any) => {
+    setClaimingFree(true);
+    const freeItem = {
+      productId: product.id || product._id || product.productId,
+      name: product.name,
+      price: 0,
+      size: product.sizes?.[0] || 'Free Size',
+      color: product.colors?.[0] || product.color || 'Default',
+      image: product.images?.[0] || product.image || '',
+      slug: product.slug || '',
+    };
+    await addItem(freeItem, 1);
+    // Reset progress after claiming
+    setSpendProgress(0);
+    setSavedSpend(0);
+    setFreeItemClaimed(true);
+    setFreeItemModalOpen(false);
+    setClaimingFree(false);
+  };
+
+  // Reset the claimed flag when cart total drops (e.g. cart cleared)
+  useEffect(() => {
+    if (totalPrice < FREE_ITEM_THRESHOLD) setFreeItemClaimed(false);
+  }, [totalPrice]);
+
+  // ─── Kalastra Credits Modal ──────────────────────────────────────────────────
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [availableCouponsCount, setAvailableCouponsCount] = useState<number | null>(null);
+  const [loadingCredits, setLoadingCredits] = useState(false);
+
+  const handleOpenCreditsModal = async () => {
+    setCreditsModalOpen(true);
+    if (availableCouponsCount !== null) return; // already fetched
+    setLoadingCredits(true);
+    const res = await apiRequest<{ availableCount: number }>('/coupons/available') as any;
+    if (res.success && res.data) {
+      setAvailableCouponsCount(res.data.availableCount ?? 0);
+    } else {
+      setAvailableCouponsCount(0);
+    }
+    setLoadingCredits(false);
+  };
+
   type AlterAddress = {
     id: string;
     full_name: string;
@@ -497,6 +586,69 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   </button>
                 </div>
 
+                {/* ── Free Item Progress Card (Desktop Overview) ── */}
+                <div className={`border p-6 mb-6 shadow-sm transition-all ${
+                  isThresholdMet && !freeItemClaimed
+                    ? 'border-accent-yellow bg-gradient-to-r from-accent-yellow/10 to-amber-50 shadow-[4px_4px_0px_0px_rgba(255,196,0,0.4)]'
+                    : 'border-cold-grey-light bg-pure-white'
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <FiGift size={18} className={isThresholdMet && !freeItemClaimed ? 'text-amber-600' : 'text-cold-grey'} />
+                      <span className={`text-xs font-bold uppercase tracking-widest ${
+                        isThresholdMet && !freeItemClaimed ? 'text-amber-700' : 'text-cold-grey'
+                      }`}>
+                        {isThresholdMet && !freeItemClaimed
+                          ? '🎉 You unlocked a FREE item!'
+                          : freeItemClaimed
+                          ? '✓ Free item claimed'
+                          : `Shop ₹${FREE_ITEM_THRESHOLD.toLocaleString('en-IN')} to get 1 clothing FREE`
+                        }
+                      </span>
+                    </div>
+                    {!isThresholdMet && !freeItemClaimed && (
+                      <span className="text-xs font-bold text-cold-grey">
+                        ₹{remainingAmount.toLocaleString('en-IN')} to go
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="h-2 w-full bg-cold-grey-light/60 rounded-full overflow-hidden mb-1 relative">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ease-out ${
+                        isThresholdMet && !freeItemClaimed
+                          ? 'bg-gradient-to-r from-amber-400 to-yellow-300'
+                          : freeItemClaimed
+                          ? 'bg-green-400'
+                          : 'bg-gradient-to-r from-deep-black to-deep-black/70'
+                      }`}
+                      style={{ width: `${freeItemClaimed ? 0 : progressPct}%` }}
+                    />
+                    {isThresholdMet && !freeItemClaimed && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                    )}
+                  </div>
+                  <div className="flex justify-between text-[10px] font-bold text-cold-grey uppercase tracking-widest">
+                    <span>₹{Math.min(spendProgress, FREE_ITEM_THRESHOLD).toLocaleString('en-IN')}</span>
+                    <span>₹{FREE_ITEM_THRESHOLD.toLocaleString('en-IN')}</span>
+                  </div>
+
+                  {isThresholdMet && !freeItemClaimed && (
+                    <button
+                      onClick={handleOpenFreeModal}
+                      className="mt-4 w-full py-2.5 bg-deep-black text-accent-yellow text-xs font-bold uppercase tracking-widest hover:brightness-110 transition-all cursor-pointer shadow-sm"
+                    >
+                      🎁 Claim Your Free Item
+                    </button>
+                  )}
+                  {freeItemClaimed && (
+                    <p className="mt-3 text-xs text-green-600 font-bold uppercase tracking-widest text-center">
+                      ✓ Free item added to cart!
+                    </p>
+                  )}
+                </div>
+
                 {/* Widgets Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Card 1 */}
@@ -755,10 +907,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent-yellow/10 rounded-full blur-3xl" />
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-6">
-              <h1 className="text-2xl font-bold tracking-tight">Welcome {userName}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">Welcome TO {userName}</h1>
               <div className="text-right">
                 <div className="font-heading font-black text-xl tracking-wider flex items-center gap-1">
-                  KALASATRA <span className="text-accent-yellow">X</span>
+                  KALASATRA
                 </div>
                 <div className="text-[10px] text-accent-yellow uppercase font-bold tracking-widest mt-1">Expired on 01 Jun</div>
               </div>
@@ -767,29 +919,73 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             <div className="space-y-4 mb-8">
               <div className="flex items-center gap-3">
                 <FiUser className="text-cold-grey" />
-                <span className="text-sm font-semibold">Join the exclusive X club</span>
+                <span className="text-sm font-semibold">Get exclusive discounts on every event</span>
               </div>
               <div className="flex items-center gap-3">
                 <FiStar className="text-cold-grey" />
-                <span className="text-sm font-semibold">Assured cashback on every order</span>
+                <span className="text-sm font-semibold">Assured kalstra on every order</span>
               </div>
               <div className="flex items-center gap-3">
                 <FiGift className="text-cold-grey" />
-                <span className="text-sm font-semibold">Win free gifts for order streaks</span>
+                <span className="text-sm font-semibold">Collect kalastra coins for discounts</span>
               </div>
             </div>
 
-            <div className="text-xs text-cold-grey font-semibold mb-2">
-              Shop ₹5000 more to become a X member. <a href="#" className="text-pure-white underline decoration-accent-yellow underline-offset-4">More Details</a>
+            {/* ── Free-Item Progress (Mobile) ── */}
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5">
+                <FiGift size={13} className={isThresholdMet && !freeItemClaimed ? 'text-accent-yellow' : 'text-cold-grey'} />
+                <span className={`text-xs font-semibold ${
+                  isThresholdMet && !freeItemClaimed ? 'text-accent-yellow' : 'text-cold-grey'
+                }`}>
+                  {isThresholdMet && !freeItemClaimed
+                    ? '🎉 Free item unlocked!'
+                    : freeItemClaimed
+                    ? '✓ Free item claimed'
+                    : `Shop ₹${FREE_ITEM_THRESHOLD.toLocaleString('en-IN')} to get 1 clothing FREE`
+                  }
+                </span>
+              </div>
+              {!isThresholdMet && !freeItemClaimed && (
+                <span className="text-[10px] font-bold text-cold-grey/80">
+                  ₹{remainingAmount.toLocaleString('en-IN')} left
+                </span>
+              )}
             </div>
-            
-            <div className="h-1.5 w-full bg-pure-white/20 rounded-full overflow-hidden mt-3 relative">
-               <div className="absolute top-0 right-0 h-full w-full bg-pure-white/10" />
+
+            <div className="h-1.5 w-full bg-pure-white/20 rounded-full overflow-hidden mt-2 relative">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ease-out ${
+                  isThresholdMet && !freeItemClaimed
+                    ? 'bg-accent-yellow'
+                    : freeItemClaimed
+                    ? 'bg-green-400'
+                    : 'bg-pure-white/80'
+                }`}
+                style={{ width: `${freeItemClaimed ? 0 : progressPct}%` }}
+              />
+              {isThresholdMet && !freeItemClaimed && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+              )}
             </div>
             <div className="flex justify-between mt-1 text-[10px] font-bold text-cold-grey uppercase tracking-widest">
-              <span>₹0</span>
-              <span>₹5000</span>
+              <span>₹{Math.min(spendProgress, FREE_ITEM_THRESHOLD).toLocaleString('en-IN')}</span>
+              <span>₹{FREE_ITEM_THRESHOLD.toLocaleString('en-IN')}</span>
             </div>
+
+            {isThresholdMet && !freeItemClaimed && (
+              <button
+                onClick={handleOpenFreeModal}
+                className="mt-3 w-full py-2 bg-accent-yellow text-deep-black text-[11px] font-bold uppercase tracking-widest rounded-sm hover:brightness-105 transition-all cursor-pointer"
+              >
+                🎁 Claim Free Item
+              </button>
+            )}
+            {freeItemClaimed && (
+              <p className="mt-2 text-[10px] text-green-400 font-bold uppercase tracking-widest text-center">
+                ✓ Free item added to your cart!
+              </p>
+            )}
           </div>
         </div>
 
@@ -801,7 +997,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 { label: 'Orders & Returns', action: () => navigate('/user-orders') },
                 { label: 'Wishlist', action: () => navigate('/wishlist') },
                 { label: 'Coupons', action: () => setCouponModalOpen(true) },
-                { label: 'Kalasatra Credit', action: undefined },
+                { label: 'Kalasatra Credit', action: () => handleOpenCreditsModal() },
                 { label: 'Profile & Addresses', action: () => setActiveView('profile') },
                 { label: 'Edit Details', action: () => setActiveView('edit') },
                 { label: 'Terms of Use', action: undefined },
@@ -1207,6 +1403,173 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* ─── Free Item Claim Modal ─── */}
+      {freeItemModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center"
+          onClick={() => setFreeItemModalOpen(false)}
+        >
+          <div
+            className="bg-pure-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-lg shadow-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-cold-grey-light shrink-0">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-deep-black">🎁 Choose Your Free Item</h3>
+                <p className="text-[10px] text-cold-grey mt-0.5 uppercase tracking-widest font-semibold">Pick any 1 — added at ₹0</p>
+              </div>
+              <button
+                onClick={() => setFreeItemModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-cold-white transition-colors cursor-pointer text-cold-grey hover:text-deep-black"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Product Grid */}
+            <div className="overflow-y-auto flex-1 p-4 sm:p-6">
+              {loadingFreeProducts ? (
+                <div className="flex justify-center items-center py-16">
+                  <div className="w-8 h-8 border-2 border-cold-grey-light border-t-deep-black rounded-full animate-spin" />
+                </div>
+              ) : freeProducts.length === 0 ? (
+                <p className="text-center text-cold-grey text-sm py-10 italic">No products available. Try again later.</p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {freeProducts.map((product) => (
+                    <div
+                      key={product.id || product._id}
+                      className="border border-cold-grey-light group cursor-pointer hover:border-deep-black hover:shadow-[3px_3px_0px_0px_rgba(11,12,16,1)] transition-all"
+                      onClick={() => handleClaimFreeItem(product)}
+                    >
+                      {/* Product Image */}
+                      <div className="aspect-[3/4] overflow-hidden bg-cold-white relative">
+                        {product.images?.[0] || product.image ? (
+                          <img
+                            src={product.images?.[0] || product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <FiShoppingBag size={24} className="text-cold-grey opacity-40" />
+                          </div>
+                        )}
+                        <div className="absolute top-2 right-2 bg-accent-yellow text-deep-black text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5">
+                          FREE
+                        </div>
+                      </div>
+                      {/* Product Info */}
+                      <div className="px-3 py-2.5">
+                        <p className="text-xs font-bold text-deep-black line-clamp-1 uppercase tracking-wide">{product.name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-bold text-green-600">₹0</span>
+                          <span className="text-[10px] text-cold-grey line-through">₹{(product.price || product.selling_price || 0).toLocaleString('en-IN')}</span>
+                        </div>
+                        <button
+                          disabled={claimingFree}
+                          className="mt-2 w-full py-1.5 bg-deep-black text-pure-white text-[9px] font-bold uppercase tracking-widest group-hover:bg-accent-yellow group-hover:text-deep-black transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {claimingFree ? '...' : 'Claim Free'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Kalastra Credits Modal (Mobile) ─── */}
+      {creditsModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-end justify-center"
+          onClick={() => setCreditsModalOpen(false)}
+        >
+          <div
+            className="bg-pure-white w-full rounded-t-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle bar */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-cold-grey-light rounded-full" />
+            </div>
+
+            {/* Header */}
+            <div className="px-5 pt-3 pb-4 border-b border-cold-grey-light flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-deep-black rounded-full flex items-center justify-center">
+                  <FiCreditCard size={16} className="text-accent-yellow" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-deep-black">Kalastra Credits</h3>
+                  <p className="text-[10px] text-cold-grey uppercase tracking-widest font-semibold">Your coins &amp; offers</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCreditsModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center text-cold-grey hover:text-deep-black cursor-pointer"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-5 space-y-4">
+
+              {/* Coins balance tile */}
+              <div className="flex items-center justify-between bg-deep-black text-pure-white px-5 py-4 rounded-sm">
+                <div>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-cold-grey mb-0.5">Your Balance</p>
+                  <p className="text-2xl font-black tracking-tight">
+                    {profile?.kalasatra_credits ?? profile?.kalastra_coins ?? 0}
+                    <span className="text-sm font-semibold text-accent-yellow ml-1.5">coins</span>
+                  </p>
+                </div>
+                <FiStar size={28} className="text-accent-yellow opacity-80" />
+              </div>
+
+              {/* Available coupons tile */}
+              <div className="flex items-center justify-between border border-cold-grey-light px-5 py-4">
+                <div>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-cold-grey mb-0.5">Available Coupons</p>
+                  {loadingCredits ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-4 h-4 border-2 border-cold-grey-light border-t-deep-black rounded-full animate-spin" />
+                      <span className="text-xs text-cold-grey">Fetching...</span>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-black text-deep-black tracking-tight">
+                      {availableCouponsCount ?? 0}
+                      <span className="text-sm font-semibold text-cold-grey ml-1.5">active</span>
+                    </p>
+                  )}
+                </div>
+                <FiGift size={26} className="text-deep-black opacity-30" />
+              </div>
+
+              {/* Info note */}
+              <p className="text-[11px] text-cold-grey leading-relaxed">
+                Redeem a coupon code to earn Kalastra coins. Coins can be used for exclusive discounts on future orders.
+              </p>
+
+              {/* CTA */}
+              <button
+                onClick={() => { setCreditsModalOpen(false); setCouponModalOpen(true); }}
+                className="w-full py-3.5 bg-deep-black text-accent-yellow text-xs font-bold uppercase tracking-widest hover:brightness-110 transition-all cursor-pointer"
+              >
+                🎟 Redeem a Coupon Code
+              </button>
+            </div>
+
+            {/* Safe-area bottom padding */}
+            <div className="pb-6" />
           </div>
         </div>
       )}

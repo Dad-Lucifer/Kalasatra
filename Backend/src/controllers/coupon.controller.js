@@ -82,6 +82,32 @@ const getCoupons = async (req, res) => {
 };
 
 /**
+ * GET /api/v1/coupons/available
+ * Returns count of currently active & valid coupons (any authenticated user)
+ */
+const getAvailableCouponsCount = async (req, res) => {
+  try {
+    const now = new Date().toISOString();
+
+    const { count, error } = await supabase
+      .from("coupons")
+      .select("*", { count: "exact", head: true })
+      .eq("is_active", true)
+      .lte("start_date", now)
+      .gte("end_date", now);
+
+    if (error) throw error;
+
+    return res.status(200).json({
+      success: true,
+      data: { availableCount: count ?? 0 },
+    });
+  } catch (err) {
+    return handleError(res, err, "getAvailableCouponsCount");
+  }
+};
+
+/**
  * DELETE /api/v1/admin/coupons/:id
  * Delete a coupon
  */
@@ -227,4 +253,4 @@ const redeemCoupon = async (req, res) => {
   }
 };
 
-module.exports = { createCoupon, getCoupons, deleteCoupon, redeemCoupon };
+module.exports = { createCoupon, getCoupons, deleteCoupon, redeemCoupon, getAvailableCouponsCount };
