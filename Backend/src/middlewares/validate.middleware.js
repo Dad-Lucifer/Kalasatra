@@ -165,7 +165,8 @@ const createProductSchema = Joi.object({
   discount_percentage: Joi.number().min(0).max(100).optional(),
   gst_percentage: Joi.number().min(0).max(100).optional(),
   colors: Joi.array().items(Joi.string()).optional(),
-  sizes: Joi.array().items(Joi.string()).optional(),
+  // Sizes are stored as encoded strings: "LABEL" or "LABEL:measurement" e.g. "M", "L:28", "XL:32"
+  sizes: Joi.array().items(Joi.string().max(30)).optional(),
   images: Joi.array().items(
     Joi.object({
       url: Joi.string().uri().required(),
@@ -192,7 +193,8 @@ const updateProductSchema = Joi.object({
   discount_percentage: Joi.number().min(0).max(100).optional(),
   gst_percentage: Joi.number().min(0).max(100).optional(),
   colors: Joi.array().items(Joi.string()).optional(),
-  sizes: Joi.array().items(Joi.string()).optional(),
+  // Sizes are stored as encoded strings: "LABEL" or "LABEL:measurement" e.g. "M", "L:28", "XL:32"
+  sizes: Joi.array().items(Joi.string().max(30)).optional(),
   images: Joi.array().items(
     Joi.object({
       url: Joi.string().uri().required(),

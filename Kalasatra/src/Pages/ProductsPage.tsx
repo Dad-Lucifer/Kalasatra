@@ -50,7 +50,17 @@ interface ProductsPageProps {
 }
 
 const availableColors = ['Red', 'Blue', 'Black', 'White', 'Green', 'Yellow', 'Pink', 'Grey'];
-const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Custom'];
+
+// Encode / decode size entries as "LABEL:measurement" strings for DB storage.
+const encodeSizeEntry = (label: string, measurement: string) =>
+  measurement.trim() ? `${label}:${measurement.trim()}` : label;
+
+const decodeSizeEntry = (raw: string): { label: string; measurement: string } => {
+  const idx = raw.indexOf(':');
+  if (idx === -1) return { label: raw, measurement: '' };
+  return { label: raw.slice(0, idx), measurement: raw.slice(idx + 1) };
+};
 
 export default function ProductsPage({ isAdminMode = false }: ProductsPageProps) {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -77,6 +87,8 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
 
   // Add Product Modal
   const [showModal, setShowModal] = useState(false);
+  // selectedSizeLabels = which size buttons are toggled ON (e.g. ['M', 'L'])
+  // sizeInputs = measurement value per label (e.g. { M: '22', L: '28' })
   const [formData, setFormData] = useState({
     category_id: '',
     subcategory_id: '',
@@ -90,8 +102,10 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     low_stock_threshold: '10',
     is_featured: false,
     colors: [] as string[],
-    sizes: [] as string[],
+    selectedSizeLabels: [] as string[],
   });
+  const [sizeInputs, setSizeInputs] = useState<Record<string, string[]>>({});
+  const [sizeDraftInput, setSizeDraftInput] = useState<Record<string, string>>({});
   const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; alt: string; order: number }>>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -285,14 +299,55 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     }));
   };
 
-  const toggleFormSize = (size: string) => {
-    setFormData((prev) => ({
+  const toggleFormSize = (label: string) => {
+    setFormData((prev) => {
+      const active = prev.selectedSizeLabels.includes(label);
+      return {
+        ...prev,
+        selectedSizeLabels: active
+          ? prev.selectedSizeLabels.filter((s) => s !== label)
+          : [...prev.selectedSizeLabels, label],
+      };
+    });
+    // Clear measurements + draft when deselecting
+    if (formData.selectedSizeLabels.includes(label)) {
+      setSizeInputs((prev) => {
+        const next = { ...prev };
+        delete next[label];
+        return next;
+      });
+      setSizeDraftInput((prev) => {
+        const next = { ...prev };
+        delete next[label];
+        return next;
+      });
+    }
+  };
+
+  const handleAddMeasurement = (label: string) => {
+    const val = (sizeDraftInput[label] ?? '').trim();
+    if (!val) return;
+    setSizeInputs((prev) => ({
       ...prev,
-      sizes: prev.sizes.includes(size)
-        ? prev.sizes.filter((s) => s !== size)
-        : [...prev.sizes, size],
+      [label]: [...(prev[label] ?? []), val],
+    }));
+    setSizeDraftInput((prev) => ({ ...prev, [label]: '' }));
+  };
+
+  const handleRemoveMeasurement = (label: string, idx: number) => {
+    setSizeInputs((prev) => ({
+      ...prev,
+      [label]: (prev[label] ?? []).filter((_, i) => i !== idx),
     }));
   };
+
+  // Each label+measurement becomes one encoded string; label with no measurements = bare label
+  const buildSizesPayload = (): string[] =>
+    formData.selectedSizeLabels.flatMap((label) => {
+      const measurements = sizeInputs[label] ?? [];
+      if (measurements.length === 0) return [label];
+      return measurements.map((m) => encodeSizeEntry(label, m));
+    });
 
   const resetForm = () => {
     setFormData({
@@ -308,8 +363,10 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
       low_stock_threshold: '10',
       is_featured: false,
       colors: [],
-      sizes: [],
+      selectedSizeLabels: [],
     });
+    setSizeInputs({});
+    setSizeDraftInput({});
     setUploadedImages([]);
   };
 
@@ -341,7 +398,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
       discount_percentage: parseFloat(formData.discount_percentage) || 0,
       gst_percentage: parseFloat(formData.gst_percentage) || 0,
       colors: formData.colors,
-      sizes: formData.sizes,
+      sizes: buildSizesPayload(),
       images: uploadedImages,
       stock_quantity: parseInt(formData.stock_quantity) || 0,
       low_stock_threshold: parseInt(formData.low_stock_threshold) || 10,
@@ -715,7 +772,10 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                           {product.colors.length > 4 && <span className="text-[10px] text-[#999]">+{product.colors.length - 4}</span>}
                         </div>
                         <div className="text-[10px] text-[#666] uppercase tracking-wider">
-                          {product.sizes.slice(0, 3).join(', ')}
+                          {product.sizes.slice(0, 3).map((s) => {
+                            const { label, measurement } = decodeSizeEntry(s);
+                            return measurement ? `${label}(${measurement})` : label;
+                          }).join(', ')}
                           {product.sizes.length > 3 && ` +${product.sizes.length - 3}`}
                         </div>
                       </div>
@@ -969,24 +1029,89 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="block text-sm font-medium text-[#999]">Sizes</label>
+                <p className="text-[10px] text-[#666]">Select sizes, then add one or more measurements (e.g. 22, 26, 28 in inches).</p>
                 <div className="flex flex-wrap gap-2">
-                  {availableSizes.map((size) => (
+                  {availableSizes.map((label) => (
                     <button
-                      key={size}
+                      key={label}
                       type="button"
-                      onClick={() => toggleFormSize(size)}
+                      onClick={() => toggleFormSize(label)}
                       className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all border ${
-                        formData.sizes.includes(size)
+                        formData.selectedSizeLabels.includes(label)
                           ? 'bg-[#D4AF37] text-[#0F0F0F] border-[#D4AF37]'
                           : 'bg-[#0F0F0F] text-[#F5F5F5] border-[#333] hover:border-[#D4AF37]'
                       }`}
                     >
-                      {size}
+                      {label}
                     </button>
                   ))}
                 </div>
+
+                {/* Per-size measurement chips */}
+                {formData.selectedSizeLabels.length > 0 && (
+                  <div className="mt-3 flex flex-col gap-3">
+                    {formData.selectedSizeLabels.map((label) => (
+                      <div key={label} className="bg-[#0F0F0F] border border-[#333] rounded-lg p-3 space-y-2">
+                        {/* Label header */}
+                        <span className="inline-block px-2 py-0.5 text-xs font-bold text-[#D4AF37] border border-[#D4AF37] rounded">
+                          {label}
+                        </span>
+
+                        {/* Existing chips */}
+                        {(sizeInputs[label] ?? []).length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {(sizeInputs[label] ?? []).map((m, i) => (
+                              <span
+                                key={i}
+                                className="flex items-center gap-1 px-2 py-0.5 bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#D4AF37] text-[11px] rounded-full"
+                              >
+                                {m}&quot;
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveMeasurement(label, i)}
+                                  className="text-[#D4AF37] hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer leading-none"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Add input */}
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            placeholder="e.g. 28"
+                            value={sizeDraftInput[label] ?? ''}
+                            onChange={(e) =>
+                              setSizeDraftInput((prev) => ({ ...prev, [label]: e.target.value }))
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddMeasurement(label);
+                              }
+                            }}
+                            className="w-28 px-2.5 py-1.5 bg-[#1C1C1C] border border-[#333] rounded-lg text-[#F5F5F5] text-xs placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
+                          />
+                          <span className="text-[10px] text-[#666]">inches</span>
+                          <button
+                            type="button"
+                            onClick={() => handleAddMeasurement(label)}
+                            className="px-2.5 py-1.5 bg-[#D4AF37] text-[#0F0F0F] text-xs font-semibold rounded-lg hover:brightness-110 transition-all border-none cursor-pointer"
+                          >
+                            + Add
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Image Upload */}

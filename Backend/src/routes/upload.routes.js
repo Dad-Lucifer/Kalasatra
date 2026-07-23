@@ -12,7 +12,7 @@ const { uploadSingle, uploadMultiple } = require("../middlewares/upload.middlewa
 
 /**
  * @route   POST /api/v1/upload/image
- * @desc    Upload a single product image to Bunny.net CDN
+ * @desc    Upload a single product image to AWS S3 + CloudFront (WebP + AVIF, blurDataURL)
  * @access  Admin
  */
 router.post(
@@ -25,7 +25,7 @@ router.post(
 
 /**
  * @route   POST /api/v1/upload/images
- * @desc    Upload multiple product images to Bunny.net CDN
+ * @desc    Upload multiple product images to AWS S3 + CloudFront (WebP + AVIF, blurDataURL)
  * @access  Admin
  */
 router.post(

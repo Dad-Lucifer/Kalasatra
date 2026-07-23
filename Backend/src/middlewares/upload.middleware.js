@@ -14,7 +14,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 /**
  * Multer configuration — stores files in memory as buffers
- * for direct upload to Bunny.net CDN
+ * for processing by sharp (WebP/AVIF conversion) and upload to AWS S3 + CloudFront.
  */
 const storage = multer.memoryStorage();
 

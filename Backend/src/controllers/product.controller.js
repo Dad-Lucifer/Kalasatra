@@ -1,6 +1,7 @@
 "use strict";
 
 const { supabase } = require("../../database/supabase");
+const { deleteImagesFromS3 } = require("../services/s3.service");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -405,18 +406,46 @@ const updateProduct = async (req, res) => {
 
 /**
  * DELETE /api/v1/products/:id
- * Delete product (Admin only)
+ * Delete product and its associated S3 images (Admin only)
  */
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // ── 1. Fetch product images before deletion so we can clean up S3 ──────
+    const { data: product, error: fetchError } = await supabase
+      .from("products")
+      .select("images, thumbnail_url")
+      .eq("id", id)
+      .single();
+
+    if (fetchError) {
+      console.warn("[deleteProduct] Could not fetch product before delete:", fetchError.message);
+    }
+
+    // ── 2. Delete from DB ──────────────────────────────────────────────────
     const { error } = await supabase
       .from("products")
       .delete()
       .eq("id", id);
 
     if (error) throw error;
+
+    // ── 3. Clean up S3 objects (best-effort, don't fail the response) ──────
+    if (product?.images && Array.isArray(product.images)) {
+      const s3Keys = product.images.flatMap((img) => {
+        const keys = [];
+        if (img?.webp_key) keys.push(img.webp_key);
+        if (img?.avif_key) keys.push(img.avif_key);
+        return keys;
+      });
+
+      if (s3Keys.length > 0) {
+        deleteImagesFromS3(s3Keys).catch((err) =>
+          console.error("[deleteProduct] S3 cleanup failed (non-fatal):", err.message)
+        );
+      }
+    }
 
     return res.status(200).json({
       success: true,
