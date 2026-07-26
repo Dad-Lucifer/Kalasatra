@@ -113,6 +113,10 @@ export default function ProductDetailPage() {
 
 
   const handleSubmitReview = async () => {
+    if (!localStorage.getItem('accessToken')) {
+      navigate('/auth');
+      return;
+    }
     if (!reviewForm.review.trim()) return;
     setSubmittingReview(true);
     setReviewMessage(null);
@@ -442,7 +446,13 @@ export default function ProductDetailPage() {
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
-                  onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                  onClick={() => {
+                    if (!localStorage.getItem('accessToken')) {
+                      navigate('/auth');
+                      return;
+                    }
+                    setReviewForm({ ...reviewForm, rating: star });
+                  }}
                   className="cursor-pointer"
                 >
                   <svg className={`w-6 h-6 ${star <= reviewForm.rating ? 'text-[#D4AF37]' : 'text-gray-300'} hover:text-[#D4AF37] transition-colors`} fill="currentColor" viewBox="0 0 20 20">
@@ -454,7 +464,18 @@ export default function ProductDetailPage() {
             <textarea
               placeholder="Share your thoughts about this product..."
               value={reviewForm.review}
-              onChange={(e) => setReviewForm({ ...reviewForm, review: e.target.value })}
+              onFocus={() => {
+                if (!localStorage.getItem('accessToken')) {
+                  navigate('/auth');
+                }
+              }}
+              onChange={(e) => {
+                if (!localStorage.getItem('accessToken')) {
+                  navigate('/auth');
+                  return;
+                }
+                setReviewForm({ ...reviewForm, review: e.target.value });
+              }}
               rows={4}
               className="w-full px-4 py-3 border border-gray-300 text-sm text-[#1A1A1A] outline-none focus:border-[#D4AF37] transition-colors resize-none placeholder:text-gray-400"
             />
