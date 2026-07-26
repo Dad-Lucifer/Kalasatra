@@ -12,6 +12,7 @@ import ProductDetailPage from './Pages/ProductDetailPage';
 import CartPage from './Pages/CartPage';
 import WishlistPage from './Pages/WishlistPage';
 import UserOrdersPage from './Pages/UserOrdersPage';
+import TermsPage from './Pages/TermsPage';
 import './App.css';
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
           <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/products" element={<CategoryProductsPage />} />
           <Route path="/products/:categorySlug" element={<CategoryProductsPage />} />
           <Route path="/product/:slug" element={<ProductDetailPage />} />

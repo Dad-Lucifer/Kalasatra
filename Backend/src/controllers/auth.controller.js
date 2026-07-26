@@ -597,6 +597,40 @@ const deleteAccount = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/v1/auth/check-email
+ * Checks whether an email is registered in the Supabase users table.
+ * Used by the frontend to gate the Forgot Password flow.
+ */
+const checkEmailExists = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required." });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("uid")
+      .eq("email", email.toLowerCase().trim())
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: "No account found with this email address.",
+      });
+    }
+
+    return res.status(200).json({ success: true, message: "Email is registered." });
+  } catch (err) {
+    console.error("[AUTH CONTROLLER] checkEmailExists:", err);
+    return res.status(500).json({ success: false, message: "An internal error occurred." });
+  }
+};
+
 module.exports = {
   signup,
   verifyOtp,
@@ -609,4 +643,5 @@ module.exports = {
   getMe,
   updateProfile,
   deleteAccount,
+  checkEmailExists,
 };

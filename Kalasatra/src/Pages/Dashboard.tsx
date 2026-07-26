@@ -439,7 +439,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               <div>
                 <h3 className="text-xs uppercase font-bold text-cold-grey tracking-widest mb-3 border-b border-cold-grey-light pb-2">Legal</h3>
                 <ul className="space-y-3 text-sm text-deep-black">
-                  <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Terms of Use</a></li>
+                  <li><a href="/terms" className="hover:text-accent-yellow transition-colors font-semibold">Terms of Use</a></li>
                   <li><a href="#" className="hover:text-accent-yellow transition-colors font-semibold">Privacy Center</a></li>
                 </ul>
               </div>
@@ -1000,7 +1000,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 { label: 'Kalasatra Credit', action: () => handleOpenCreditsModal() },
                 { label: 'Profile & Addresses', action: () => setActiveView('profile') },
                 { label: 'Edit Details', action: () => setActiveView('edit') },
-                { label: 'Terms of Use', action: undefined },
+                { label: 'Terms of Use', action: () => navigate('/terms') },
                 { label: 'Privacy Center', action: undefined },
               ].map((item) => (
                 <li key={item.label} className="border-b border-cold-grey-light/50">

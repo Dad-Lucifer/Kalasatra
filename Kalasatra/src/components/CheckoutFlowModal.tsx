@@ -26,22 +26,26 @@ interface CheckoutFlowModalProps {
 }
 
 // ─── Delivery Charge Logic ─────────────────────────────────────────────────────
-
-const MUMBAI_PINCODES_START = ['400', '401'];
+// Maharashtra pincode prefixes (400–425, 431, 440–447)
+// 403xxx = Goa (NOT Maharashtra) — intentionally excluded
 const MAHARASHTRA_PINCODES_START = [
-  '400','401','402','403','404','410','411','412','413','414','415',
+  '400','401','402','404','410','411','412','413','414','415',
   '416','417','418','419','420','421','422','423','424','425','431',
   '440','441','442','443','444','445','446','447',
 ];
 
+/**
+ * Returns the delivery charge based on pincode / state:
+ *  - Maharashtra pincode → ₹90
+ *  - All other states   → ₹199
+ */
 function getDeliveryCharge(pincode: string, state: string): number {
-  if (!pincode || pincode.length < 3) return 170;
+  if (!pincode || pincode.length < 3) return 199;
   const prefix3 = pincode.slice(0, 3);
-  const isMumbai = MUMBAI_PINCODES_START.includes(prefix3);
-  if (isMumbai) return 60;
-  const isMaha = MAHARASHTRA_PINCODES_START.includes(prefix3) || state?.toLowerCase().includes('maharashtra');
-  if (isMaha) return 90;
-  return 170;
+  const isMaha =
+    MAHARASHTRA_PINCODES_START.includes(prefix3) ||
+    state?.toLowerCase().includes('maharashtra');
+  return isMaha ? 90 : 199;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -71,6 +75,18 @@ export default function CheckoutFlowModal({ onClose }: CheckoutFlowModalProps) {
   const [earnedCoins, setEarnedCoins] = useState(0);
   const [loadingCoins, setLoadingCoins] = useState(true);
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    name: string | null;
+    discount_type: 'percentage' | 'flat';
+    discount_value: number;
+    discount_amount: number;
+  } | null>(null);
+
   // Delivery charge state
   const [deliveryCharge, setDeliveryCharge] = useState(0);
 
@@ -83,6 +99,40 @@ export default function CheckoutFlowModal({ onClose }: CheckoutFlowModalProps) {
       if (res.success) setAvailableCoins(res.data?.coins ?? 0);
     } catch (_) { /* non-fatal — coins default to 0 */ }
     finally { setLoadingCoins(false); }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setValidatingCoupon(true);
+    setCouponError(null);
+
+    try {
+      const res = await apiRequest<any>('/coupons/validate-discount', {
+        method: 'POST',
+        body: JSON.stringify({
+          code: couponInput.trim(),
+          order_amount: totalPrice,
+        }),
+      });
+
+      if (res.success && res.data) {
+        setAppliedCoupon(res.data);
+        setCouponError(null);
+      } else {
+        setAppliedCoupon(null);
+        setCouponError(res.message || 'Invalid coupon code.');
+      }
+    } catch {
+      setCouponError('Failed to validate coupon code.');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError(null);
   };
 
   const loadAddresses = async () => {
@@ -184,12 +234,13 @@ export default function CheckoutFlowModal({ onClose }: CheckoutFlowModalProps) {
     finally { setSavingAddress(false); }
   };
 
-  // ─── Coins Calculation ──────────────────────────────────────────────────────
+  // ─── Calculations ───────────────────────────────────────────────────────────
 
   const maxRedeemableCoins = Math.floor(availableCoins / 100) * 100; // e.g. 350 → 300
   const coinsDiscount = (coinsToRedeem / 100) * 10;                  // 100 coins = ₹10
   const coinsUsed = coinsToRedeem;
-  const finalAmount = Math.max(0, totalPrice - coinsDiscount + deliveryCharge);
+  const couponDiscount = appliedCoupon ? appliedCoupon.discount_amount : 0;
+  const finalAmount = Math.max(0, totalPrice - coinsDiscount - couponDiscount + deliveryCharge);
 
   const stepCoins = (delta: number) => {
     setCoinsToRedeem(prev => {
@@ -210,7 +261,7 @@ export default function CheckoutFlowModal({ onClose }: CheckoutFlowModalProps) {
     if (!address) { alert('Address missing.'); return; }
     handleCheckout(
       address,
-      { coinsUsed, coinsDiscount, deliveryCharge },
+      { coinsUsed, coinsDiscount, deliveryCharge, couponCode: appliedCoupon?.code, couponDiscount },
       (earned: number) => {
         // earned comes directly from the verify response — no extra API call needed
         setEarnedCoins(earned);
@@ -223,8 +274,7 @@ export default function CheckoutFlowModal({ onClose }: CheckoutFlowModalProps) {
 
   // ─── Delivery charge label ──────────────────────────────────────────────────
   const deliveryLabel = deliveryCharge === 0 ? 'Free' :
-    deliveryCharge === 60 ? '₹60 (Mumbai)' :
-    deliveryCharge === 90 ? '₹90 (Maharashtra)' : '₹170 (Other states)';
+    deliveryCharge === 90 ? '₹90 (Maharashtra)' : '₹199 (Outside Maharashtra)';
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -535,6 +585,77 @@ export default function CheckoutFlowModal({ onClose }: CheckoutFlowModalProps) {
                 )}
               </div>
 
+              {/* ── Coupon Code Section ─────────────────────────────────── */}
+              <div className={`border p-4 transition-all duration-300 ${
+                appliedCoupon ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-white'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🏷️</span>
+                    <p className="text-xs font-bold text-black uppercase tracking-widest">Coupon Code</p>
+                  </div>
+                  {appliedCoupon && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-[10px] text-red-600 hover:underline uppercase font-bold tracking-wider cursor-pointer bg-transparent border-none"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-white border border-green-200 p-2.5 rounded">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-black text-xs tracking-wider uppercase">{appliedCoupon.code}</span>
+                        <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 font-bold uppercase rounded">Applied</span>
+                      </div>
+                      <p className="text-[10px] text-green-600 mt-0.5 font-semibold">
+                        {appliedCoupon.discount_type === 'percentage'
+                          ? `${appliedCoupon.discount_value}% Off`
+                          : `₹${appliedCoupon.discount_value} Off`}
+                        {appliedCoupon.name ? ` • ${appliedCoupon.name}` : ''}
+                      </p>
+                    </div>
+                    <span className="text-green-600 font-bold text-sm">−₹{appliedCoupon.discount_amount.toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponInput}
+                        onChange={(e) => {
+                          setCouponInput(e.target.value.toUpperCase());
+                          setCouponError(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleApplyCoupon();
+                          }
+                        }}
+                        placeholder="ENTER COUPON CODE"
+                        className="flex-1 px-3 py-2 bg-white border border-gray-300 text-xs font-bold text-black placeholder-gray-400 focus:outline-none focus:border-black uppercase tracking-widest"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={validatingCoupon || !couponInput.trim()}
+                        className="px-4 py-2 bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer border-none"
+                      >
+                        {validatingCoupon ? 'Checking...' : 'Apply'}
+                      </button>
+                    </div>
+                    {couponError && (
+                      <p className="text-[10px] text-red-600 mt-1.5 font-semibold leading-tight">{couponError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* ── Price Breakdown ──────────────────────────────────────── */}
               <div className="border-t border-black/10 pt-4 space-y-2.5">
                 <div className="flex justify-between text-xs text-gray-600 uppercase tracking-widest">
@@ -542,10 +663,17 @@ export default function CheckoutFlowModal({ onClose }: CheckoutFlowModalProps) {
                   <span>₹{totalPrice.toFixed(2)}</span>
                 </div>
 
-              {coinsDiscount > 0 && (
+                {coinsDiscount > 0 && (
                   <div className="flex justify-between text-xs uppercase tracking-widest text-green-600 font-semibold">
                     <span className="flex items-center gap-1">🪙 Coins Discount ({coinsUsed} coins)</span>
                     <span>−₹{coinsDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-xs uppercase tracking-widest text-green-600 font-semibold">
+                    <span className="flex items-center gap-1">🏷️ Coupon ({appliedCoupon?.code})</span>
+                    <span>−₹{couponDiscount.toFixed(2)}</span>
                   </div>
                 )}
 

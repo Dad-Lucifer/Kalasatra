@@ -865,8 +865,8 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
 
       {/* ─── Add Product Modal ─── */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto py-6 sm:py-10 px-3 sm:px-4" onClick={() => setShowModal(false)}>
-          <div className="w-full max-w-2xl bg-[#1C1C1C] rounded-2xl overflow-hidden mx-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto py-6 sm:py-10 px-3 sm:px-4">
+          <div className="w-full max-w-2xl bg-[#1C1C1C] rounded-2xl overflow-hidden mx-auto">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#333]">
               <h2 className="text-lg sm:text-xl font-bold text-[#F5F5F5]">Add New Product</h2>
               <button onClick={() => setShowModal(false)} className="text-2xl text-[#999] hover:text-[#F5F5F5] bg-transparent border-none cursor-pointer transition-colors">&times;</button>

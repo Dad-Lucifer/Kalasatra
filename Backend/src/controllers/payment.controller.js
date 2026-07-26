@@ -61,6 +61,8 @@ exports.verifyPayment = async (req, res, next) => {
       coins_used = 0,
       coins_discount = 0,
       delivery_charge = 0,
+      coupon_code = null,
+      coupon_discount = 0,
     } = req.body;
 
     // ── 1. Validate required payment fields ──────────────────────────────────
@@ -97,6 +99,8 @@ exports.verifyPayment = async (req, res, next) => {
     const coinsUsedNum = parseInt(coins_used, 10) || 0;
     const coinsDiscountNum = parseFloat(coins_discount) || 0;
     const deliveryChargeNum = parseFloat(delivery_charge) || 0;
+    const couponDiscountNum = parseFloat(coupon_discount) || 0;
+    const cleanCouponCode = coupon_code ? String(coupon_code).trim().toUpperCase() : null;
 
     // ── 4a. Deduct redeemed coins via safe helper ─────────────────────────────
     if (coinsUsedNum > 0) {
@@ -132,6 +136,8 @@ exports.verifyPayment = async (req, res, next) => {
       coins_used:      coinsUsedNum,
       coins_discount:  coinsDiscountNum,
       delivery_charge: deliveryChargeNum,
+      coupon_code:     cleanCouponCode,
+      coupon_discount: couponDiscountNum,
 
       delivery_status: "order_confirmed",
     };
@@ -152,6 +158,38 @@ exports.verifyPayment = async (req, res, next) => {
     }
 
     console.log(`[verifyPayment] Order saved: ${savedOrder.id} | Payment: ${razorpay_payment_id}`);
+
+    // ── 5b. Record discount coupon redemption ───────────────────────────────────
+    if (cleanCouponCode) {
+      try {
+        const { data: cData } = await supabase
+          .from("coupons")
+          .select("id, usage_limit, usage_count")
+          .eq("code", cleanCouponCode)
+          .single();
+
+        if (cData) {
+          if (cData.usage_limit !== null) {
+            await supabase.rpc("increment_coupon_usage", { p_coupon_id: cData.id });
+          } else {
+            await supabase
+              .from("coupons")
+              .update({ usage_count: (cData.usage_count || 0) + 1, updated_at: new Date().toISOString() })
+              .eq("id", cData.id);
+          }
+
+          await supabase.from("coupon_redemptions").insert({
+            coupon_id: cData.id,
+            user_uid: user.sub,
+            coupon_type: "discount",
+            discount_applied: couponDiscountNum,
+            order_id: savedOrder.id,
+          });
+        }
+      } catch (cErr) {
+        console.warn("[verifyPayment] Coupon redemption log note:", cErr.message);
+      }
+    }
 
     // ── 6. Grant reward coins (0–15 random) ────────────────────────────────────
     const rewardCoins = Math.floor(Math.random() * 16); // 0–15

@@ -15,6 +15,7 @@ const {
   getMe,
   updateProfile,
   deleteAccount,
+  checkEmailExists,
 } = require("../controllers/auth.controller");
 
 const { authenticateToken } = require("../middlewares/auth.middleware");
@@ -90,6 +91,18 @@ router.post(
   "/refresh-token",
   validate(refreshTokenSchema),
   refreshToken
+);
+
+/**
+ * @route   POST /api/v1/auth/check-email
+ * @desc    Check if an email is already registered (gates the Forgot Password flow)
+ * @access  Public
+ */
+router.post(
+  "/check-email",
+  authLimiter,
+  validate(forgotPasswordSchema), // reuses same { email } schema
+  checkEmailExists
 );
 
 /**

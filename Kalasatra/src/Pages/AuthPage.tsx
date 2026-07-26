@@ -145,6 +145,19 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
     setLoading(true);
     setMessage(null);
 
+    // ── Step 1: Verify the email is registered in our database ──────────────
+    const checkRes = await apiRequest('/auth/check-email', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+
+    if (!checkRes.success) {
+      setLoading(false);
+      showMessage('error', 'No account found with this email address. Please enter a valid registered email.');
+      return;
+    }
+
+    // ── Step 2: Email exists → send the reset OTP ────────────────────────────
     const res = await apiRequest('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
@@ -152,12 +165,13 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
 
     setLoading(false);
     if (res.success) {
-      showMessage('success', 'Password reset code has been sent to your email.');
+      showMessage('success', 'Password reset code has been sent to your email. (Please check your spam folder for the OTP)');
       setTab('reset');
     } else {
       showMessage('error', res.message || 'Request failed');
     }
   };
+
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -478,8 +492,11 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
               {tab === 'forgot' && (
                 <form onSubmit={handleForgotPassword} className="flex flex-col gap-5">
                   <div className="text-center space-y-2 mb-2">
-                    <h3 className="font-heading text-lg font-bold text-soft-white">Forgot Password</h3>
-                    <p className="text-sm text-soft-white/60">Enter your email and we'll send you an OTP to reset your password.</p>
+                    <h3 className="font-heading text-lg font-bold text-deep-black">Forgot Password</h3>
+                    <p className="text-sm text-cold-grey">Enter your email and we'll send you an OTP to reset your password.</p>
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 font-bold">
+                      Note: Check the spam folder in email for the OTP
+                    </p>
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -523,8 +540,11 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
               {tab === 'reset' && (
                 <form onSubmit={handleResetPassword} className="flex flex-col gap-5">
                   <div className="text-center space-y-2 mb-2">
-                    <h3 className="font-heading text-lg font-bold text-soft-white">Reset Password</h3>
-                    <p className="text-sm text-soft-white/60">Enter the code sent to your email and your new password.</p>
+                    <h3 className="font-heading text-lg font-bold text-deep-black">Reset Password</h3>
+                    <p className="text-sm text-cold-grey">Enter the code sent to your email and your new password.</p>
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 font-bold">
+                      Note: Check the spam folder in email for the OTP
+                    </p>
                   </div>
 
                   <div className="flex flex-col gap-2">

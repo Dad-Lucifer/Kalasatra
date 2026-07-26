@@ -20,6 +20,8 @@ export interface CheckoutExtras {
   coinsUsed: number;
   coinsDiscount: number;
   deliveryCharge: number;
+  couponCode?: string;
+  couponDiscount?: number;
 }
 
 export const useCheckout = () => {
@@ -30,7 +32,7 @@ export const useCheckout = () => {
   /**
    * handleCheckout
    * @param shippingAddress  - delivery address selected by user
-   * @param extras           - { coinsUsed, coinsDiscount, deliveryCharge }
+   * @param extras           - { coinsUsed, coinsDiscount, deliveryCharge, couponCode, couponDiscount }
    * @param onSuccess        - callback invoked when payment verification succeeds
    */
   const handleCheckout = async (
@@ -72,7 +74,9 @@ export const useCheckout = () => {
       const coinsUsed = extras?.coinsUsed ?? 0;
       const coinsDiscount = extras?.coinsDiscount ?? 0;
       const deliveryCharge = extras?.deliveryCharge ?? 0;
-      const finalAmount = Math.max(0, totalPrice - coinsDiscount + deliveryCharge);
+      const couponCode = extras?.couponCode ?? undefined;
+      const couponDiscount = extras?.couponDiscount ?? 0;
+      const finalAmount = Math.max(0, totalPrice - coinsDiscount - couponDiscount + deliveryCharge);
 
       const orderRes = await apiRequest('/payment/create-order', {
         method: 'POST',
@@ -135,6 +139,8 @@ export const useCheckout = () => {
               coins_used:       coinsUsed,
               coins_discount:   coinsDiscount,
               delivery_charge:  deliveryCharge,
+              coupon_code:      couponCode,
+              coupon_discount:  couponDiscount,
             }),
           });
 
