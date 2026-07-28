@@ -4,7 +4,9 @@ import HeroSection from '../components/landing/HeroSection';
 import FeaturedCategories from '../components/landing/FeaturedCategories';
 import MatchTheMood from '../components/landing/MatchTheMood';
 import NewAndPopular from '../components/landing/NewAndPopular';
+import TextModule from '../components/landing/TextModule';
 import BottomMobileNav from '../components/landing/BottomMobileNav';
+import Footer from '../components/landing/Footer';
 
 export default function LandingPage() {
   return (
@@ -20,7 +22,9 @@ export default function LandingPage() {
         <HeroSection />
         <FeaturedCategories />
         <MatchTheMood />
+        <TextModule />
         <NewAndPopular />
+        <Footer />
       </main>
 
       {/* Bottom Nav for Mobile */}
