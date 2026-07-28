@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+
 import { Link } from 'react-router-dom';
 import { 
   FaInstagram, 
@@ -58,17 +58,9 @@ const socialLinks = [
 ];
 
 export default function Footer() {
-  const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email.trim()) {
-      setSubscribed(true);
-      setEmail('');
-      setTimeout(() => setSubscribed(false), 4000);
-    }
-  };
+
+  
 
   return (
     <footer className="bg-black text-white border-t border-zinc-900 pt-16 lg:pt-24 pb-12 px-6 sm:px-10 md:px-16 lg:px-24 relative overflow-hidden">
