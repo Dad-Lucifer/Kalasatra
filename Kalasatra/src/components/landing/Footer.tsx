@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { 
   FaInstagram, 
   FaXTwitter, 
   FaYoutube, 
   FaWhatsapp, 
-  FaArrowRight,
-  FaCheck
 } from 'react-icons/fa6';
 import logoImg from '../../assets/kalastra-logo.png';
 
