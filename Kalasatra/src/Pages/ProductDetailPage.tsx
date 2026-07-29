@@ -43,6 +43,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
+  const [customSizeInput, setCustomSizeInput] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -52,6 +53,16 @@ export default function ProductDetailPage() {
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+
+  const isCustomSize = (sizeStr: string): boolean => {
+    return Boolean(sizeStr && sizeStr.toLowerCase().includes('custom'));
+  };
+
+  const getCustomSizeNumber = (sizeStr: string): string => {
+    if (!sizeStr) return '';
+    const match = sizeStr.match(/\d+/);
+    return match ? match[0] : '';
+  };
 
   useEffect(() => {
     if (!slug) return;
@@ -95,13 +106,27 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (!localStorage.getItem('accessToken')) { navigate('/auth'); return; }
     if (!product) return;
+
+    let finalSize = selectedSize || product.sizes[0] || 'M';
+    if (isCustomSize(finalSize)) {
+      const extractedNum = getCustomSizeNumber(finalSize);
+      if (extractedNum) {
+        finalSize = extractedNum;
+      } else if (customSizeInput.trim()) {
+        finalSize = customSizeInput.trim();
+      } else {
+        alert('Please enter a valid numeric size.');
+        return;
+      }
+    }
+
     setAddingToCart(true);
     addItem(
       {
         productId: product.id,
         name: product.name,
         price: calcPrice().final,
-        size: selectedSize || product.sizes[0] || 'M',
+        size: finalSize,
         color: selectedColor || product.colors[0] || 'Black',
         image: product.thumbnail_url || product.images[0]?.url || '',
         slug: product.slug,
@@ -266,20 +291,51 @@ export default function ProductDetailPage() {
                   <button className="text-xs text-[#D4AF37] hover:text-[#C9A227] transition-colors">Size Guide</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {product.sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`px-5 py-2.5 text-sm font-medium transition-all ${
-                        selectedSize === size
-                          ? 'bg-[#1A1A1A] text-white border border-[#1A1A1A]'
-                          : 'border border-gray-300 text-[#1A1A1A] hover:border-[#D4AF37]'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {product.sizes.map((size) => {
+                    const isCustom = isCustomSize(size);
+                    const numFromSize = getCustomSizeNumber(size);
+                    let labelToDisplay = size;
+                    if (isCustom) {
+                      if (numFromSize) {
+                        labelToDisplay = numFromSize;
+                      } else if (selectedSize === size && customSizeInput) {
+                        labelToDisplay = customSizeInput;
+                      } else {
+                        labelToDisplay = 'Custom';
+                      }
+                    }
+
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-5 py-2.5 text-sm font-medium transition-all ${
+                          selectedSize === size
+                            ? 'bg-[#1A1A1A] text-white border border-[#1A1A1A]'
+                            : 'border border-gray-300 text-[#1A1A1A] hover:border-[#D4AF37]'
+                        }`}
+                      >
+                        {labelToDisplay}
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Custom size numeric input field when selected size is Custom without a pre-set number */}
+                {isCustomSize(selectedSize) && !getCustomSizeNumber(selectedSize) && (
+                  <div className="mt-3 flex flex-col gap-1.5">
+                    <label className="text-xs text-gray-600 font-medium">Enter Custom Size (Numbers only):</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="e.g. 38"
+                      value={customSizeInput}
+                      onChange={(e) => setCustomSizeInput(e.target.value.replace(/\D/g, ''))}
+                      className="w-40 px-3 py-2 text-sm border border-gray-300 focus:border-[#D4AF37] focus:outline-none rounded transition-colors"
+                    />
+                  </div>
+                )}
               </div>
             )}
 
