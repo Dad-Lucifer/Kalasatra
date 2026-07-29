@@ -29,6 +29,24 @@ const categoryMeta: Record<string, { title: string; subtitle: string }> = {
   'kids-collection': { title: "Kids Collection", subtitle: 'Mini style, maximum attitude.' },
 };
 
+const isCustomSize = (sizeStr: string): boolean => {
+  return Boolean(sizeStr && sizeStr.toLowerCase().includes('custom'));
+};
+
+const getCustomSizeNumber = (sizeStr: string): string => {
+  if (!sizeStr) return '';
+  const match = sizeStr.match(/\d+/);
+  return match ? match[0] : '';
+};
+
+const formatDisplaySize = (sizeStr: string): string => {
+  if (isCustomSize(sizeStr)) {
+    const num = getCustomSizeNumber(sizeStr);
+    return num || sizeStr;
+  }
+  return sizeStr;
+};
+
 export default function CategoryProductsPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -184,11 +202,16 @@ export default function CategoryProductsPage() {
       return;
     }
     const variant = selectedVariants[product.id];
+    let selectedSizeVal = variant?.size || product.sizes[0] || 'M';
+    if (isCustomSize(selectedSizeVal)) {
+      const extractedNum = getCustomSizeNumber(selectedSizeVal);
+      if (extractedNum) selectedSizeVal = extractedNum;
+    }
     addItem({
       productId: product.id,
       name: product.name,
       price: calcPrice(product).final,
-      size: variant?.size || product.sizes[0] || 'M',
+      size: selectedSizeVal,
       color: variant?.color || product.colors[0] || 'Black',
       image: product.thumbnail_url || product.images[0]?.url || '',
       slug: product.slug,
@@ -292,7 +315,7 @@ export default function CategoryProductsPage() {
                       : 'bg-transparent text-soft-white/60 border-luxury-gold/20 hover:border-luxury-gold/50 hover:text-soft-white'
                 }`}
               >
-                {size}
+                {formatDisplaySize(size)}
               </button>
             ))}
           </div>
@@ -572,7 +595,7 @@ export default function CategoryProductsPage() {
                                         : 'bg-transparent text-soft-white/50 border-luxury-gold/15 hover:border-luxury-gold/40'
                                     }`}
                                   >
-                                    {size}
+                                    {formatDisplaySize(size)}
                                   </button>
                                 ))}
                               </div>
