@@ -1017,7 +1017,7 @@ export default function CouponPage() {
                                 className="px-3.5 py-2 rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer bg-transparent disabled:opacity-50"
                                 style={
                                   coupon.is_active
-                                    ? { borderColor: 'rgba(160,139,166,0.25)', color: '#A08BA6', hover: {} }
+                                    ? { borderColor: 'rgba(160,139,166,0.25)', color: '#A08BA6' }
                                     : { borderColor: 'rgba(16,185,129,0.25)', color: '#10B981' }
                                 }
                               >
