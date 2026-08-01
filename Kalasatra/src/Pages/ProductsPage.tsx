@@ -112,7 +112,6 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -225,11 +224,6 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   const handleEditProduct = (productId: string) => {
     const product = products.find((p) => p.id === productId);
     if (product) setEditingProduct(product);
-  };
-
-  const handleViewProduct = (productId: string) => {
-    const product = products.find((p) => p.id === productId);
-    if (product) setViewingProduct(product);
   };
 
   const handleDeleteProduct = async (productId: string, productName: string) => {
@@ -718,11 +712,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                       {/* Desktop hover overlay */}
                       <div className="absolute inset-0 bg-black/60 opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 hidden lg:flex flex-col items-center justify-center gap-2">
                         <button
-                          onClick={() =>
-                            isAdminMode
-                              ? handleViewProduct(product.id)
-                              : (window.location.href = `/products/${product.slug}`)
-                          }
+                          onClick={() => (window.location.href = `/products/${product.slug}`)}
                           className="px-5 py-2 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 transition-all border-none cursor-pointer"
                         >
                           View Details
@@ -749,11 +739,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                     {/* Mobile persistent buttons */}
                     <div className="lg:hidden flex gap-2 px-2 sm:px-5 pt-2 pb-1">
                       <button
-                        onClick={() =>
-                          isAdminMode
-                            ? handleViewProduct(product.id)
-                            : (window.location.href = `/products/${product.slug}`)
-                        }
+                        onClick={() => (window.location.href = `/products/${product.slug}`)}
                         className="flex-1 px-3 py-2 bg-[#D4AF37] text-[#0F0F0F] text-xs font-semibold rounded-lg hover:brightness-110 transition-all border-none cursor-pointer text-center"
                       >
                         View Details
