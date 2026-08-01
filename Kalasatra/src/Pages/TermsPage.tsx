@@ -559,7 +559,7 @@ export default function TermsPage() {
           >
             <img src={logoImg} alt="Kalastra Logo" className="h-8 sm:h-10 w-auto object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]" />
             <span className="text-lg sm:text-xl font-black gold-gradient-text font-cinzel tracking-widest group-hover:scale-105 transition-transform">
-              Kalasatra
+              Kalastra
             </span>
           </button>
 

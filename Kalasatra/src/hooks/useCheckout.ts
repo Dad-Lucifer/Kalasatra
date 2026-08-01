@@ -110,7 +110,7 @@ export const useCheckout = () => {
         key:         import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount:      razorpayOrder.amount,
         currency:    razorpayOrder.currency,
-        name:        'Kalasatra',
+        name:        'Kalastra',
         description: 'Store Purchase',
         order_id:    razorpayOrder.id,
 
@@ -161,7 +161,7 @@ export const useCheckout = () => {
         },
 
         theme: {
-          color: '#D4AF37', // Kalasatra gold
+          color: '#D4AF37', // Kalastra gold
         },
 
         modal: {

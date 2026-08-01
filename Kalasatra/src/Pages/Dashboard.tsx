@@ -34,12 +34,12 @@ interface UserProfile {
   createdAt: string;
   lastLoginAt?: string;
   kalastra_coins?: number;
-  kalasatra_credits?: number;
+  Kalastra_credits?: number;
 }
 
 // ─── Free-Item Progress Constants ────────────────────────────────────────────
 const FREE_ITEM_THRESHOLD = 5000;
-const SPEND_STORAGE_KEY = 'kalasatra_free_spend';
+const SPEND_STORAGE_KEY = 'Kalastra_free_spend';
 
 function getSavedSpend(): number {
   try { return Number(localStorage.getItem(SPEND_STORAGE_KEY) || '0'); } catch { return 0; }
@@ -291,7 +291,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     });
     setRedeeming(false);
     if (res.success && res.data) {
-      setCouponMessage({ type: 'success', text: res.message || `You earned ${res.data.coinsAwarded} Kalasatra coins!` });
+      setCouponMessage({ type: 'success', text: res.message || `You earned ${res.data.coinsAwarded} Kalastra coins!` });
       setCouponCode('');
       fetchProfile();
     } else {
@@ -910,7 +910,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               <h1 className="text-2xl font-bold tracking-tight">Welcome TO {userName}</h1>
               <div className="text-right">
                 <div className="font-heading font-black text-xl tracking-wider flex items-center gap-1">
-                  KALASATRA
+                  Kalastra
                 </div>
                 <div className="text-[10px] text-accent-yellow uppercase font-bold tracking-widest mt-1">Expired on 01 Jun</div>
               </div>
@@ -997,7 +997,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 { label: 'Orders & Returns', action: () => navigate('/user-orders') },
                 { label: 'Wishlist', action: () => navigate('/wishlist') },
                 { label: 'Coupons', action: () => setCouponModalOpen(true) },
-                { label: 'Kalasatra Credit', action: () => handleOpenCreditsModal() },
+                { label: 'Kalastra Credit', action: () => handleOpenCreditsModal() },
                 { label: 'Profile & Addresses', action: () => setActiveView('profile') },
                 { label: 'Edit Details', action: () => setActiveView('edit') },
                 { label: 'Terms of Use', action: () => navigate('/terms') },
@@ -1038,7 +1038,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   <button onClick={() => setActiveView('edit')} className="text-[10px] font-bold uppercase tracking-widest underline cursor-pointer">Edit</button>
                 </div>
                 <div className="px-4 py-4 space-y-2">
-                  {[{ label: 'Name', value: profile?.name }, { label: 'Email', value: profile?.email }, { label: 'Phone', value: profile?.phone }, { label: 'Gender', value: profile?.gender }, { label: 'Credits', value: profile?.kalasatra_credits ?? 0 }].map(({ label, value }) => (
+                  {[{ label: 'Name', value: profile?.name }, { label: 'Email', value: profile?.email }, { label: 'Phone', value: profile?.phone }, { label: 'Gender', value: profile?.gender }, { label: 'Credits', value: profile?.Kalastra_credits ?? 0 }].map(({ label, value }) => (
                     <div key={label} className="flex justify-between">
                       <span className="text-[10px] uppercase font-bold tracking-widest text-cold-grey">{label}</span>
                       <span className="text-sm font-bold text-deep-black">{value || <span className="text-cold-grey font-normal italic text-xs">Not set</span>}</span>
@@ -1378,7 +1378,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               {profile && (
                 <div className="mb-4 px-3 sm:px-4 py-3 bg-cold-white border border-cold-grey-light flex items-center justify-between">
                   <span className="text-[10px] sm:text-xs uppercase font-bold text-cold-grey tracking-widest">Your Balance</span>
-                  <span className="text-base sm:text-lg font-bold text-deep-black">{profile.kalasatra_credits ?? 0} coins</span>
+                  <span className="text-base sm:text-lg font-bold text-deep-black">{profile.Kalastra_credits ?? 0} coins</span>
                 </div>
               )}
 
@@ -1390,7 +1390,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   type="text"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. KALASATRA50"
+                  placeholder="e.g. Kalastra50"
                   className="w-full sm:flex-1 px-4 py-3 border border-cold-grey-light text-sm font-bold text-deep-black outline-none focus:border-deep-black transition-colors uppercase placeholder:normal-case"
                   onKeyDown={(e) => { if (e.key === 'Enter') handleRedeemCoupon(); }}
                 />
@@ -1528,7 +1528,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 <div>
                   <p className="text-[10px] uppercase font-bold tracking-widest text-cold-grey mb-0.5">Your Balance</p>
                   <p className="text-2xl font-black tracking-tight">
-                    {profile?.kalasatra_credits ?? profile?.kalastra_coins ?? 0}
+                    {profile?.Kalastra_credits ?? profile?.kalastra_coins ?? 0}
                     <span className="text-sm font-semibold text-accent-yellow ml-1.5">coins</span>
                   </p>
                 </div>

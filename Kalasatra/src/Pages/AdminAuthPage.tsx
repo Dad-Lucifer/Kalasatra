@@ -169,7 +169,7 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
           </div>
           <h2 className="text-2xl font-light tracking-[0.2em] text-[#FDFBF7] uppercase">Admin Portal</h2>
           <div className="h-[1px] w-12 bg-[#D4AF37]/40 mx-auto mt-4 mb-3"></div>
-          <p className="text-[10px] tracking-widest text-[#FDFBF7]/40 uppercase">Kalasatra Security</p>
+          <p className="text-[10px] tracking-widest text-[#FDFBF7]/40 uppercase">Kalastra Security</p>
         </div>
 
         {message && (
@@ -262,7 +262,7 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
                   <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Admin Email</label>
                   <input
                     type="email"
-                    placeholder="admin@kalasatra.com"
+                    placeholder="admin@Kalastra.com"
                     className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -333,7 +333,7 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
                   <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Admin Email</label>
                   <input
                     type="email"
-                    placeholder="admin@kalasatra.com"
+                    placeholder="admin@Kalastra.com"
                     className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

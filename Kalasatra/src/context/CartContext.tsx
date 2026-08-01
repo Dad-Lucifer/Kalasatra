@@ -26,7 +26,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null);
 
-const STORAGE_KEY = 'kalasatra_cart';
+const STORAGE_KEY = 'Kalastra_cart';
 
 function getLocalCart(): CartItem[] {
   try {

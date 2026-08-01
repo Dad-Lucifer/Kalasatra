@@ -13,14 +13,14 @@ const { authenticateToken } = require("../middlewares/auth.middleware");
 
 /**
  * @route   GET /api/v1/coupons/available
- * @desc    Get count of active & valid Kalasatra Coins coupons
+ * @desc    Get count of active & valid Kalastra Coins coupons
  * @access  Authenticated user
  */
 router.get("/available", authenticateToken, getAvailableCouponsCount);
 
 /**
  * @route   POST /api/v1/coupons/redeem
- * @desc    Redeem a COINS coupon — credits Kalasatra coins to wallet
+ * @desc    Redeem a COINS coupon — credits Kalastra coins to wallet
  * @access  Authenticated user
  */
 router.post("/redeem", authenticateToken, redeemCoupon);

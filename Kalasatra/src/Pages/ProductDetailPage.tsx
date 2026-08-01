@@ -194,7 +194,7 @@ export default function ProductDetailPage() {
       key: 'rzp_test_Sy2wxO64TxSBRa',
       amount: rzpOrder.amount,           // in paise (backend already multiplied × 100)
       currency: rzpOrder.currency || 'INR',
-      name: 'Kalasatra',
+      name: 'Kalastra',
       description: product.name,
       image: product.thumbnail_url || product.images[0]?.url || '',
       order_id: rzpOrder.id,

@@ -190,7 +190,7 @@ export default function Promotions() {
 
             {/* Description */}
             <p className="text-soft-white/60 max-w-3xl mx-auto text-lg lg:text-xl leading-relaxed font-light">
-              Kalasatra isn't just clothing—it's a movement. Every stitch carries the weight of
+              Kalastra isn't just clothing—it's a movement. Every stitch carries the weight of
               heritage. Every design speaks to the future. Your identity deserves to be heard.
             </p>
 
@@ -202,7 +202,7 @@ export default function Promotions() {
 
             {/* Additional CTA */}
             <p className="text-soft-white/40 text-sm">
-              Free shipping on orders over ₹999 | <span className="text-luxury-gold">@kalasatra</span> for inspiration
+              Free shipping on orders over ₹999 | <span className="text-luxury-gold">@Kalastra</span> for inspiration
             </p>
           </div>
         </div>

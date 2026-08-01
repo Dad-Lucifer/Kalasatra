@@ -62,7 +62,7 @@ export default function BrandStory() {
 
           <div className="space-y-7 animate-slide-in-right">
             <p className="text-lg lg:text-xl text-soft-white/75 leading-relaxed font-light">
-              Kalasatra was born from a vision to bridge the gap between timeless cultural
+              Kalastra was born from a vision to bridge the gap between timeless cultural
               artistry and the raw energy of streetwear. We don't just make clothes — we
               craft statements of identity and rebellion.
             </p>

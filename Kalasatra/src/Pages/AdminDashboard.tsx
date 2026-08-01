@@ -202,7 +202,7 @@ export default function AdminDashboard() {
         </button>
         <div className="flex items-center gap-3">
            <img src={logoImg} alt="Kalastra" className="h-10 w-auto object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]" />
-          <span className="text-xl font-black gold-gradient-text font-cinzel tracking-widest">Kalasatra</span>
+          <span className="text-xl font-black gold-gradient-text font-cinzel tracking-widest">Kalastra</span>
         </div>
         <div className="w-10" />
       </div>
@@ -230,7 +230,7 @@ export default function AdminDashboard() {
           <img src={logoImg} alt="Logo" className={`${sidebarCollapsed ? 'h-10 mx-auto' : 'h-16'} w-auto object-contain relative z-10 drop-shadow-[0_0_12px_rgba(212,175,55,0.5)] transition-all duration-500`} />
           {!sidebarCollapsed && (
             <div className="min-w-0 relative z-10">
-              <h1 className="text-2xl font-black gold-gradient-text font-cinzel tracking-[0.15em]">Kalasatra</h1>
+              <h1 className="text-2xl font-black gold-gradient-text font-cinzel tracking-[0.15em]">Kalastra</h1>
               <p className="text-[10px] text-[#D4AF37]/70 uppercase tracking-[0.4em] mt-1.5 font-bold">Admin</p>
             </div>
           )}

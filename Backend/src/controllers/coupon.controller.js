@@ -338,7 +338,7 @@ const deleteCoupon = async (req, res) => {
 
 /**
  * POST /api/v1/coupons/redeem
- * Redeem a COINS coupon. Credits Kalasatra coins to the user's wallet.
+ * Redeem a COINS coupon. Credits Kalastra coins to the user's wallet.
  * Cannot be used for discount coupons (those go through checkout).
  */
 const redeemCoupon = async (req, res) => {
@@ -421,7 +421,7 @@ const redeemCoupon = async (req, res) => {
     // ── 8. Credit coins to user ───────────────────────────────────────────────
     const { data: user, error: userError } = await supabase
       .from("users")
-      .select("kalasatra_credits")
+      .select("Kalastra_credits")
       .eq("uid", userUid)
       .single();
 
@@ -429,12 +429,12 @@ const redeemCoupon = async (req, res) => {
       return res.status(404).json({ success: false, message: "User profile not found." });
     }
 
-    const currentCredits = user.kalasatra_credits || 0;
+    const currentCredits = user.Kalastra_credits || 0;
     const newCredits = currentCredits + coupon.coins;
 
     const { error: updateError } = await supabase
       .from("users")
-      .update({ kalasatra_credits: newCredits, updated_at: new Date().toISOString() })
+      .update({ Kalastra_credits: newCredits, updated_at: new Date().toISOString() })
       .eq("uid", userUid);
 
     if (updateError) throw updateError;
@@ -456,7 +456,7 @@ const redeemCoupon = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: { coinsAwarded: coupon.coins, totalCredits: newCredits },
-      message: `You earned ${coupon.coins} Kalasatra coins!`,
+      message: `You earned ${coupon.coins} Kalastra coins!`,
     });
   } catch (err) {
     return handleError(res, err, "redeemCoupon");
@@ -494,7 +494,7 @@ const validateDiscountCoupon = async (req, res) => {
     if (coupon.type !== "discount") {
       return res.status(400).json({
         success: false,
-        message: "This is a Kalasatra Coins coupon. Redeem it from the Rewards section.",
+        message: "This is a Kalastra Coins coupon. Redeem it from the Rewards section.",
       });
     }
 

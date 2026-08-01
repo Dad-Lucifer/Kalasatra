@@ -301,7 +301,7 @@ function CouponFormModal({
                     }
                   >
                     <span className="text-[10px] font-black uppercase tracking-widest font-cinzel block">
-                      {t === 'coins' ? '🪙 Kalasatra Coins' : '🏷️ Discount Coupon'}
+                      {t === 'coins' ? '🪙 Kalastra Coins' : '🏷️ Discount Coupon'}
                     </span>
                     <span className="text-[9px] mt-1 block opacity-70">
                       {t === 'coins' ? 'Credits wallet on redeem' : 'Applied at checkout'}

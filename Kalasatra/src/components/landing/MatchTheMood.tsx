@@ -45,7 +45,7 @@ function getSessionKey(): string {
   // Use first 16 chars of token as a lightweight fingerprint; falls back to
   // a common key for unauthenticated visitors so they still get a stable set.
   const fp = token ? token.slice(0, 16) : 'guest';
-  return `kalasatra_mood_products_${fp}`;
+  return `Kalastra_mood_products_${fp}`;
 }
 
 function loadCached(): Product[] | null {

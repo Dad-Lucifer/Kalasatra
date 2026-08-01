@@ -61,7 +61,7 @@ const putObject = async (buffer, key, contentType) => {
       ContentType:  contentType,
       CacheControl: "public, max-age=31536000, immutable",
       Metadata: {
-        "uploaded-by": "kalasatra-backend",
+        "uploaded-by": "Kalastra-backend",
       },
     })
   );

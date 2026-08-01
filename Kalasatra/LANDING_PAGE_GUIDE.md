@@ -1,8 +1,8 @@
-# Kalasatra Premium Landing Page - Complete Build Guide
+# Kalastra Premium Landing Page - Complete Build Guide
 
 ## 🎨 Project Overview
 
-A **premium luxury streetwear landing page** designed for **Kalasatra** - featuring a sophisticated gold and black color scheme, advanced animations, and a complete user journey from hero to footer.
+A **premium luxury streetwear landing page** designed for **Kalastra** - featuring a sophisticated gold and black color scheme, advanced animations, and a complete user journey from hero to footer.
 
 ---
 
@@ -96,7 +96,7 @@ A **premium luxury streetwear landing page** designed for **Kalasatra** - featur
 - **Main CTA section** "Wear Your Story"
   - Premium pitch
   - "Explore the Full Collection" button
-  - Free shipping callout with @kalasatra handle
+  - Free shipping callout with @Kalastra handle
 
 **Interactivity:**
 - Email subscription with success state
@@ -112,10 +112,10 @@ A **premium luxury streetwear landing page** designed for **Kalasatra** - featur
   - Collections (Men's, Women's, Kids, Accessories, Limited Drops)
   - Company (About, Story, Careers, Press, Sustainability)
   - Support (Contact, Shipping, Returns, Size Guide, FAQ)
-  - Connect (@kalasatra Instagram, Twitter, YouTube, Discord, WhatsApp)
+  - Connect (@Kalastra Instagram, Twitter, YouTube, Discord, WhatsApp)
 - **Newsletter signup** with discount incentive
 - **Bottom links** (Privacy, Terms, Cookie Policy, Sitemap)
-- **@kalasatra branding** at the end
+- **@Kalastra branding** at the end
 
 **Features:**
 - Animated link underlines
@@ -293,7 +293,7 @@ npm run build
 ✅ Hover animations throughout  
 ✅ Countdown timer  
 ✅ Form validation ready  
-✅ @kalasatra branded throughout  
+✅ @Kalastra branded throughout  
 ✅ Premium color scheme (Gold + Black)  
 ✅ Custom Tailwind theme  
 ✅ React Hooks for state management  
@@ -303,7 +303,7 @@ npm run build
 
 ## 📞 Contact & Social
 
-**@kalasatra** - Find us on:
+**@Kalastra** - Find us on:
 - Instagram
 - Twitter/X
 - YouTube
@@ -314,7 +314,7 @@ npm run build
 
 ## 📄 License
 
-Crafted for Kalasatra - Premium Streetwear  
+Crafted for Kalastra - Premium Streetwear  
 © 2024 All Rights Reserved
 
 ---

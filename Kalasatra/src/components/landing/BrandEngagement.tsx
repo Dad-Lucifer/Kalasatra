@@ -27,7 +27,7 @@ const highlights = [
 
 const testimonials = [
   {
-    quote: "Kalasatra's quality is unmatched. The fabric, fit, and attention to detail elevates my entire wardrobe.",
+    quote: "Kalastra's quality is unmatched. The fabric, fit, and attention to detail elevates my entire wardrobe.",
     author: 'Arjun M.',
     role: 'Verified Buyer',
     rating: 5,
@@ -83,7 +83,7 @@ export default function BrandEngagement() {
         {/* Stats Section */}
         <div className="mb-28 lg:mb-36">
           <h2 className="font-heading text-3xl font-bold text-soft-white mb-12 uppercase tracking-[0.1rem]">
-            Why Choose Kalasatra
+            Why Choose Kalastra
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {highlights.map((h, idx) => (
@@ -136,7 +136,7 @@ export default function BrandEngagement() {
               </h2>
 
               <p className="text-lg text-soft-white/60 leading-relaxed max-w-md">
-                Real feedback from real customers who've made Kalasatra part of their identity.
+                Real feedback from real customers who've made Kalastra part of their identity.
               </p>
 
               <button className="group inline-flex items-center gap-2 text-luxury-gold font-semibold text-sm uppercase tracking-[0.2em] hover:text-gold-light transition-all">

@@ -218,7 +218,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
 
           <div className="text-center mb-8 flex flex-col items-center">
             <div className="h-28 mb-4 w-full flex justify-center">
-              <img src={logoImg} alt="Kalasatra Logo" className="h-full max-w-full object-contain" />
+              <img src={logoImg} alt="Kalastra Logo" className="h-full max-w-full object-contain" />
             </div>
             <p className="text-sm text-cold-grey tracking-wider uppercase font-bold">
               Premium Streetwear
