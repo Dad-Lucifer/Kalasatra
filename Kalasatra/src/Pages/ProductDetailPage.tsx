@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
-import { loadRazorpayScript, RAZORPAY_KEY } from '../utils/razorpay';
+
 import { useCart } from '../context/CartContext';
 import { useCheckoutFlow } from '../context/CheckoutFlowContext';
 
@@ -105,10 +105,9 @@ export default function ProductDetailPage() {
     return { discounted, final: withGst };
   };
 
-  const handleAddToCart = () => {
-    if (!localStorage.getItem('accessToken')) { navigate('/auth'); return; }
-    if (!product) return;
-
+  // ─── Shared size-resolution helper ─────────────────────────────────────────
+  const resolveFinalSize = (): string | null => {
+    if (!product) return null;
     let finalSize = selectedSize || product.sizes[0] || 'M';
     if (isCustomSize(finalSize)) {
       const extractedNum = getCustomSizeNumber(finalSize);
@@ -118,9 +117,18 @@ export default function ProductDetailPage() {
         finalSize = customSizeInput.trim();
       } else {
         alert('Please enter a valid numeric size.');
-        return;
+        return null;
       }
     }
+    return finalSize;
+  };
+
+  const handleAddToCart = () => {
+    if (!localStorage.getItem('accessToken')) { navigate('/auth'); return; }
+    if (!product) return;
+
+    const finalSize = resolveFinalSize();
+    if (!finalSize) return;
 
     setAddingToCart(true);
     addItem(
@@ -133,129 +141,55 @@ export default function ProductDetailPage() {
         image: product.thumbnail_url || product.images[0]?.url || '',
         slug: product.slug,
       },
-      quantity  // pass the user-selected quantity
+      quantity
     );
-    setTimeout(() => setAddingToCart(false), 1200);
+    // Open cart drawer so the user can see what's been added
+    setTimeout(() => {
+      setAddingToCart(false);
+      setCartOpen(true);
+    }, 600);
   };
 
 
-  // ─── Buy Now: auth-guard → Razorpay checkout ─────────────────────────────
-  const handleBuyNow = async () => {
-    // 1. Auth guard — redirect to login if not authenticated
+  // ─── Buy Now: same flow as Add to Cart → Checkout ────────────────────────
+  //
+  //  1. Auth-guard (same as Add to Cart)
+  //  2. Resolve size (shared helper)
+  //  3. Add item to cart (so CheckoutFlowModal sees it)
+  //  4. Immediately fire startCheckout() — opens the unified checkout modal
+  //
+  //  This keeps ONE checkout path through the app instead of two.
+  const handleBuyNow = () => {
     if (!localStorage.getItem('accessToken')) {
       navigate('/auth');
       return;
     }
     if (!product) return;
 
-    // 2. Resolve final size (same logic as Add-to-Cart)
-    let finalSize = selectedSize || product.sizes[0] || 'M';
-    if (isCustomSize(finalSize)) {
-      const extractedNum = getCustomSizeNumber(finalSize);
-      if (extractedNum) {
-        finalSize = extractedNum;
-      } else if (customSizeInput.trim()) {
-        finalSize = customSizeInput.trim();
-      } else {
-        alert('Please enter a valid numeric size.');
-        return;
-      }
-    }
-
-    const unitPrice  = calcPrice().final;
-    const totalAmount = unitPrice * quantity;
+    const finalSize = resolveFinalSize();
+    if (!finalSize) return;
 
     setBuyingNow(true);
 
-    // 3. Load Razorpay checkout.js
-    const scriptLoaded = await loadRazorpayScript();
-    if (!scriptLoaded) {
-      alert('Could not load Razorpay. Please check your internet connection.');
-      setBuyingNow(false);
-      return;
-    }
-
-    // 4. Create Razorpay order on backend (requires auth)
-    const orderRes = await apiRequest('/payment/create-order', {
-      method: 'POST',
-      body: JSON.stringify({ amount: totalAmount }),
-    });
-
-    if (!orderRes.success || !orderRes.data) {
-      alert(orderRes.message || 'Failed to initiate payment. Please try again.');
-      setBuyingNow(false);
-      return;
-    }
-
-    const rzpOrder = orderRes.data;
-
-    // 5. Open Razorpay payment modal
-    const options = {
-      key: RAZORPAY_KEY,                      // rzp_test_* → Razorpay test mode
-      amount: rzpOrder.amount,           // in paise (backend already multiplied × 100)
-      currency: rzpOrder.currency || 'INR',
-      name: 'Kalastra',
-      description: product.name,
-      image: product.thumbnail_url || product.images[0]?.url || '',
-      order_id: rzpOrder.id,
-
-      // 6. Payment success handler — verify signature with backend
-      handler: async (response: {
-        razorpay_order_id: string;
-        razorpay_payment_id: string;
-        razorpay_signature: string;
-      }) => {
-        const verifyRes = await apiRequest('/payment/verify', {
-          method: 'POST',
-          body: JSON.stringify({
-            razorpay_order_id:   response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature:  response.razorpay_signature,
-            amount:              totalAmount,
-            items: [
-              {
-                productId: product.id,
-                name:      product.name,
-                price:     unitPrice,
-                size:      finalSize,
-                color:     selectedColor || product.colors[0] || 'Black',
-                quantity,
-                image:     product.thumbnail_url || product.images[0]?.url || '',
-                slug:      product.slug,
-              },
-            ],
-            shipping_address: null,   // user can update in orders page
-            delivery_charge: 0,
-            coins_used: 0,
-            coins_discount: 0,
-            coupon_code: null,
-            coupon_discount: 0,
-          }),
-        });
-
-        if (verifyRes.success) {
-          navigate('/user-orders');
-        } else {
-          alert(verifyRes.message || 'Payment verification failed. Please contact support.');
-        }
-        setBuyingNow(false);
+    // Add the item to the cart (same payload as Add to Cart)
+    addItem(
+      {
+        productId: product.id,
+        name: product.name,
+        price: calcPrice().final,
+        size: finalSize,
+        color: selectedColor || product.colors[0] || 'Black',
+        image: product.thumbnail_url || product.images[0]?.url || '',
+        slug: product.slug,
       },
+      quantity
+    );
 
-      theme:  { color: '#D4AF37' },
-      modal: {
-        backdropclose: false,
-        ondismiss: () => {
-          setBuyingNow(false);
-        },
-      },
-    };
-
-    const rzpInstance = new (window as any).Razorpay(options);
-    rzpInstance.on('payment.failed', () => {
-      alert('Payment failed. Please try again.');
+    // Small tick so cart state settles, then open the checkout modal
+    setTimeout(() => {
       setBuyingNow(false);
-    });
-    rzpInstance.open();
+      startCheckout();
+    }, 150);
   };
 
   const handleSubmitReview = async () => {
