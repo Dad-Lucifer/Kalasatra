@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
-import { loadRazorpayScript } from '../utils/razorpay';
+import { loadRazorpayScript, RAZORPAY_KEY } from '../utils/razorpay';
 import { useCart } from '../context/CartContext';
 import { useCheckoutFlow } from '../context/CheckoutFlowContext';
 
@@ -191,7 +191,7 @@ export default function ProductDetailPage() {
 
     // 5. Open Razorpay payment modal
     const options = {
-      key: 'rzp_test_Sy2wxO64TxSBRa',
+      key: RAZORPAY_KEY,                      // rzp_test_* → Razorpay test mode
       amount: rzpOrder.amount,           // in paise (backend already multiplied × 100)
       currency: rzpOrder.currency || 'INR',
       name: 'Kalastra',
