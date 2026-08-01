@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { apiRequest, API_BASE_URL } from '../utils/api';
 
 import { COLOR_MAP } from '../constants/colors';
@@ -61,6 +62,34 @@ interface EditProductModalProps {
   onSaved: () => void;
 }
 
+// ─── Section header component ─────────────────────────────────────────────────
+function SectionHeader({ icon, title }: { icon: string; title: string }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-4">
+      <span className="text-base">{icon}</span>
+      <span className="text-xs font-bold tracking-[0.12em] uppercase text-[#D4AF37]">{title}</span>
+      <div className="flex-1 h-px bg-gradient-to-r from-[#D4AF37]/30 to-transparent" />
+    </div>
+  );
+}
+
+// ─── Styled field label ───────────────────────────────────────────────────────
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <label className="block text-xs font-semibold tracking-wide text-[#C0C0C0] mb-1.5 uppercase">
+      {children}
+      {required && <span className="text-[#D4AF37] ml-1">*</span>}
+    </label>
+  );
+}
+
+// ─── Shared input class ───────────────────────────────────────────────────────
+const inputCls =
+  'w-full px-3.5 py-2.5 bg-[#111111] border border-[#2A2A2A] rounded-xl text-[#F0F0F0] text-sm placeholder-[#555] outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/20 transition-all duration-200 font-[Outfit]';
+
+const selectCls =
+  'w-full px-3.5 py-2.5 bg-[#111111] border border-[#2A2A2A] rounded-xl text-[#F0F0F0] text-sm outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/20 transition-all duration-200 cursor-pointer font-[Outfit]';
+
 export default function EditProductModal({ product, categories, onClose, onSaved }: EditProductModalProps) {
   const [formData, setFormData] = useState({
     category_id: product.category_id,
@@ -75,7 +104,7 @@ export default function EditProductModal({ product, categories, onClose, onSaved
     low_stock_threshold: product.low_stock_threshold.toString(),
     is_featured: product.is_featured,
     colors: product.colors || [] as string[],
-    selectedSizeLabels: (product.sizes || []).map((s) => decodeSizeEntry(s).label),
+    selectedSizeLabels: Array.from(new Set((product.sizes || []).map((s) => decodeSizeEntry(s).label))),
   });
   // Pre-populate measurement inputs from existing encoded size strings (grouped by label)
   const initSizeInputs = (): Record<string, string[]> => {
@@ -95,6 +124,7 @@ export default function EditProductModal({ product, categories, onClose, onSaved
   const [modalSubcategories, setModalSubcategories] = useState<Subcategory[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -166,23 +196,19 @@ export default function EditProductModal({ product, categories, onClose, onSaved
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const processImageFiles = async (files: FileList) => {
     if (!files || files.length === 0) return;
-
     setUploading(true);
     const form = new FormData();
     for (let i = 0; i < files.length; i++) {
       form.append('images', files[i]);
     }
-
     try {
       const res = await fetch(`${API_BASE_URL}/upload/images`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: form,
       });
-
       const data = await res.json();
       if (data.success) {
         const newImages: ProductImage[] = data.data.map(
@@ -204,6 +230,16 @@ export default function EditProductModal({ product, categories, onClose, onSaved
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) await processImageFiles(e.target.files);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files) await processImageFiles(e.dataTransfer.files);
+  };
+
   const removeImage = (index: number) => {
     setUploadedImages((prev) => prev.filter((_, i) => i !== index));
   };
@@ -222,7 +258,7 @@ export default function EditProductModal({ product, categories, onClose, onSaved
       low_stock_threshold: product.low_stock_threshold.toString(),
       is_featured: product.is_featured,
       colors: product.colors || [],
-      selectedSizeLabels: (product.sizes || []).map((s) => decodeSizeEntry(s).label),
+      selectedSizeLabels: Array.from(new Set((product.sizes || []).map((s) => decodeSizeEntry(s).label))),
     });
     setSizeInputs(initSizeInputs());
     setSizeDraftInput({});
@@ -280,327 +316,482 @@ export default function EditProductModal({ product, categories, onClose, onSaved
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto py-10" onClick={onClose}>
-      <div className="w-full max-w-2xl bg-[#1C1C1C] rounded-2xl overflow-hidden mx-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#333]">
-          <h2 className="text-xl font-bold text-[#F5F5F5]">Edit Product</h2>
-          <button onClick={onClose} className="text-2xl text-[#999] hover:text-[#F5F5F5] bg-transparent border-none cursor-pointer transition-colors">&times;</button>
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto py-8"
+      style={{ background: 'rgba(0,0,0,0.82)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl mx-4 mb-8 rounded-2xl overflow-hidden"
+        style={{
+          background: '#1A1A1A',
+          border: '1px solid rgba(212,175,55,0.2)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ── Header ─────────────────────────────────────────────────────────── */}
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{
+            background: 'linear-gradient(90deg, rgba(212,175,55,0.08) 0%, transparent 100%)',
+            borderBottom: '1px solid rgba(212,175,55,0.15)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+              style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}
+            >
+              ✏️
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-[#F5F5F5] font-[Syne]">Edit Product</h2>
+              <p className="text-[11px] text-[#777] truncate max-w-[300px]">{product.name}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#666] hover:text-[#F5F5F5] hover:bg-white/5 transition-all cursor-pointer"
+            style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            ✕
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#999]">Category *</label>
-              <select
-                value={formData.category_id}
-                onChange={(e) => handleFormChange('category_id', e.target.value)}
-                required
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm outline-none focus:border-[#D4AF37] transition-colors"
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-            </div>
+        {/* ── Scrollable form body ────────────────────────────────────────────── */}
+        <form onSubmit={handleSubmit} className="overflow-y-auto" style={{ maxHeight: '78vh' }}>
+          <div className="p-6 space-y-7">
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#999]">Subcategory</label>
-              <select
-                value={formData.subcategory_id}
-                onChange={(e) => handleFormChange('subcategory_id', e.target.value)}
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm outline-none focus:border-[#D4AF37] transition-colors"
-              >
-                <option value="">None</option>
-                {modalSubcategories.map((sub) => (
-                  <option key={sub.id} value={sub.id}>{sub.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+            {/* ── Section: Basic Info ──────────────────────────────────────── */}
+            <div>
+              <SectionHeader icon="📦" title="Basic Information" />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <FieldLabel required>Category</FieldLabel>
+                    <select
+                      value={formData.category_id}
+                      onChange={(e) => handleFormChange('category_id', e.target.value)}
+                      required
+                      className={selectCls}
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <FieldLabel>Subcategory</FieldLabel>
+                    <select
+                      value={formData.subcategory_id}
+                      onChange={(e) => handleFormChange('subcategory_id', e.target.value)}
+                      className={selectCls}
+                    >
+                      <option value="">None</option>
+                      {modalSubcategories.map((sub) => (
+                        <option key={sub.id} value={sub.id}>{sub.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-[#999]">Product Name *</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleFormChange('name', e.target.value)}
-              required
-              className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-[#999]">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => handleFormChange('description', e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#999]">Buying Price</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.buying_price}
-                onChange={(e) => handleFormChange('buying_price', e.target.value)}
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#999]">Selling Price *</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.selling_price}
-                onChange={(e) => handleFormChange('selling_price', e.target.value)}
-                required
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#999]">Discount %</label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={formData.discount_percentage}
-                onChange={(e) => handleFormChange('discount_percentage', e.target.value)}
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#999]">GST %</label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={formData.gst_percentage}
-                onChange={(e) => handleFormChange('gst_percentage', e.target.value)}
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#999]">Stock Quantity</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.stock_quantity}
-                onChange={(e) => handleFormChange('stock_quantity', e.target.value)}
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#999]">Low Stock Threshold</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.low_stock_threshold}
-                onChange={(e) => handleFormChange('low_stock_threshold', e.target.value)}
-                className="w-full px-3 py-2 bg-[#0F0F0F] border border-[#333] rounded-lg text-[#F5F5F5] text-sm placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
-              />
-            </div>
-
-            <div className="flex items-end pb-2">
-              <label className="flex items-center gap-2 text-sm text-[#F5F5F5] cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.is_featured}
-                  onChange={(e) => handleFormChange('is_featured', e.target.checked)}
-                  className="accent-[#D4AF37]"
-                />
-                Featured Product
-              </label>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-[#999]">Colors</label>
-            <div className="flex flex-wrap gap-2">
-              {availableColors.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => toggleFormColor(color)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full cursor-pointer transition-all border ${
-                    formData.colors.includes(color)
-                      ? 'bg-[#D4AF37]/20 text-[#D4AF37] border-[#D4AF37]'
-                      : 'bg-[#0F0F0F] text-[#999] border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5]'
-                  }`}
-                >
-                  <span
-                    className="w-3 h-3 rounded-full border border-white/20 shrink-0"
-                    style={{ backgroundColor: COLOR_MAP[color] ?? color.toLowerCase() }}
+                <div>
+                  <FieldLabel required>Product Name</FieldLabel>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleFormChange('name', e.target.value)}
+                    required
+                    placeholder="e.g. Premium Cotton Kurta"
+                    className={inputCls}
                   />
-                  {color}
-                </button>
-              ))}
-            </div>
-          </div>
+                </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-[#999]">Sizes</label>
-            <p className="text-[10px] text-[#666]">Select sizes, then add one or more measurements (e.g. 22, 26, 28 in inches).</p>
-            <div className="flex flex-wrap gap-2">
-              {availableSizes.map((label) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => toggleFormSize(label)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all border ${
-                    formData.selectedSizeLabels.includes(label)
-                      ? 'bg-[#D4AF37] text-[#0F0F0F] border-[#D4AF37]'
-                      : 'bg-[#0F0F0F] text-[#F5F5F5] border-[#333] hover:border-[#D4AF37]'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+                <div>
+                  <FieldLabel>Description</FieldLabel>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleFormChange('description', e.target.value)}
+                    rows={3}
+                    placeholder="Describe the product..."
+                    className={`${inputCls} resize-none`}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Per-size measurement chips */}
-            {formData.selectedSizeLabels.length > 0 && (
-              <div className="mt-3 flex flex-col gap-3">
-                {formData.selectedSizeLabels.map((label) => (
-                  <div key={label} className="bg-[#0F0F0F] border border-[#333] rounded-lg p-3 space-y-2">
-                    <span className="inline-block px-2 py-0.5 text-xs font-bold text-[#D4AF37] border border-[#D4AF37] rounded">
-                      {label}
-                    </span>
-
-                    {/* Existing chips */}
-                    {(sizeInputs[label] ?? []).length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {(sizeInputs[label] ?? []).map((m, i) => (
-                          <span
-                            key={i}
-                            className="flex items-center gap-1 px-2 py-0.5 bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#D4AF37] text-[11px] rounded-full"
-                          >
-                            {m}&quot;
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveMeasurement(label, i)}
-                              className="text-[#D4AF37] hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer leading-none"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Add input */}
-                    <div className="flex items-center gap-2">
+            {/* ── Section: Pricing ─────────────────────────────────────────── */}
+            <div>
+              <SectionHeader icon="💰" title="Pricing" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Buying Price', field: 'buying_price', placeholder: '0.00' },
+                  { label: 'Selling Price', field: 'selling_price', placeholder: '0.00', required: true },
+                  { label: 'Discount %', field: 'discount_percentage', placeholder: '0', max: 100 },
+                  { label: 'GST %', field: 'gst_percentage', placeholder: '0', max: 100 },
+                ].map(({ label, field, placeholder, required, max }) => (
+                  <div key={field}>
+                    <FieldLabel required={required}>{label}</FieldLabel>
+                    <div className="relative">
+                      {field.includes('price') && (
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555] text-sm pointer-events-none">₹</span>
+                      )}
                       <input
                         type="number"
+                        step="0.01"
                         min="0"
-                        step="0.5"
-                        placeholder="e.g. 28"
-                        value={sizeDraftInput[label] ?? ''}
-                        onChange={(e) =>
-                          setSizeDraftInput((prev) => ({ ...prev, [label]: e.target.value }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddMeasurement(label);
-                          }
-                        }}
-                        className="w-28 px-2.5 py-1.5 bg-[#1C1C1C] border border-[#333] rounded-lg text-[#F5F5F5] text-xs placeholder-[#666] outline-none focus:border-[#D4AF37] transition-colors"
+                        max={max}
+                        value={formData[field as keyof typeof formData] as string}
+                        onChange={(e) => handleFormChange(field, e.target.value)}
+                        required={required}
+                        placeholder={placeholder}
+                        className={`${inputCls} ${field.includes('price') ? 'pl-7' : ''}`}
                       />
-                      <span className="text-[10px] text-[#666]">inches</span>
-                      <button
-                        type="button"
-                        onClick={() => handleAddMeasurement(label)}
-                        className="px-2.5 py-1.5 bg-[#D4AF37] text-[#0F0F0F] text-xs font-semibold rounded-lg hover:brightness-110 transition-all border-none cursor-pointer"
-                      >
-                        + Add
-                      </button>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-[#999]">Product Images</label>
-            <div className="flex flex-col gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/avif"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="px-4 py-2 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all border-none cursor-pointer"
-                >
-                  {uploading ? 'Uploading...' : 'Choose Images'}
-                </button>
-                <span className="text-[10px] text-[#666]">Supports JPG, PNG, WebP, AVIF (max 10MB each)</span>
+            {/* ── Section: Inventory ───────────────────────────────────────── */}
+            <div>
+              <SectionHeader icon="📊" title="Inventory" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 items-end">
+                <div>
+                  <FieldLabel>Stock Quantity</FieldLabel>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.stock_quantity}
+                    onChange={(e) => handleFormChange('stock_quantity', e.target.value)}
+                    placeholder="0"
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Low Stock Alert</FieldLabel>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.low_stock_threshold}
+                    onChange={(e) => handleFormChange('low_stock_threshold', e.target.value)}
+                    placeholder="10"
+                    className={inputCls}
+                  />
+                </div>
+                <div className="pb-0.5">
+                  <label
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all border ${
+                      formData.is_featured
+                        ? 'bg-[#D4AF37]/10 border-[#D4AF37]/40 text-[#D4AF37]'
+                        : 'bg-[#111] border-[#2A2A2A] text-[#888] hover:border-[#444]'
+                    }`}
+                  >
+                    <span className="text-lg">{formData.is_featured ? '⭐' : '☆'}</span>
+                    <span className="text-xs font-semibold tracking-wide uppercase">Featured</span>
+                    <input
+                      type="checkbox"
+                      checked={formData.is_featured}
+                      onChange={(e) => handleFormChange('is_featured', e.target.checked)}
+                      className="hidden"
+                    />
+                    <div
+                      className={`ml-auto w-9 h-5 rounded-full transition-all duration-300 relative ${
+                        formData.is_featured ? 'bg-[#D4AF37]' : 'bg-[#333]'
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-300 ${
+                          formData.is_featured ? 'left-[18px]' : 'left-0.5'
+                        }`}
+                      />
+                    </div>
+                  </label>
+                </div>
               </div>
             </div>
 
-            {uploadedImages.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mt-3">
-                {uploadedImages.map((img, idx) => (
-                  <div key={idx} className="relative aspect-square bg-[#0F0F0F] rounded-lg overflow-hidden group">
-                    <img src={img.url} alt={`Product ${idx + 1}`} className="w-full h-full object-cover" />
+            {/* ── Section: Colors ──────────────────────────────────────────── */}
+            <div>
+              <SectionHeader icon="🎨" title="Colors" />
+              <div className="flex flex-wrap gap-2">
+                {availableColors.map((color) => {
+                  const isSelected = formData.colors.includes(color);
+                  return (
                     <button
+                      key={color}
                       type="button"
-                      onClick={() => removeImage(idx)}
-                      title="Remove image"
-                      className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none flex items-center justify-center"
+                      onClick={() => toggleFormColor(color)}
+                      className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-full cursor-pointer transition-all ${
+                        isSelected
+                          ? 'text-[#D4AF37]'
+                          : 'text-[#888] hover:text-[#CCC]'
+                      }`}
+                      style={{
+                        background: isSelected ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                        border: isSelected ? '1px solid rgba(212,175,55,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                        boxShadow: isSelected ? '0 0 10px rgba(212,175,55,0.1)' : 'none',
+                      }}
                     >
-                      &times;
+                      <span
+                        className="w-3.5 h-3.5 rounded-full shrink-0"
+                        style={{
+                          backgroundColor: COLOR_MAP[color] ?? color.toLowerCase(),
+                          border: color === 'White' ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(0,0,0,0.3)',
+                          boxShadow: isSelected ? `0 0 6px ${COLOR_MAP[color]}66` : 'none',
+                        }}
+                      />
+                      {color}
+                      {isSelected && <span className="text-[10px]">✓</span>}
                     </button>
-                    {idx === 0 && <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-[#D4AF37]/80 text-[#0F0F0F] text-[8px] font-bold rounded">Thumbnail</span>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-            )}
+              {formData.colors.length > 0 && (
+                <p className="mt-2 text-[11px] text-[#666]">
+                  {formData.colors.length} color{formData.colors.length !== 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+
+            {/* ── Section: Sizes ───────────────────────────────────────────── */}
+            <div>
+              <SectionHeader icon="📐" title="Sizes & Measurements" />
+              <p className="text-[11px] text-[#555] mb-3">
+                Select sizes, then add optional measurements (e.g. 28″ for waist).
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {availableSizes.map((label) => {
+                  const isActive = formData.selectedSizeLabels.includes(label);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => toggleFormSize(label)}
+                      className="px-4 py-2 text-xs font-bold rounded-lg cursor-pointer transition-all"
+                      style={{
+                        background: isActive ? '#D4AF37' : 'rgba(255,255,255,0.04)',
+                        color: isActive ? '#0F0F0F' : '#999',
+                        border: isActive ? '1px solid #D4AF37' : '1px solid rgba(255,255,255,0.08)',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Per-size measurement chips */}
+              {formData.selectedSizeLabels.length > 0 && (
+                <div className="flex flex-col gap-3 max-h-48 overflow-y-auto pr-1">
+                  {formData.selectedSizeLabels.map((label) => (
+                    <div
+                      key={label}
+                      className="rounded-xl p-3.5 space-y-2.5"
+                      style={{
+                        background: 'rgba(212,175,55,0.04)',
+                        border: '1px solid rgba(212,175,55,0.15)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="px-2.5 py-0.5 text-[11px] font-black tracking-widest rounded-md"
+                          style={{
+                            background: 'rgba(212,175,55,0.15)',
+                            border: '1px solid rgba(212,175,55,0.4)',
+                            color: '#D4AF37',
+                          }}
+                        >
+                          {label}
+                        </span>
+                        {(sizeInputs[label] ?? []).length > 0 && (
+                          <span className="text-[10px] text-[#555]">
+                            {(sizeInputs[label] ?? []).length} measurement{(sizeInputs[label] ?? []).length !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Existing chips */}
+                      {(sizeInputs[label] ?? []).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {(sizeInputs[label] ?? []).map((m, i) => (
+                            <span
+                              key={i}
+                              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-lg"
+                              style={{
+                                background: 'rgba(212,175,55,0.12)',
+                                border: '1px solid rgba(212,175,55,0.3)',
+                                color: '#D4AF37',
+                              }}
+                            >
+                              {m}″
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMeasurement(label, i)}
+                                className="w-3.5 h-3.5 flex items-center justify-center rounded-full text-[10px] hover:bg-red-500/20 hover:text-red-400 transition-all bg-transparent border-none cursor-pointer leading-none"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add input */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          placeholder="e.g. 28"
+                          value={sizeDraftInput[label] ?? ''}
+                          onChange={(e) =>
+                            setSizeDraftInput((prev) => ({ ...prev, [label]: e.target.value }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddMeasurement(label);
+                            }
+                          }}
+                          className="w-28 px-3 py-2 bg-[#111] border border-[#2A2A2A] rounded-lg text-[#F0F0F0] text-xs placeholder-[#555] outline-none focus:border-[#D4AF37] transition-colors"
+                        />
+                        <span className="text-[11px] text-[#555]">inches</span>
+                        <button
+                          type="button"
+                          onClick={() => handleAddMeasurement(label)}
+                          className="px-3 py-2 text-[11px] font-bold rounded-lg hover:brightness-110 transition-all border-none cursor-pointer"
+                          style={{ background: '#D4AF37', color: '#0F0F0F' }}
+                        >
+                          + Add
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Section: Images ──────────────────────────────────────────── */}
+            <div>
+              <SectionHeader icon="🖼️" title="Product Images" />
+
+              {/* Drop zone */}
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => !uploading && fileInputRef.current?.click()}
+                className="rounded-xl py-8 px-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all"
+                style={{
+                  background: dragOver ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
+                  border: dragOver
+                    ? '2px dashed rgba(212,175,55,0.6)'
+                    : '2px dashed rgba(255,255,255,0.1)',
+                }}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <div className="text-2xl">{uploading ? '⏳' : '📤'}</div>
+                <p className="text-sm font-medium text-[#CCC]">
+                  {uploading ? 'Uploading images…' : 'Drop images here or click to browse'}
+                </p>
+                <p className="text-[11px] text-[#555]">JPG, PNG, WebP, AVIF — max 10 MB each</p>
+              </div>
+
+              {/* Image grid */}
+              {uploadedImages.length > 0 && (
+                <div className="grid grid-cols-4 gap-2.5 mt-3">
+                  {uploadedImages.map((img, idx) => (
+                    <div
+                      key={idx}
+                      className="relative aspect-square rounded-xl overflow-hidden group"
+                      style={{ border: idx === 0 ? '2px solid rgba(212,175,55,0.5)' : '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      <img src={img.url} alt={`Product ${idx + 1}`} className="w-full h-full object-cover" />
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        title="Remove image"
+                        className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-600/90 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition-all cursor-pointer border-none flex items-center justify-center hover:bg-red-500 hover:scale-110"
+                      >
+                        ✕
+                      </button>
+                      {idx === 0 && (
+                        <span
+                          className="absolute bottom-1.5 left-1.5 px-2 py-0.5 text-[9px] font-black tracking-wider rounded-md"
+                          style={{ background: 'rgba(212,175,55,0.9)', color: '#0F0F0F' }}
+                        >
+                          THUMB
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-[#333]">
-            <button
-              type="button"
-              onClick={() => {
-                resetForm();
-                onClose();
-              }}
-              className="px-6 py-2.5 bg-transparent text-[#999] text-sm font-medium rounded-lg border border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5] transition-all cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || uploading}
-              className="px-6 py-2.5 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
-            >
-              {submitting ? 'Saving...' : 'Save Changes'}
-            </button>
+          {/* ── Sticky footer ──────────────────────────────────────────────────── */}
+          <div
+            className="sticky bottom-0 flex items-center justify-between gap-3 px-6 py-4"
+            style={{
+              background: 'linear-gradient(0deg, #141414 60%, rgba(20,20,20,0) 100%)',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <p className="text-[11px] text-[#555]">
+              Fields marked <span className="text-[#D4AF37]">*</span> are required
+            </p>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  resetForm();
+                  onClose();
+                }}
+                className="px-5 py-2.5 text-sm font-semibold rounded-xl cursor-pointer border border-white/10 text-[#888] bg-transparent hover:text-[#F5F5F5] hover:border-white/25 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || uploading}
+                className="px-6 py-2.5 text-sm font-bold rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 transition-[filter]"
+                style={{
+                  background: 'linear-gradient(135deg, #D4AF37 0%, #B8962A 100%)',
+                  color: '#0F0F0F',
+                  border: 'none',
+                }}
+              >
+                {submitting ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Saving…
+                  </span>
+                ) : '✓ Save Changes'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

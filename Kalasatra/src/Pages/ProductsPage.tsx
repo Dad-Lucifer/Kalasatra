@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { apiRequest, API_BASE_URL } from '../utils/api';
 import EditProductModal from '../components/EditProductModal';
+import ProductDetailsModal from '../components/ProductDetailsModal';
 
 interface Category {
   id: string;
@@ -78,6 +80,8 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [debouncedMinPrice, setDebouncedMinPrice] = useState('');
+  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState('');
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('created_at');
@@ -120,11 +124,13 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   }, []);
 
   useEffect(() => {
+    // Always reset subcategory when category changes to avoid stale filter
+    setSelectedSubcategory('');
+    setCurrentPage(1);
     if (selectedCategory) {
       loadSubcategories(selectedCategory);
     } else {
       setSubcategories([]);
-      setSelectedSubcategory('');
     }
   }, [selectedCategory]);
 
@@ -136,13 +142,21 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
   }, [searchQuery]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedMinPrice(minPrice);
+      setDebouncedMaxPrice(maxPrice);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [minPrice, maxPrice]);
+
+  useEffect(() => {
     loadProducts();
   }, [
     selectedCategory,
     selectedSubcategory,
     debouncedSearch,
-    minPrice,
-    maxPrice,
+    debouncedMinPrice,
+    debouncedMaxPrice,
     selectedColors,
     selectedSizes,
     sortBy,
@@ -170,15 +184,22 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     const params = new URLSearchParams();
     if (selectedCategory) params.append('category', selectedCategory);
     if (selectedSubcategory) params.append('subcategory', selectedSubcategory);
-    if (searchQuery) params.append('search', searchQuery);
-    if (minPrice) params.append('minPrice', minPrice);
-    if (maxPrice) params.append('maxPrice', maxPrice);
+    if (debouncedSearch) params.append('search', debouncedSearch);
+    if (debouncedMinPrice) params.append('minPrice', debouncedMinPrice);
+    if (debouncedMaxPrice) params.append('maxPrice', debouncedMaxPrice);
     if (selectedColors.length > 0) params.append('colors', selectedColors.join(','));
-    if (selectedSizes.length > 0) params.append('sizes', selectedSizes.join(','));
+    // NOTE: sizes are filtered client-side to handle encoded formats like "S:24"
+    // Do not send sizes to API – instead fetch all and filter below
     params.append('sortBy', sortBy);
     params.append('sortOrder', sortOrder);
-    params.append('page', currentPage.toString());
-    params.append('limit', '12');
+    // When size filter is active load all products so client-side filter sees every match
+    if (selectedSizes.length > 0) {
+      params.append('page', '1');
+      params.append('limit', '9999');
+    } else {
+      params.append('page', currentPage.toString());
+      params.append('limit', '12');
+    }
 
     const res = await apiRequest(`/products?${params.toString()}`);
     setLoading(false);
@@ -207,8 +228,11 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     setSelectedCategory('');
     setSelectedSubcategory('');
     setSearchQuery('');
+    setDebouncedSearch('');
     setMinPrice('');
     setMaxPrice('');
+    setDebouncedMinPrice('');
+    setDebouncedMaxPrice('');
     setSelectedColors([]);
     setSelectedSizes([]);
     setCurrentPage(1);
@@ -562,6 +586,20 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
 
   const hasActiveFilters = selectedCategory || selectedSubcategory || searchQuery || minPrice || maxPrice || selectedColors.length > 0 || selectedSizes.length > 0;
 
+  // ── Client-side size filtering ───────────────────────────────────────────────
+  // Sizes are stored encoded as "LABEL:measurement" (e.g. "S:24", "Custom:36").
+  // The API cannot reliably filter these by prefix, so we decode each size entry
+  // and match purely on the label part, ignoring the measurement number.
+  // "Custom" matches any size whose label is "Custom" (e.g. Custom, Custom:24).
+  const filteredProducts = selectedSizes.length === 0
+    ? products
+    : products.filter((product) =>
+        product.sizes.some((encodedSize) => {
+          const { label } = decodeSizeEntry(encodedSize);
+          return selectedSizes.includes(label);
+        })
+      );
+
   return (
     <div className="min-h-screen bg-rich-black">
       {/* Header */}
@@ -650,12 +688,16 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
           {/* Sort Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div className="text-xs sm:text-sm text-[#999]">
-              {pagination && (
+              {selectedSizes.length > 0 ? (
                 <span>
-                  Showing {(pagination.page - 1) * pagination.limit + 1}-
+                  {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} matching size filter
+                </span>
+              ) : pagination ? (
+                <span>
+                  Showing {(pagination.page - 1) * pagination.limit + 1}–
                   {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} products
                 </span>
-              )}
+              ) : null}
             </div>
             <div className="flex items-center gap-2">
               <label className="text-xs sm:text-sm text-[#999] whitespace-nowrap">Sort by:</label>
@@ -683,9 +725,13 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
               <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
               <p className="mt-4 text-[#999] text-sm">Loading products...</p>
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-24">
-              <p className="text-[#999]">No products found matching your filters.</p>
+              <p className="text-[#999]">
+                {selectedSizes.length > 0
+                  ? `No products found with size${selectedSizes.length > 1 ? 's' : ''}: ${selectedSizes.join(', ')}`
+                  : 'No products found matching your filters.'}
+              </p>
               <button
                 onClick={clearFilters}
                 className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 active:scale-95 text-white text-sm font-semibold uppercase tracking-wide transition-all duration-200 border-none cursor-pointer shadow-sm"
@@ -697,7 +743,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <div
                     key={product.id}
                     className="bg-[#1C1C1C] rounded-xl overflow-hidden hover:shadow-lg hover:shadow-black/30 transition-all duration-300 group relative"
@@ -718,11 +764,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                       {/* Desktop hover overlay */}
                       <div className="absolute inset-0 bg-black/60 opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 hidden lg:flex flex-col items-center justify-center gap-2">
                         <button
-                          onClick={() =>
-                            isAdminMode
-                              ? handleViewProduct(product.id)
-                              : (window.location.href = `/products/${product.slug}`)
-                          }
+                          onClick={() => handleViewProduct(product.id)}
                           className="px-5 py-2 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 transition-all border-none cursor-pointer"
                         >
                           View Details
@@ -749,11 +791,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                     {/* Mobile persistent buttons */}
                     <div className="lg:hidden flex gap-2 px-2 sm:px-5 pt-2 pb-1">
                       <button
-                        onClick={() =>
-                          isAdminMode
-                            ? handleViewProduct(product.id)
-                            : (window.location.href = `/products/${product.slug}`)
-                        }
+                        onClick={() => handleViewProduct(product.id)}
                         className="flex-1 px-3 py-2 bg-[#D4AF37] text-[#0F0F0F] text-xs font-semibold rounded-lg hover:brightness-110 transition-all border-none cursor-pointer text-center"
                       >
                         View Details
@@ -848,7 +886,7 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
                 ))}
               </div>
 
-              {pagination && pagination.totalPages > 1 && (
+              {!selectedSizes.length && pagination && pagination.totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-8">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -889,8 +927,8 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
       </div>
 
       {/* ─── Add Product Modal ─── */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto py-6 sm:py-10 px-3 sm:px-4">
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/70 flex items-start justify-center overflow-y-auto py-6 sm:py-10 px-3 sm:px-4">
           <div className="w-full max-w-2xl bg-[#1C1C1C] rounded-2xl overflow-hidden mx-auto">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#333]">
               <h2 className="text-lg sm:text-xl font-bold text-[#F5F5F5]">Add New Product</h2>
@@ -1209,7 +1247,8 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Product Modal */}
@@ -1219,6 +1258,18 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
           categories={categories}
           onClose={() => setEditingProduct(null)}
           onSaved={loadProducts}
+        />
+      )}
+
+      {/* Product Details Modal */}
+      {viewingProduct && (
+        <ProductDetailsModal
+          product={viewingProduct}
+          onClose={() => setViewingProduct(null)}
+          onEdit={isAdminMode ? (productId) => {
+            setViewingProduct(null);
+            handleEditProduct(productId);
+          } : undefined}
         />
       )}
     </div>
