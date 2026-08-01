@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiRequest, API_BASE_URL } from '../utils/api';
 
-const availableColors = ['Red', 'Blue', 'Black', 'White', 'Green', 'Yellow', 'Pink', 'Grey'];
+import { COLOR_MAP } from '../constants/colors';
+
+const availableColors = Object.keys(COLOR_MAP);
 const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Custom'];
 
 // Encode / decode size entries as "LABEL:measurement" strings for DB storage.
@@ -434,12 +436,16 @@ export default function EditProductModal({ product, categories, onClose, onSaved
                   key={color}
                   type="button"
                   onClick={() => toggleFormColor(color)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all border ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full cursor-pointer transition-all border ${
                     formData.colors.includes(color)
-                      ? 'bg-[#D4AF37] text-[#0F0F0F] border-[#D4AF37]'
-                      : 'bg-[#0F0F0F] text-[#F5F5F5] border-[#333] hover:border-[#D4AF37]'
+                      ? 'bg-[#D4AF37]/20 text-[#D4AF37] border-[#D4AF37]'
+                      : 'bg-[#0F0F0F] text-[#999] border-[#333] hover:border-[#D4AF37] hover:text-[#F5F5F5]'
                   }`}
                 >
+                  <span
+                    className="w-3 h-3 rounded-full border border-white/20 shrink-0"
+                    style={{ backgroundColor: COLOR_MAP[color] ?? color.toLowerCase() }}
+                  />
                   {color}
                 </button>
               ))}
