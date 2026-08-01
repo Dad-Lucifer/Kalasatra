@@ -63,12 +63,12 @@ export default function Footer() {
   
 
   return (
-    <footer className="bg-black text-white border-t border-zinc-900 pt-16 lg:pt-24 pb-12 px-6 sm:px-10 md:px-16 lg:px-24 relative overflow-hidden">
+    <footer className="bg-black text-white border-t border-zinc-900 pt-16 lg:pt-20 pb-12 px-6 sm:px-10 md:px-15 lg:px-20 relative overflow-hidden">
       {/* Top Newsletter / Brand Statement Banner */}
      
 
       {/* Main Footer Links Grid */}
-      <div className="max-w-7xl mx-auto py-13 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-8">
+      <div className="max-w-7xl mx-auto py-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-8">
         {/* Brand Info Column */}
         <div className="lg:col-span-2 space-y-6 pr-4">
          
@@ -83,9 +83,6 @@ export default function Footer() {
             </div>
           </Link>
 
-          {/* <p className="text-xl text-zinc-400 leading-relaxed font-normal max-w-sm">
-            Kalastra combines <span className="text-white italic">“Kala”</span> (Art) and <span className="text-white italic">“Vastra”</span> (Clothing) to create trendsetting wearable art that empowers personal, unapologetic expression.
-          </p> */}
 
           {/* Social Links */}
           <div className="flex items-center gap-3 pt-2">
@@ -98,7 +95,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.name}
-                  className="w-10 h-10 rounded-full border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-white hover:bg-zinc-900 transition-all duration-300"
+                  className="w-10 h-10 rounded-full border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-yellow-300 hover:border-white hover:bg-zinc-900 transition-all duration-300"
                 >
                   <IconComponent className="text-base" />
                 </a>

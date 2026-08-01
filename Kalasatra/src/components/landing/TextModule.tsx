@@ -31,7 +31,7 @@ const TextModule: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.15 }}
-          className="lg:col-span-6 space-y-6 text-zinc-300 text-base md:text-lg   leading-relaxed pt-2"
+          className="lg:col-span-6 space-y-6 text-zinc-300 text-base text-justify md:text-lg   leading-relaxed pt-2"
         >
           <p>
             <strong className="font-bold text-yellow-300">Kalastra Clothing</strong> embarked on its journey on October 1, 2020. The idea was born from a deep passion for fashion and a desire to create a brand that seamlessly blends style with quality.

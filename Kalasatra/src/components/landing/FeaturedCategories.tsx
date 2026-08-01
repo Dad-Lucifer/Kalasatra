@@ -106,13 +106,15 @@ export default function FeaturedCategories() {
                   <img 
                     src={category.imgUrl} 
                     alt={category.name}
-                    className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 ${category.mobileImgUrl ? 'hidden md:block' : ''}`}
+                    loading={category.id === 'mens-collection' ? 'eager' : 'lazy'}
+                    className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${category.mobileImgUrl ? 'hidden md:block' : ''}`}
                   />
                   {category.mobileImgUrl && (
                     <img 
                       src={category.mobileImgUrl} 
                       alt={`${category.name} Mobile`}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 md:hidden"
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 md:hidden"
                     />
                   )}
 

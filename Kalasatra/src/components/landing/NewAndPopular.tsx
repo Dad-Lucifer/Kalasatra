@@ -254,7 +254,7 @@ export default function NewAndPopular() {
 
         {/* Filter Tabs */}
         <div className="flex justify-center mb-12">
-          <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-6 px-6 sm:mx-0 sm:px-0">
+          <div className="flex overflow-x-auto scrollbar-none gap-3 pb-2 -mx-6 px-6 sm:mx-0 sm:px-0">
             {tabs.map((tab) => (
               <button
                 key={tab}
@@ -296,7 +296,6 @@ export default function NewAndPopular() {
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                layout
                 className="group cursor-pointer flex flex-col bg-zinc-900 border border-white/5 hover:border-[#D4AF37]/50 transition-colors duration-500 rounded-sm overflow-hidden"
               >
                 {/* Product Image Box */}
@@ -305,7 +304,8 @@ export default function NewAndPopular() {
                     <img 
                       src={product.thumbnail_url} 
                       alt={product.name}
-                      className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ${product.stock_quantity > 0 ? 'group-hover:scale-110' : 'opacity-50 grayscale'}`}
+                      loading="lazy"
+                      className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${product.stock_quantity > 0 ? 'group-hover:scale-105' : 'opacity-50 grayscale'}`}
                     />
                     
                     {/* Gradient Overlays */}

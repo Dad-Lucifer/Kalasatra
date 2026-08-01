@@ -426,7 +426,11 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
     <>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-base lg:text-lg font-semibold text-[#F5F5F5]">Filters</h3>
-        <button onClick={clearFilters} className="text-xs lg:text-sm text-[#D4AF37] hover:underline bg-transparent border-none cursor-pointer">
+        <button
+          onClick={clearFilters}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-semibold uppercase tracking-wide transition-all duration-200 cursor-pointer border-none shadow-sm"
+        >
+          <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
           Clear All
         </button>
       </div>
@@ -575,24 +579,25 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 px-4 sm:px-6 py-4 sm:py-8 max-w-[1440px] mx-auto">
         {/* ─── Mobile Filter Bar ─── */}
-        <div className="lg:hidden flex items-center gap-3">
+        <div className="lg:hidden flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1C1C1C] border border-[#333] rounded-lg text-sm text-[#F5F5F5] cursor-pointer hover:border-[#D4AF37] transition-colors"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#1C1C1C] border border-[#333] rounded-lg text-sm text-[#F5F5F5] cursor-pointer hover:border-[#D4AF37] transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm4 6a1 1 0 011-1h8a1 1 0 010 2H8a1 1 0 01-1-1zm2 6a1 1 0 011-1h4a1 1 0 010 2h-4a1 1 0 01-1-1z" />
             </svg>
-            Filters
+            <span className="whitespace-nowrap">Filters</span>
             {hasActiveFilters && (
-              <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+              <span className="w-2 h-2 rounded-full bg-[#D4AF37] shrink-0" />
             )}
           </button>
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="text-xs text-[#D4AF37] hover:underline bg-transparent border-none cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs sm:text-sm font-semibold uppercase tracking-wide transition-all duration-200 cursor-pointer border-none shadow-sm whitespace-nowrap"
             >
+              <svg className="w-3 h-3 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
               Clear All
             </button>
           )}
@@ -673,7 +678,11 @@ export default function ProductsPage({ isAdminMode = false }: ProductsPageProps)
           ) : products.length === 0 ? (
             <div className="text-center py-24">
               <p className="text-[#999]">No products found matching your filters.</p>
-              <button onClick={clearFilters} className="mt-4 px-4 py-2 bg-[#D4AF37] text-[#0F0F0F] text-sm font-medium rounded-lg hover:brightness-110 transition-all border-none cursor-pointer">
+              <button
+                onClick={clearFilters}
+                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 active:scale-95 text-white text-sm font-semibold uppercase tracking-wide transition-all duration-200 border-none cursor-pointer shadow-sm"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                 Clear Filters
               </button>
             </div>

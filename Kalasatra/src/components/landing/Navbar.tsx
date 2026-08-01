@@ -111,7 +111,7 @@ export default function Navbar() {
       }
       setDropdownOpen(true);
       setActiveIndex(-1);
-    }, 300);
+    }, 500);
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
   }, [query]);
 
@@ -283,10 +283,10 @@ export default function Navbar() {
         }`}
       >
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20 gap-4">
+          <div className="flex items-center justify-between h-16 lg:h-20 gap-4 relative">
 
             {/* Hamburger */}
-            <div className="flex items-center">
+            <div className="flex items-center shrink-0">
               <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-[#D4AF37] hover:text-white transition-colors focus:outline-none cursor-pointer">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
@@ -294,7 +294,7 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Logo */}
+            {/* Desktop Logo — full logo + wordmark, centered */}
             <Link to="/" className="hidden lg:flex flex-1 justify-center items-center group relative">
               <div className="flex items-center gap-3 justify-center">
                 <img src={logoImg} alt="Kalastra Logo" className="h-12 lg:h-16 w-auto object-contain drop-shadow-[0_0_10px_rgba(212,175,55,0.3)] transition-all duration-700 group-hover:scale-110 group-hover:rotate-6" />
@@ -302,6 +302,21 @@ export default function Navbar() {
                   KALASTRA
                 </span>
               </div>
+            </Link>
+
+            {/* Mobile brand name — absolutely centered so hamburger & icons stay at edges */}
+            <Link
+              to="/"
+              className="lg:hidden absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group pointer-events-auto"
+            >
+              {/* <img
+                src={logoImg}
+                alt="Kalastra Logo"
+                className="h-10 w-auto object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.4)] transition-all duration-500 group-hover:scale-110"
+              /> */}
+              <span className="text-xl tracking-[0.3em] uppercase font-black text-[#D4AF37] drop-shadow-[0_0_10px_rgba(212,175,55,0.3)] transition-all duration-500 group-hover:text-white">
+                KALASTRA
+              </span>
             </Link>
 
             {/* Right section */}

@@ -384,7 +384,7 @@ export default function CategoryProductsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
           {/* ─── Mobile Filter Toggle ─── */}
-          <div className="lg:hidden flex items-center justify-between gap-3 mb-4">
+          <div className="lg:hidden flex flex-wrap items-center justify-between gap-3 mb-4">
             <button
               onClick={() => {
                 setDraftSortBy(sortBy);
@@ -402,12 +402,13 @@ export default function CategoryProductsPage() {
               {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.8)] animate-pulse" />}
             </button>
             
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="text-xs font-bold uppercase tracking-wider text-red-500 hover:text-red-600 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-semibold uppercase tracking-wide transition-all duration-200 cursor-pointer border-none shadow-sm whitespace-nowrap"
                 >
+                  <svg className="w-3 h-3 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                   Clear
                 </button>
               )}
@@ -481,8 +482,9 @@ export default function CategoryProductsPage() {
               {hasActiveDraftFilters && (
                 <button
                   onClick={clearFilters}
-                  className="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-semibold uppercase tracking-wide transition-all duration-200 cursor-pointer border-none shadow-sm"
                 >
+                  <svg className="w-3 h-3 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                   Clear All
                 </button>
               )}

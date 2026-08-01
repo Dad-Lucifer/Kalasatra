@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
+import { loadRazorpayScript } from '../utils/razorpay';
 import { useCart } from '../context/CartContext';
 import { useCheckoutFlow } from '../context/CheckoutFlowContext';
 
@@ -52,6 +53,7 @@ export default function ProductDetailPage() {
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
   const isCustomSize = (sizeStr: string): boolean => {
@@ -136,6 +138,125 @@ export default function ProductDetailPage() {
     setTimeout(() => setAddingToCart(false), 1200);
   };
 
+
+  // ─── Buy Now: auth-guard → Razorpay checkout ─────────────────────────────
+  const handleBuyNow = async () => {
+    // 1. Auth guard — redirect to login if not authenticated
+    if (!localStorage.getItem('accessToken')) {
+      navigate('/auth');
+      return;
+    }
+    if (!product) return;
+
+    // 2. Resolve final size (same logic as Add-to-Cart)
+    let finalSize = selectedSize || product.sizes[0] || 'M';
+    if (isCustomSize(finalSize)) {
+      const extractedNum = getCustomSizeNumber(finalSize);
+      if (extractedNum) {
+        finalSize = extractedNum;
+      } else if (customSizeInput.trim()) {
+        finalSize = customSizeInput.trim();
+      } else {
+        alert('Please enter a valid numeric size.');
+        return;
+      }
+    }
+
+    const unitPrice  = calcPrice().final;
+    const totalAmount = unitPrice * quantity;
+
+    setBuyingNow(true);
+
+    // 3. Load Razorpay checkout.js
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded) {
+      alert('Could not load Razorpay. Please check your internet connection.');
+      setBuyingNow(false);
+      return;
+    }
+
+    // 4. Create Razorpay order on backend (requires auth)
+    const orderRes = await apiRequest('/payment/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ amount: totalAmount }),
+    });
+
+    if (!orderRes.success || !orderRes.data) {
+      alert(orderRes.message || 'Failed to initiate payment. Please try again.');
+      setBuyingNow(false);
+      return;
+    }
+
+    const rzpOrder = orderRes.data;
+
+    // 5. Open Razorpay payment modal
+    const options = {
+      key: 'rzp_test_Sy2wxO64TxSBRa',
+      amount: rzpOrder.amount,           // in paise (backend already multiplied × 100)
+      currency: rzpOrder.currency || 'INR',
+      name: 'Kalasatra',
+      description: product.name,
+      image: product.thumbnail_url || product.images[0]?.url || '',
+      order_id: rzpOrder.id,
+
+      // 6. Payment success handler — verify signature with backend
+      handler: async (response: {
+        razorpay_order_id: string;
+        razorpay_payment_id: string;
+        razorpay_signature: string;
+      }) => {
+        const verifyRes = await apiRequest('/payment/verify', {
+          method: 'POST',
+          body: JSON.stringify({
+            razorpay_order_id:   response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature:  response.razorpay_signature,
+            amount:              totalAmount,
+            items: [
+              {
+                productId: product.id,
+                name:      product.name,
+                price:     unitPrice,
+                size:      finalSize,
+                color:     selectedColor || product.colors[0] || 'Black',
+                quantity,
+                image:     product.thumbnail_url || product.images[0]?.url || '',
+                slug:      product.slug,
+              },
+            ],
+            shipping_address: null,   // user can update in orders page
+            delivery_charge: 0,
+            coins_used: 0,
+            coins_discount: 0,
+            coupon_code: null,
+            coupon_discount: 0,
+          }),
+        });
+
+        if (verifyRes.success) {
+          navigate('/user-orders');
+        } else {
+          alert(verifyRes.message || 'Payment verification failed. Please contact support.');
+        }
+        setBuyingNow(false);
+      },
+
+      theme:  { color: '#D4AF37' },
+      modal: {
+        backdropclose: false,
+        ondismiss: () => {
+          setBuyingNow(false);
+        },
+      },
+    };
+
+    const rzpInstance = new (window as any).Razorpay(options);
+    rzpInstance.on('payment.failed', () => {
+      alert('Payment failed. Please try again.');
+      setBuyingNow(false);
+    });
+    rzpInstance.open();
+  };
 
   const handleSubmitReview = async () => {
     if (!localStorage.getItem('accessToken')) {
@@ -374,14 +495,23 @@ export default function ProductDetailPage() {
               </button>
               <div className="flex gap-3">
                 <button
-                  onClick={() => {
-                    handleAddToCart();
-                    navigate('/cart');
-                  }}
-                  disabled={product.stock_status === 'out'}
-                  className="w-1/2 h-12 text-sm font-semibold uppercase tracking-[0.15em] border border-[#D4AF37] text-[#1A1A1A] hover:bg-[#D4AF37] hover:text-white transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={handleBuyNow}
+                  disabled={product.stock_status === 'out' || buyingNow}
+                  className={`w-1/2 h-12 text-sm font-semibold uppercase tracking-[0.15em] border transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed ${
+                    buyingNow
+                      ? 'bg-[#D4AF37] border-[#D4AF37] text-white scale-[1.02]'
+                      : 'border-[#D4AF37] text-[#1A1A1A] hover:bg-[#D4AF37] hover:text-white'
+                  }`}
                 >
-                  Buy Now
+                  {buyingNow ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
+                      </svg>
+                      Processing…
+                    </span>
+                  ) : 'Buy Now'}
                 </button>
                 <button
                   onClick={() => navigate('/cart')}

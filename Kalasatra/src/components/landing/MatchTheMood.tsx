@@ -109,8 +109,8 @@ export default function MatchTheMood() {
         return;
       }
 
-      // 2️⃣  Fetch from backend
-      const res = await apiRequest<Product[]>('/products?limit=100&is_active=true');
+      // 2️⃣  Fetch from backend — only fetch what we need
+      const res = await apiRequest<Product[]>('/products?limit=10&is_active=true');
 
       if (cancelled) return;
 
@@ -186,7 +186,8 @@ export default function MatchTheMood() {
                 <img
                   src={item.imgUrl}
                   alt={`${item.title1} ${item.title2}`}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
 
                 {/* Base Gradient Overlay */}
