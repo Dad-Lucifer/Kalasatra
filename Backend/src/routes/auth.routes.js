@@ -32,7 +32,7 @@ const {
   updateProfileSchema,
 } = require("../middlewares/validate.middleware");
 
-// ─── Public Routes ──────────────────────────────────────────────────────────
+// //─── Public Routes ──────────────────────────────────────────────────────────
 
 /**
  * @route   POST /api/v1/auth/signup
