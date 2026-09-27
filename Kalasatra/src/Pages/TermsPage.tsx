@@ -44,12 +44,14 @@ export default function TermsPage() {
       toc={TOC}
     >
       {/* ── SECTION 1.0 ── */}
-      <section id="sec-1" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
-            1.0 PRELIMINARY RECITALS & STATUTORY ENFORCEABILITY
+      <section id="sec-1" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 1.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
+            1.0 PRELIMINARY RECITALS &amp; STATUTORY ENFORCEABILITY
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 1.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -80,19 +82,21 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 2.0 ── */}
-      <section id="sec-2" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-2" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 2.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             2.0 STATUTORY DEFINITIONS &amp; CONSTRUCTION
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 2.0</span>
         </div>
         <div className="space-y-3">
           <p>
             Whenever used in this Covenant, the following capitalized terms shall have the respective meanings
             ascribed below:
           </p>
-          <div className="border border-black divide-y divide-black font-mono text-xs my-4 bg-neutral-50">
+          <div className="border border-black divide-y divide-black font-mono text-xs my-3 bg-neutral-50">
             <div className="p-3">
               <span className="font-bold text-black uppercase">&ldquo;Business Day&rdquo;:</span> Any day other than a
               Saturday, Sunday, or a public holiday declared by the Central Government of India or the State Government
@@ -126,56 +130,92 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 3.0 ── */}
-      <section id="sec-3" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-3" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 3.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             3.0 ENTITY IDENTIFICATION &amp; REGULATORY STATUS
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 3.0</span>
         </div>
         <div className="space-y-3">
           <p>
             Pursuant to Rule 3(2) of the <em>Consumer Protection (E-Commerce) Rules, 2020</em>, the statutory details
             of the operating business entity are declared as under:
           </p>
-          <table className="w-full border border-black text-xs font-mono my-3">
-            <tbody>
-              <tr className="border-b border-black bg-neutral-100">
-                <td className="p-2.5 font-bold w-1/3 border-r border-black uppercase">Trade &amp; Legal Name</td>
-                <td className="p-2.5 font-bold">KALASTRA</td>
-              </tr>
-              <tr className="border-b border-black">
-                <td className="p-2.5 font-bold border-r border-black uppercase">Legal Constitution</td>
-                <td className="p-2.5">Sole Proprietorship established under the laws of India</td>
-              </tr>
-              <tr className="border-b border-black bg-neutral-50">
-                <td className="p-2.5 font-bold border-r border-black uppercase">Principal Place of Business</td>
-                <td className="p-2.5">Kopar Railway Station, Mumbai, Maharashtra, India</td>
-              </tr>
-              <tr className="border-b border-black">
-                <td className="p-2.5 font-bold border-r border-black uppercase">GSTIN Status</td>
-                <td className="p-2.5">Registered under CGST/SGST Acts; detailed on purchase invoices</td>
-              </tr>
-              <tr className="border-b border-black bg-neutral-50">
-                <td className="p-2.5 font-bold border-r border-black uppercase">Official Electronic Mail</td>
-                <td className="p-2.5 font-bold">kalastra29@gmail.com</td>
-              </tr>
-              <tr>
-                <td className="p-2.5 font-bold border-r border-black uppercase">Statutory Telephonic Support</td>
-                <td className="p-2.5 font-bold">+91 9082260829 (Monday&ndash;Friday, 10:00 to 18:00 IST)</td>
-              </tr>
-            </tbody>
-          </table>
+
+          {/* ── Mobile Key-Value Card Layout (sm:hidden) ── */}
+          <div className="sm:hidden border border-black divide-y divide-neutral-200 bg-neutral-50 font-mono text-xs my-3">
+            <div className="p-2.5">
+              <span className="text-[9px] uppercase tracking-wider text-neutral-500 block">Trade &amp; Legal Name</span>
+              <strong className="text-black text-xs">KALASTRA</strong>
+            </div>
+            <div className="p-2.5">
+              <span className="text-[9px] uppercase tracking-wider text-neutral-500 block">Legal Constitution</span>
+              <span className="text-neutral-800 text-xs">Sole Proprietorship (India)</span>
+            </div>
+            <div className="p-2.5">
+              <span className="text-[9px] uppercase tracking-wider text-neutral-500 block">Principal Place of Business</span>
+              <span className="text-neutral-800 text-xs">Kopar Railway Station, Mumbai, Maharashtra, India</span>
+            </div>
+            <div className="p-2.5">
+              <span className="text-[9px] uppercase tracking-wider text-neutral-500 block">GSTIN Status</span>
+              <span className="text-neutral-800 text-xs">Registered under CGST/SGST Acts (Reflected on invoice)</span>
+            </div>
+            <div className="p-2.5">
+              <span className="text-[9px] uppercase tracking-wider text-neutral-500 block">Official Support Email</span>
+              <span className="text-black font-bold text-xs break-all">kalastra29@gmail.com</span>
+            </div>
+            <div className="p-2.5">
+              <span className="text-[9px] uppercase tracking-wider text-neutral-500 block">Direct Telephone Support</span>
+              <span className="text-black font-bold text-xs">+91 9082260829 (Mon&ndash;Fri, 10:00 to 18:00 IST)</span>
+            </div>
+          </div>
+
+          {/* ── Desktop Clean Table View (hidden sm:block) ── */}
+          <div className="hidden sm:block overflow-x-auto w-full my-3">
+            <table className="w-full border border-black text-xs font-mono">
+              <tbody>
+                <tr className="border-b border-black bg-neutral-100">
+                  <td className="p-2.5 font-bold w-1/3 border-r border-black uppercase">Trade &amp; Legal Name</td>
+                  <td className="p-2.5 font-bold">KALASTRA</td>
+                </tr>
+                <tr className="border-b border-black">
+                  <td className="p-2.5 font-bold border-r border-black uppercase">Legal Constitution</td>
+                  <td className="p-2.5">Sole Proprietorship established under the laws of India</td>
+                </tr>
+                <tr className="border-b border-black bg-neutral-50">
+                  <td className="p-2.5 font-bold border-r border-black uppercase">Principal Place of Business</td>
+                  <td className="p-2.5">Kopar Railway Station, Mumbai, Maharashtra, India</td>
+                </tr>
+                <tr className="border-b border-black">
+                  <td className="p-2.5 font-bold border-r border-black uppercase">GSTIN Status</td>
+                  <td className="p-2.5">Registered under CGST/SGST Acts; detailed on purchase invoices</td>
+                </tr>
+                <tr className="border-b border-black bg-neutral-50">
+                  <td className="p-2.5 font-bold border-r border-black uppercase">Official Email</td>
+                  <td className="p-2.5 font-bold break-all">kalastra29@gmail.com</td>
+                </tr>
+                <tr>
+                  <td className="p-2.5 font-bold border-r border-black uppercase">Telephonic Support</td>
+                  <td className="p-2.5 font-bold">+91 9082260829 (Mon&ndash;Fri, 10:00 to 18:00 IST)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
       {/* ── SECTION 4.0 ── */}
-      <section id="sec-4" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-4" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 4.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             4.0 USER ELIGIBILITY, ACCOUNTS &amp; CONTRACTUAL CAPACITY
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 4.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -200,12 +240,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 5.0 ── */}
-      <section id="sec-5" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-5" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 5.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             5.0 MADE-TO-ORDER MANUFACTURING DOCTRINE &amp; TOLERANCES
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 5.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -217,7 +259,7 @@ export default function TermsPage() {
             <strong>5.2 Standard Tolerances:</strong> Handcrafted and tailored textiles are subject to natural variations.
             The Customer acknowledges and agrees that:
           </p>
-          <ul className="list-disc pl-6 space-y-1">
+          <ul className="list-disc pl-5 sm:pl-6 space-y-1">
             <li>
               A dimensional measurement variance of <strong>1 to 2 centimeters</strong> along seams, sleeves, or lengths
               is standard industry tolerance and does not constitute a defect or non-conformity.
@@ -235,12 +277,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 6.0 ── */}
-      <section id="sec-6" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-6" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 6.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             6.0 ORDER OFFER, ACCEPTANCE &amp; STRICT NO-CANCELLATION COVENANT
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 6.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -248,7 +292,7 @@ export default function TermsPage() {
             specified goods. The contract of sale is concluded and becomes legally binding only when Kalastra issues an
             electronic confirmation email verifying payment receipt.
           </p>
-          <div className="border-2 border-black p-4 bg-neutral-100 font-mono text-xs">
+          <div className="border border-black p-3 sm:p-4 bg-neutral-100 font-mono text-xs break-words">
             <strong className="block uppercase text-black mb-1">
               NOTICE OF STRICT NO-CANCELLATION BY CUSTOMER:
             </strong>
@@ -267,12 +311,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 7.0 ── */}
-      <section id="sec-7" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-7" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 7.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             7.0 PRICING, CURRENCY (INR) &amp; TAX INVOICING (GST)
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 7.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -289,12 +335,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 8.0 ── */}
-      <section id="sec-8" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-8" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 8.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             8.0 ONLINE PAYMENT PROTOCOLS &amp; NON-RETENTION OF CREDENTIALS
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 8.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -315,12 +363,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 9.0 ── */}
-      <section id="sec-9" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-9" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 9.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             9.0 DOMESTIC SHIPPING, DELIVERY TIMELINES &amp; RISK ALLOCATION
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 9.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -346,12 +396,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 10.0 ── */}
-      <section id="sec-10" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-10" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 10.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             10.0 RETURNS, INSPECTION &amp; QUALIFYING DEFECT POLICY
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 10.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -363,7 +415,7 @@ export default function TermsPage() {
             <strong>10.2 Mandatory 7-Day Notice:</strong> Any claim of damage or manufacturing defect must be reported
             within <strong>7 calendar days of physical delivery</strong> by emailing <code>kalastra29@gmail.com</code> with:
           </p>
-          <ul className="list-disc pl-6 space-y-1 text-xs">
+          <ul className="list-disc pl-5 sm:pl-6 space-y-1 text-xs">
             <li>The official Order Number and invoice copy;</li>
             <li>High-resolution digital photographs and/or unboxing video clearly displaying the alleged defect;</li>
             <li>Photographs of the outer courier packaging and tags.</li>
@@ -378,12 +430,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 11.0 ── */}
-      <section id="sec-11" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-11" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 11.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             11.0 PROPRIETARY RIGHTS, TRADEMARKS &amp; ARTISTIC COPYRIGHT
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 11.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -402,12 +456,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 12.0 ── */}
-      <section id="sec-12" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-12" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 12.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             12.0 USER CONDUCT, CYBER SECURITY &amp; STATUTORY PROHIBITIONS
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 12.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -415,7 +471,7 @@ export default function TermsPage() {
             Ethics Code) Rules, 2021</em>, you agree not to host, display, upload, modify, transmit, or distribute any
             information that:
           </p>
-          <ul className="list-disc pl-6 space-y-1 text-xs">
+          <ul className="list-disc pl-5 sm:pl-6 space-y-1 text-xs">
             <li>Belongs to another person and to which you do not have any legal right;</li>
             <li>Is defamatory, obscene, pornographic, pedophilic, invasive of another&rsquo;s privacy, or racially offensive;</li>
             <li>Infringes any patent, trademark, copyright, or other proprietary rights;</li>
@@ -426,12 +482,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 13.0 ── */}
-      <section id="sec-13" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-13" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 13.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             13.0 PROMOTIONAL COVENANTS &amp; DISCOUNT COUPON RESTRICTIONS
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 13.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -443,12 +501,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 14.0 ── */}
-      <section id="sec-14" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-14" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 14.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             14.0 DISCLAIMER OF WARRANTIES &amp; GARMENT CARE OBLIGATIONS
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 14.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -465,12 +525,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 15.0 ── */}
-      <section id="sec-15" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-15" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 15.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             15.0 LIMITATION OF LIABILITY &amp; LIQUIDATED DAMAGES CAP
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 15.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -478,7 +540,7 @@ export default function TermsPage() {
             representatives shall not be liable for any indirect, incidental, punitive, special, or consequential damages
             arising out of or in connection with the purchase of goods or utilization of the platform.
           </p>
-          <p className="border border-black p-3 bg-neutral-50 font-mono text-xs">
+          <p className="border border-black p-3 bg-neutral-50 font-mono text-xs break-words">
             <strong>AGGREGATE MAXIMUM LIABILITY:</strong> IN NO EVENT SHALL THE TOTAL CUMULATIVE LIABILITY OF KALASTRA
             FOR ALL CLAIMS ARISING OUT OF AN ORDER EXCEED THE EXACT PURCHASE PRICE ACTUALLY PAID BY THE CUSTOMER FOR
             THE SPECIFIC GARMENT GIVING RISE TO THE ALLEGED CAUSE OF ACTION.
@@ -487,12 +549,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 16.0 ── */}
-      <section id="sec-16" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-16" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 16.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             16.0 INDEMNIFICATION COVENANT
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 16.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -505,12 +569,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 17.0 (DPDP ACT 2023 COMPLIANCE) ── */}
-      <section id="sec-17" className="border-b border-black pb-8 bg-neutral-50 p-4 border">
-        <div className="flex items-baseline justify-between border-b border-black pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-17" className="border-b border-black pb-6 sm:pb-8 bg-neutral-50 p-3 sm:p-4 border">
+        <div className="border-b border-black pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-black mb-1">
+            STATUTORY CLAUSE 17.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             17.0 DATA PROTECTION &amp; COMPLIANCE WITH DPDP ACT, 2023
           </h2>
-          <span className="font-mono text-xs font-bold text-black">STATUTORY CLAUSE 17.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -522,7 +588,7 @@ export default function TermsPage() {
           <p>
             <strong>17.2 Legal Capacities:</strong> In all processing of digital personal data:
           </p>
-          <ul className="list-disc pl-6 space-y-1 text-xs">
+          <ul className="list-disc pl-5 sm:pl-6 space-y-1 text-xs">
             <li>
               <strong>Kalastra</strong> acts strictly as a <strong>&ldquo;Data Fiduciary&rdquo;</strong> as defined under
               Section 2(i) of the DPDP Act, determining the purpose and means of data processing;
@@ -537,7 +603,7 @@ export default function TermsPage() {
             number, email, and billing records) is processed solely for lawful purposes under Section 4 and Section 6
             of the DPDP Act, specifically:
           </p>
-          <ul className="list-disc pl-6 space-y-1 text-xs">
+          <ul className="list-disc pl-5 sm:pl-6 space-y-1 text-xs">
             <li>To fulfill the contractual made-to-order manufacturing and delivery covenant agreed upon by you;</li>
             <li>To comply with statutory invoicing and tax filing obligations under the Central Goods and Services Tax Act, 2017;</li>
             <li>To render transactional status updates, shipping tracking, and customer grievance resolution;</li>
@@ -547,7 +613,7 @@ export default function TermsPage() {
             <strong>17.4 Statutory Rights of Data Principals:</strong> Under Sections 11, 12, 13, and 14 of the DPDP Act,
             2023, you enjoy statutory rights including:
           </p>
-          <ul className="list-disc pl-6 space-y-1 text-xs">
+          <ul className="list-disc pl-5 sm:pl-6 space-y-1 text-xs">
             <li><strong>Right to Access Information:</strong> Obtain a summary of your personal data processed by Kalastra;</li>
             <li><strong>Right to Correction &amp; Erasure:</strong> Request correction of inaccurate data, completion of incomplete records, or erasure of data no longer necessary for tax or fulfillment purposes;</li>
             <li><strong>Right of Grievance Redressal:</strong> File grievances directly with our statutory Grievance Redressal Officer;</li>
@@ -572,12 +638,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 18.0 ── */}
-      <section id="sec-18" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-18" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 18.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             18.0 THIRD-PARTY INTERMEDIARIES &amp; LOGISTICS PROVIDERS
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 18.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -590,12 +658,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 19.0 ── */}
-      <section id="sec-19" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-19" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 19.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             19.0 FORCE MAJEURE EXCLUSIONS
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 19.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -608,12 +678,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 20.0 ── */}
-      <section id="sec-20" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-20" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 20.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             20.0 GOVERNING LAW, DISPUTE RESOLUTION &amp; EXCLUSIVE JURISDICTION
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 20.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -626,7 +698,7 @@ export default function TermsPage() {
             shall transmit a formal written Statement of Dispute to the other party, allowing thirty (30) days for informal
             good-faith resolution.
           </p>
-          <p className="border border-black p-3 bg-neutral-50 font-mono text-xs">
+          <p className="border border-black p-3 bg-neutral-50 font-mono text-xs break-words">
             <strong>EXCLUSIVE TERRITORIAL JURISDICTION:</strong> SUBJECT TO MANDATORY PROVISIONS OF APPLICABLE CONSUMER
             PROTECTION LAWS, ALL DISPUTES, LITIGATION, OR LEGAL PROCEEDINGS ARISING FROM OR PERTAINING TO THIS COVENANT
             SHALL BE SUBJECT TO THE SOLE AND EXCLUSIVE JURISDICTION OF THE COURTS OF COMPETENT JURISDICTION SITUATED AT
@@ -636,12 +708,14 @@ export default function TermsPage() {
       </section>
 
       {/* ── SECTION 21.0 ── */}
-      <section id="sec-21" className="border-b border-black pb-8">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+      <section id="sec-21" className="border-b border-black pb-6 sm:pb-8">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 21.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             21.0 SEVERABILITY, ENTIRE AGREEMENT &amp; AMENDMENTS
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 21.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -664,11 +738,13 @@ export default function TermsPage() {
 
       {/* ── SECTION 22.0 ── */}
       <section id="sec-22" className="pb-4">
-        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
-          <h2 className="text-lg font-serif font-black uppercase text-black">
+        <div className="border-b border-neutral-300 pb-2 mb-3 sm:mb-4">
+          <div className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">
+            CLAUSE 22.0
+          </div>
+          <h2 className="text-base sm:text-lg font-serif font-black uppercase text-black leading-snug break-words">
             22.0 STATUTORY NOTICE &amp; GRIEVANCE REDRESSAL OFFICER
           </h2>
-          <span className="font-mono text-xs text-neutral-500">CLAUSE 22.0</span>
         </div>
         <div className="space-y-3">
           <p>
@@ -676,12 +752,12 @@ export default function TermsPage() {
             <em>Digital Personal Data Protection Act, 2023</em>, the contact particulars of our statutory Grievance
             Redressal Officer are as follows:
           </p>
-          <div className="border border-black p-4 bg-neutral-50 font-mono text-xs space-y-1">
+          <div className="border border-black p-3 sm:p-4 bg-neutral-50 font-mono text-xs space-y-1 break-words">
             <div className="font-bold text-sm text-black">GRIEVANCE REDRESSAL &amp; DATA PROTECTION DESK</div>
             <div><strong>Designated Officer:</strong> Legal Compliance Lead &amp; Grievance Officer</div>
             <div><strong>Entity:</strong> Kalastra (Sole Proprietorship)</div>
             <div><strong>Postal Address:</strong> Kopar Railway Station, Mumbai, Maharashtra, India</div>
-            <div><strong>Grievance Email:</strong> kalastra29@gmail.com</div>
+            <div><strong>Grievance Email:</strong> <span className="break-all">kalastra29@gmail.com</span></div>
             <div><strong>Direct Telephone:</strong> +91 9082260829</div>
             <div><strong>Statutory Acknowledgment Window:</strong> Within 48 hours of receipt</div>
             <div><strong>Resolution Redressal Timeline:</strong> Within 30 days of registration</div>
