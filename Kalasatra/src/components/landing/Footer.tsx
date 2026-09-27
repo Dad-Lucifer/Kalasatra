@@ -32,20 +32,20 @@ const footerNav = [
   {
     title: 'HELP & SUPPORT',
     links: [
-      { label: 'Customer Care', href: '#' },
-      { label: 'Shipping & Delivery', href: '#' },
-      { label: 'Returns & Exchanges', href: '#' },
-      { label: 'Size Guide', href: '#' },
-      { label: 'Track Order', href: '/orders' },
+      { label: 'Customer Care', href: 'mailto:kalastra29@gmail.com' },
+      { label: 'Shipping & Delivery', href: '/terms#sec-9' },
+      { label: 'Returns & Refund Policy', href: '/refund-policy' },
+      { label: 'Size Guide', href: '/terms#sec-5' },
+      { label: 'Track Order', href: '/user-orders' },
     ],
   },
   {
-    title: 'LEGAL',
+    title: 'LEGAL & COMPLIANCE',
     links: [
-      { label: 'Privacy Policy', href: '#' },
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Cookie Preferences', href: '#' },
-      { label: 'Accessibility', href: '#' },
+      { label: 'Terms & Conditions', href: '/terms' },
+      { label: 'Privacy Policy (DPDP Act)', href: '/privacy-policy' },
+      { label: 'Cookie Policy', href: '/cookie-policy' },
+      { label: 'Refund & Cancellation Policy', href: '/refund-policy' },
     ],
   },
 ];

@@ -13,6 +13,9 @@ import CartPage from './Pages/CartPage';
 import WishlistPage from './Pages/WishlistPage';
 import UserOrdersPage from './Pages/UserOrdersPage';
 import TermsPage from './Pages/TermsPage';
+import PrivacyPolicyPage from './Pages/PrivacyPolicyPage';
+import CookiePolicyPage from './Pages/CookiePolicyPage';
+import RefundPolicyPage from './Pages/RefundPolicyPage';
 import './App.css';
 
 function App() {
@@ -57,6 +60,13 @@ function App() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
+          <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+          <Route path="/cookies" element={<Navigate to="/cookie-policy" replace />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/refunds" element={<Navigate to="/refund-policy" replace />} />
+          <Route path="/returns" element={<Navigate to="/refund-policy" replace />} />
           <Route path="/products" element={<CategoryProductsPage />} />
           <Route path="/products/:categorySlug" element={<CategoryProductsPage />} />
           <Route path="/product/:slug" element={<ProductDetailPage />} />
