@@ -1,942 +1,693 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import logoImg from '../assets/kalastra-logo.png';
+import LegalLayout from '../components/legal/LegalLayout';
 
-interface Section {
-  id: string;
-  num: number;
-  title: string;
-  category: 'general' | 'orders' | 'returns' | 'legal';
-  icon: string;
-  content: Array<{
-    type: 'paragraph' | 'bullet_list' | 'callout' | 'key_value';
-    text?: string;
-    items?: string[];
-    calloutType?: 'warning' | 'info' | 'important';
-    keyValue?: Array<{ label: string; value: string }>;
-  }>;
-}
-
-const customStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Outfit:wght@300;400;500;600&display=swap');
-  
-  .font-cinzel { font-family: 'Cinzel', serif; }
-  .font-outfit { font-family: 'Outfit', sans-serif; }
-  
-  .glass-panel {
-    background: rgba(26, 11, 46, 0.5);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(212, 175, 55, 0.18);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-  }
-  
-  .gold-gradient-text {
-    background: linear-gradient(135deg, #FFDF73 0%, #D4AF37 50%, #B8922A 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .gold-border-glow {
-    border: 1px solid rgba(212, 175, 55, 0.35);
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
-  }
-
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  /* Hide scrollbar for IE, Edge and Firefox */
-  .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
-
-  ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #0f0518;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #D4AF37;
-    border-radius: 3px;
-  }
-`;
-
-const SECTIONS_DATA: Section[] = [
-  {
-    id: 'definitions',
-    num: 1,
-    title: 'DEFINITIONS',
-    category: 'general',
-    icon: '📖',
-    content: [
-      {
-        type: 'key_value',
-        keyValue: [
-          { label: 'Business Days', value: 'Monday through Friday, excluding public holidays in Mumbai, Maharashtra.' },
-          { label: 'Made-to-Order', value: 'A product manufactured, cut, stitched, or finished only after an order is confirmed and payment is received.' },
-          { label: 'Order', value: 'A request placed by you through the Site to purchase one or more products.' },
-          { label: 'Products', value: 'All physical clothing items and accessories offered for sale by Kalastra on the Site.' },
-          { label: 'Site', value: 'The Kalastra e-commerce website, subdomains, mobile versions, and related services.' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'about-kalastra',
-    num: 2,
-    title: 'ABOUT KALASTRA',
-    category: 'general',
-    icon: '🏛️',
-    content: [
-      {
-        type: 'paragraph',
-        text: 'Kalastra is a clothing brand registered and operating as a sole proprietorship in India.',
-      },
-      {
-        type: 'key_value',
-        keyValue: [
-          { label: 'Legal Name', value: 'Kalastra' },
-          { label: 'Constitution', value: 'Sole Proprietorship' },
-          { label: 'Registered Address', value: 'Kopar Railway Station, Mumbai, Maharashtra, India' },
-          { label: 'GST Registration', value: 'Available on request and reflected in your purchase invoice' },
-          { label: 'Customer Support Email', value: 'kalastra29@gmail.com' },
-          { label: 'Customer Support Phone', value: '+91 9082260829' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'account-security',
-    num: 3,
-    title: 'ACCOUNT REGISTRATION AND SECURITY',
-    category: 'general',
-    icon: '🔐',
-    content: [
-      {
-        type: 'bullet_list',
-        items: [
-          'Account Creation: To place an order, you must create a user account on the Site. Guest checkout is not available. You agree to provide accurate, current, and complete information.',
-          'Account Security: You are solely responsible for maintaining the confidentiality of your login credentials and for all activities under your account. Notify us immediately of unauthorized use.',
-          'Account Termination: We reserve the right to suspend or terminate your account if we suspect inaccurate information, fraudulent activity, or violation of these Terms.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'product-info',
-    num: 4,
-    title: 'PRODUCT INFORMATION AND AVAILABILITY',
-    category: 'orders',
-    icon: '🧵',
-    content: [
-      {
-        type: 'callout',
-        calloutType: 'info',
-        text: 'Made-to-Order Manufacturing: Production begins only after your Order has been accepted and payment confirmed. Each garment is crafted specifically for you.',
-      },
-      {
-        type: 'bullet_list',
-        items: [
-          'Product Descriptions: We strive to display Products accurately. Due to screen settings and fabric properties, exact colors and textures cannot be guaranteed.',
-          'Variations: Slight variations in color, size, and finish do not constitute a defect. Minor measurement deviations of 1-2 cm may occur during tailoring.',
-          'Size Chart: Consultation of the size chart is required prior to ordering.',
-          'Limited Editions & Pre-Orders: Pre-order items are subject to specific production timelines and availability windows. Pre-orders cannot be cancelled once placed.',
-          'No Custom Tailoring: All Products are manufactured according to standard size chart measurements. No alterations or custom fittings are provided.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'orders-cancellation',
-    num: 5,
-    title: 'ORDERS, ACCEPTANCE, AND CANCELLATION',
-    category: 'orders',
-    icon: '🚫',
-    content: [
-      {
-        type: 'callout',
-        calloutType: 'warning',
-        text: 'STRICT NO-CANCELLATION POLICY: Once an Order is placed and payment received, cancellation is NOT permitted under any circumstances. Resource allocation begins immediately.',
-      },
-      {
-        type: 'bullet_list',
-        items: [
-          'Order Acceptance: A binding contract is formed upon receipt of a payment confirmation email from us.',
-          'Refusal or Cancellation by Us: We reserve the right to cancel orders due to manufacturing defects discovered during quality checks, pricing errors, or suspected fraud.',
-          'Refunds on Company Cancellation: Full refund will be issued to the original payment method within 7-14 Business Days if cancelled by us.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'pricing-payment',
-    num: 6,
-    title: 'PRICING AND PAYMENT',
-    category: 'orders',
-    icon: '💳',
-    content: [
-      {
-        type: 'bullet_list',
-        items: [
-          'Currency & Taxes: Prices are in Indian Rupees (INR) and inclusive of Goods and Services Tax (GST).',
-          'Payment Gateways: Exclusively online via Razorpay and integrated gateways. Cash on delivery, bank transfers, and offline methods are not accepted.',
-          'Pricing Errors: In the event of a material pricing error, you will be offered the choice to reconfirm at the correct price or cancel for a full refund.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'shipping-delivery',
-    num: 7,
-    title: 'SHIPPING, DELIVERY, AND RISK OF LOSS',
-    category: 'orders',
-    icon: '🚚',
-    content: [
-      {
-        type: 'key_value',
-        keyValue: [
-          { label: 'Shipping Region', value: 'Exclusively within India (no international shipping)' },
-          { label: 'Delivery Timeline', value: '7 to 14 Business Days from Order confirmation (includes production + transit)' },
-          { label: 'Transit Risk', value: 'Kalastra bears risk of loss or damage until delivery at your provided address' },
-          { label: 'Address Accuracy', value: 'User is responsible for complete address. Re-shipment fees apply for address errors' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'returns-refunds',
-    num: 8,
-    title: 'RETURNS, REFUNDS, AND EXCHANGES',
-    category: 'returns',
-    icon: '↺',
-    content: [
-      {
-        type: 'callout',
-        calloutType: 'important',
-        text: 'All sales are final. Returns are strictly limited to damaged, defective, or incorrect items reported within 7 calendar days of delivery.',
-      },
-      {
-        type: 'bullet_list',
-        items: [
-          'Return Window: Must notify us within 7 calendar days of delivery with digital photos of damage and packaging.',
-          'Condition: Must be original, unused, unwashed, unaltered condition with tags intact.',
-          'Non-Returnable Items: Worn, washed, ironed, tag-less items, or sale/discounted items are final sale.',
-          'Exchanges: Direct exchanges are not offered. Return eligible defective item for refund and place a new order.',
-          'Return Shipping: Kalastra bears return shipping cost for approved defective/damaged returns.',
-          'Refund Processing: Issued to original payment method within 7 to 14 Business Days after inspection approval.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'intellectual-property',
-    num: 9,
-    title: 'INTELLECTUAL PROPERTY RIGHTS',
-    category: 'legal',
-    icon: '⚖️',
-    content: [
-      {
-        type: 'paragraph',
-        text: 'All content on the Site—including text, graphics, logos, images, software, and design aesthetics—is the exclusive property of Kalastra protected under Indian IP laws.',
-      },
-      {
-        type: 'bullet_list',
-        items: [
-          'Trademarks: Kalastra trademark and brand elements cannot be used without prior written consent.',
-          'License: Limited, non-exclusive, non-transferable license for personal, non-commercial use.',
-          'Prohibitions: Copying, scraping, selling, or duplicating any content or product designs is strictly prohibited.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'user-conduct',
-    num: 10,
-    title: 'USER CONDUCT AND PROHIBITED ACTIVITIES',
-    category: 'legal',
-    icon: '🛡️',
-    content: [
-      {
-        type: 'paragraph',
-        text: 'You agree not to engage in fraudulent orders, backend intrusion, uploading malware, code exploitation, harassment of staff, or interfering with site operation. Violations result in immediate account termination and legal action.',
-      },
-    ],
-  },
-  {
-    id: 'promotions-coupons',
-    num: 11,
-    title: 'PROMOTIONS AND DISCOUNT CODES',
-    category: 'orders',
-    icon: '🎟️',
-    content: [
-      {
-        type: 'bullet_list',
-        items: [
-          'Discount Codes: Subject to specific terms communicated at offer creation.',
-          'Non-Combinable: Cannot be combined with other offers unless explicitly stated.',
-          'Modification: Kalastra reserves the right to withdraw or modify promotions at any time.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'disclaimer-warranties',
-    num: 12,
-    title: 'DISCLAIMER OF WARRANTIES',
-    category: 'legal',
-    icon: '⚠️',
-    content: [
-      {
-        type: 'paragraph',
-        text: 'Site and Products are provided on an "as is" and "as available" basis. Customer is responsible for following garment care instructions. Damage from improper washing or ironing voids liability.',
-      },
-    ],
-  },
-  {
-    id: 'limitation-liability',
-    num: 13,
-    title: 'LIMITATION OF LIABILITY',
-    category: 'legal',
-    icon: '🔒',
-    content: [
-      {
-        type: 'paragraph',
-        text: 'To the maximum extent permitted by Indian law, Kalastra’s aggregate liability is limited to the purchase price paid for the specific product in claim.',
-      },
-    ],
-  },
-  {
-    id: 'indemnification',
-    num: 14,
-    title: 'INDEMNIFICATION',
-    category: 'legal',
-    icon: '🛡️',
-    content: [
-      {
-        type: 'paragraph',
-        text: 'You agree to defend and hold harmless Kalastra and its proprietor against claims, damages, or expenses arising from your use of the Site or violation of these Terms.',
-      },
-    ],
-  },
-  {
-    id: 'third-party-services',
-    num: 15,
-    title: 'THIRD-PARTY SERVICES AND LINKS',
-    category: 'legal',
-    icon: '🔗',
-    content: [
-      {
-        type: 'bullet_list',
-        items: [
-          'Payment Gateway: Handled securely via Razorpay. We do not store card details.',
-          'Shipping Partners: Local courier logistics. Transit loss covered as per Section 7.',
-          'External Links: We are not responsible for content or policies on third-party sites.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'privacy-data',
-    num: 16,
-    title: 'PRIVACY AND DATA COLLECTION',
-    category: 'legal',
-    icon: '🔒',
-    content: [
-      {
-        type: 'paragraph',
-        text: 'Governed by our separate Privacy Policy. We collect necessary data and analytics to fulfill orders and improve services.',
-      },
-    ],
-  },
-  {
-    id: 'force-majeure',
-    num: 17,
-    title: 'FORCE MAJEURE',
-    category: 'legal',
-    icon: '🌧️',
-    content: [
-      {
-        type: 'paragraph',
-        text: 'Not liable for delays caused by acts of God, strikes, lockdowns, transport failures, or events beyond reasonable control. Timelines will extend accordingly.',
-      },
-    ],
-  },
-  {
-    id: 'governing-law',
-    num: 18,
-    title: 'GOVERNING LAW AND DISPUTE RESOLUTION',
-    category: 'legal',
-    icon: '⚖️',
-    content: [
-      {
-        type: 'key_value',
-        keyValue: [
-          { label: 'Governing Law', value: 'Laws of the Republic of India' },
-          { label: 'Jurisdiction', value: 'Exclusive jurisdiction of courts in Mumbai, Maharashtra, India' },
-          { label: 'Informal Resolution', value: 'Good-faith resolution required prior to litigation' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'modifications-terms',
-    num: 19,
-    title: 'MODIFICATIONS TO TERMS',
-    category: 'general',
-    icon: '📝',
-    content: [
-      {
-        type: 'paragraph',
-        text: 'We reserve the right to update these Terms at any time. Continued use of the Site after posting constitutes acceptance of revised terms.',
-      },
-    ],
-  },
-  {
-    id: 'general-provisions',
-    num: 20,
-    title: 'GENERAL PROVISIONS',
-    category: 'legal',
-    icon: '📄',
-    content: [
-      {
-        type: 'bullet_list',
-        items: [
-          'Severability: Invalid provisions do not affect the validity of remaining provisions.',
-          'Waiver: Failure to enforce a right does not constitute a waiver.',
-          'Entire Agreement: Terms + Privacy Policy + Order Confirmation form the complete agreement.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'contact-information',
-    num: 21,
-    title: 'CONTACT INFORMATION',
-    category: 'general',
-    icon: '📞',
-    content: [
-      {
-        type: 'key_value',
-        keyValue: [
-          { label: 'Email', value: 'kalastra29@gmail.com' },
-          { label: 'Phone', value: '+91 9082260829' },
-          { label: 'Mailing Address', value: 'Kalastra, Kopar Railway Station, Mumbai, Maharashtra, India' },
-          { label: 'Support SLA', value: 'Up to 2 Business Days for email response' },
-        ],
-      },
-    ],
-  },
+const TOC = [
+  { id: 'sec-1', num: '1.0', title: 'Preliminary Recitals & Statutory Enforceability' },
+  { id: 'sec-2', num: '2.0', title: 'Statutory Definitions & Construction' },
+  { id: 'sec-3', num: '3.0', title: 'Entity Identification & Regulatory Status' },
+  { id: 'sec-4', num: '4.0', title: 'User Eligibility, Accounts & Contractual Capacity' },
+  { id: 'sec-5', num: '5.0', title: 'Made-to-Order Manufacturing Doctrine & Tolerances' },
+  { id: 'sec-6', num: '6.0', title: 'Order Offer, Acceptance & Strict No-Cancellation Covenant' },
+  { id: 'sec-7', num: '7.0', title: 'Pricing, Currency (INR) & Tax Invoicing (GST)' },
+  { id: 'sec-8', num: '8.0', title: 'Online Payment Protocols & Non-Retention of Credentials' },
+  { id: 'sec-9', num: '9.0', title: 'Domestic Shipping, Delivery Timelines & Risk Allocation' },
+  { id: 'sec-10', num: '10.0', title: 'Returns, Inspection & Qualifying Defect Policy' },
+  { id: 'sec-11', num: '11.0', title: 'Proprietary Rights, Trademarks & Artistic Copyright' },
+  { id: 'sec-12', num: '12.0', title: 'User Conduct, Cyber Security & Statutory Prohibitions' },
+  { id: 'sec-13', num: '13.0', title: 'Promotional Covenants & Discount Coupon Restrictions' },
+  { id: 'sec-14', num: '14.0', title: 'Disclaimer of Warranties & Garment Care Obligations' },
+  { id: 'sec-15', num: '15.0', title: 'Limitation of Liability & Liquidated Damages Cap' },
+  { id: 'sec-16', num: '16.0', title: 'Indemnification Covenant' },
+  { id: 'sec-17', num: '17.0', title: 'Data Protection & Compliance with DPDP Act, 2023' },
+  { id: 'sec-18', num: '18.0', title: 'Third-Party Intermediaries & Logistics Providers' },
+  { id: 'sec-19', num: '19.0', title: 'Force Majeure Exclusions' },
+  { id: 'sec-20', num: '20.0', title: 'Governing Law, Dispute Resolution & Exclusive Jurisdiction' },
+  { id: 'sec-21', num: '21.0', title: 'Severability, Entire Agreement & Amendments' },
+  { id: 'sec-22', num: '22.0', title: 'Statutory Notice & Grievance Redressal Officer' },
 ];
 
 export default function TermsPage() {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [activeSectionId, setActiveSectionId] = useState<string>('definitions');
-  const [copiedSection, setCopiedSection] = useState<string | null>(null);
-  
-  // Accordion state (ProductDetailPage style)
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
-    // Expand first 3 by default
-    const initial: Record<string, boolean> = {};
-    SECTIONS_DATA.forEach((s, idx) => {
-      initial[s.id] = idx < 3;
-    });
-    return initial;
-  });
-
-  const toggleSection = (id: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
-  const expandAll = () => {
-    const all: Record<string, boolean> = {};
-    SECTIONS_DATA.forEach((s) => (all[s.id] = true));
-    setExpandedSections(all);
-  };
-
-  const collapseAll = () => {
-    const none: Record<string, boolean> = {};
-    SECTIONS_DATA.forEach((s) => (none[s.id] = false));
-    setExpandedSections(none);
-  };
-
-  // Filter sections by search and category
-  const filteredSections = useMemo(() => {
-    return SECTIONS_DATA.filter((sec) => {
-      const matchesCategory = activeCategory === 'all' || sec.category === activeCategory;
-      const q = searchQuery.toLowerCase().trim();
-      if (!q) return matchesCategory;
-
-      const matchesTitle = sec.title.toLowerCase().includes(q);
-      const matchesContent = sec.content.some((c) => {
-        if (c.text?.toLowerCase().includes(q)) return true;
-        if (c.items?.some((i) => i.toLowerCase().includes(q))) return true;
-        if (c.keyValue?.some((kv) => kv.label.toLowerCase().includes(q) || kv.value.toLowerCase().includes(q))) return true;
-        return false;
-      });
-
-      return matchesCategory && (matchesTitle || matchesContent);
-    });
-  }, [searchQuery, activeCategory]);
-
-  // When searching, expand matching sections automatically
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const expanded: Record<string, boolean> = {};
-      filteredSections.forEach((s) => (expanded[s.id] = true));
-      setExpandedSections(expanded);
-    }
-  }, [searchQuery, filteredSections]);
-
-  // Scroll spy to highlight active nav item
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPos = window.scrollY + 220;
-      for (const sec of SECTIONS_DATA) {
-        const el = document.getElementById(sec.id);
-        if (el) {
-          const top = el.offsetTop;
-          const height = el.offsetHeight;
-          if (scrollPos >= top && scrollPos < top + height) {
-            setActiveSectionId(sec.id);
-            break;
-          }
-        }
-      }
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToSection = (id: string) => {
-    // Ensure section is expanded
-    setExpandedSections((prev) => ({ ...prev, [id]: true }));
-    
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      if (el) {
-        const yOffset = -110;
-        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
-      }
-    }, 50);
-  };
-
-  const copySectionLink = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const url = `${window.location.origin}/terms#${id}`;
-    navigator.clipboard.writeText(url);
-    setCopiedSection(id);
-    setTimeout(() => setCopiedSection(null), 2500);
-  };
-
   return (
-    <div className="min-h-screen bg-[#0f0518] font-outfit text-[#FDFBF7] selection:bg-[#D4AF37] selection:text-[#0f0518] relative overflow-x-hidden">
-      <style>{customStyles}</style>
-
-      {/* Atmospheric Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-[#3a1b66] blur-[180px] opacity-25" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#D4AF37] blur-[190px] opacity-10" />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-15 mix-blend-overlay" />
-      </div>
-
-      {/* ─── Top Navbar ─── */}
-      <header className="sticky top-0 z-50 glass-panel border-b border-[#D4AF37]/20 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-16 sm:h-20 flex items-center justify-between">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer bg-transparent border-none"
-          >
-            <img src={logoImg} alt="Kalastra Logo" className="h-8 sm:h-10 w-auto object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]" />
-            <span className="text-lg sm:text-xl font-black gold-gradient-text font-cinzel tracking-widest group-hover:scale-105 transition-transform">
-              Kalastra
-            </span>
-          </button>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={() => navigate('/')}
-              className="px-3 sm:px-4 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#A08BA6] hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all border border-transparent hover:border-[#D4AF37]/30 cursor-pointer"
-            >
-              ← <span className="hidden sm:inline">Back to</span> Store
-            </button>
-          </div>
+    <LegalLayout
+      title="Terms & Conditions of Sale and Platform Covenant"
+      subtitle="Standard Legal Instrument governing electronic access, made-to-order manufacturing, digital sales, and statutory personal data processing under Indian Law."
+      docReference="KLS/LGL/2026-TNC/IND"
+      effectiveDate="July 23, 2026"
+      lastUpdated="September 27, 2026"
+      jurisdiction="Courts of Competent Jurisdiction at Mumbai, Maharashtra, India"
+      statutoryActs={[
+        'Information Technology Act, 2000 (Act 21 of 2000)',
+        'Digital Personal Data Protection Act, 2023 (Act 22 of 2023)',
+        'Indian Contract Act, 1872 (Act 9 of 1872)',
+        'Consumer Protection (E-Commerce) Rules, 2020',
+        'Central Goods and Services Tax Act, 2017',
+      ]}
+      toc={TOC}
+    >
+      {/* ── SECTION 1.0 ── */}
+      <section id="sec-1" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            1.0 PRELIMINARY RECITALS & STATUTORY ENFORCEABILITY
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 1.0</span>
         </div>
-      </header>
-
-      {/* ─── Hero Header (Product Detail Style Breadcrumb & Badge) ─── */}
-      <section className="relative z-10 pt-8 sm:pt-14 pb-8 px-4 sm:px-6 text-center max-w-4xl mx-auto">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <button
-            onClick={() => navigate('/')}
-            className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-[#A08BA6] hover:text-[#D4AF37] transition-colors cursor-pointer bg-transparent border-none"
-          >
-            Store
-          </button>
-          <span className="text-[10px] text-[#D4AF37]/40">/</span>
-          <span className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-[#D4AF37] font-semibold">
-            Terms & Conditions
-          </span>
-        </div>
-
-        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[#FFDF73] text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] font-cinzel mb-4 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
-          <span>📜 Official Covenant</span>
-          <span>•</span>
-          <span>Updated: July 23, 2026</span>
-        </div>
-
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black gold-gradient-text font-cinzel tracking-tight leading-tight mb-4">
-          Terms & Conditions
-        </h1>
-
-        <p className="text-xs sm:text-base text-[#A08BA6] font-light leading-relaxed mb-8 max-w-2xl mx-auto px-2">
-          Please review the official operating covenant governing your made-to-order purchases with Kalastra.
-        </p>
-
-        {/* Search Bar (Mobile + Desktop Optimized) */}
-        <div className="relative max-w-xl mx-auto mb-8 px-2 sm:px-0">
-          <svg className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search clauses (e.g. delivery, returns, GST, cancellation)..."
-            className="w-full pl-12 sm:pl-14 pr-12 sm:pr-14 py-3.5 sm:py-4 bg-[#0a0310]/90 border border-[#D4AF37]/30 rounded-2xl text-[#FDFBF7] text-xs sm:text-sm placeholder-[#A08BA6]/50 outline-none focus:border-[#D4AF37] focus:shadow-[0_0_25px_rgba(212,175,55,0.25)] transition-all font-mono shadow-inner"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-6 top-1/2 -translate-y-1/2 text-[#A08BA6] hover:text-[#FDFBF7] text-xs font-bold uppercase tracking-wider cursor-pointer bg-transparent border-none"
-            >
-              ×
-            </button>
-          )}
-        </div>
-
-        {/* Feature Cards Grid (Inspiration from ProductDetailPage L383-398) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
-          {[
-            { icon: '🚫', title: 'No Cancellation', sub: 'Made-to-order garments' },
-            { icon: '🚚', title: '7–14 Days Shipping', sub: 'Domestic India only' },
-            { icon: '↺', title: '7-Day Return Window', sub: 'Defect / damaged items' },
-            { icon: '💳', title: 'Online Gateways', sub: 'Razorpay integration' },
-          ].map((item) => (
-            <div
-              key={item.title}
-              className="glass-panel p-3.5 sm:p-4 rounded-2xl border border-gray-200/10 hover:border-[#D4AF37]/50 transition-all duration-300 group cursor-default"
-            >
-              <span className="text-xl sm:text-2xl block mb-1.5 group-hover:scale-110 transition-transform">{item.icon}</span>
-              <p className="text-[10px] sm:text-xs font-bold text-[#FDFBF7] uppercase tracking-wider leading-snug">{item.title}</p>
-              <p className="text-[9px] sm:text-[10px] text-[#A08BA6] mt-0.5">{item.sub}</p>
-            </div>
-          ))}
+        <div className="space-y-3">
+          <p>
+            <strong>1.1 Electronic Record:</strong> This legal instrument constitutes an electronic record within
+            the meaning of the <em>Information Technology Act, 2000</em>, and rules framed thereunder, as applicable,
+            including the amended provisions pertaining to electronic records in various statutes as amended by the
+            said Act. This electronic record is generated by a computer system and does not require any physical or
+            digital signature to attain full legal enforceability.
+          </p>
+          <p>
+            <strong>1.2 Contracting Parties:</strong> These Terms and Conditions (&ldquo;Terms&rdquo; or
+            &ldquo;Covenant&rdquo;) are entered into by and between <strong>KALASTRA</strong>, a sole proprietorship
+            domiciled and operating under the laws of the Republic of India (hereinafter referred to as the
+            &ldquo;Company&rdquo;, &ldquo;Kalastra&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;),
+            and any natural or legal person who accesses, browses, creates an account on, or purchases products through
+            our e-commerce platform (hereinafter referred to as the &ldquo;User&rdquo;, &ldquo;Customer&rdquo;,
+            &ldquo;you&rdquo;, or &ldquo;your&rdquo;).
+          </p>
+          <p>
+            <strong>1.3 Unconditional Acceptance:</strong> By accessing the Site or initiating an Order, you
+            expressly, knowingly, and irrevocably accept, acknowledge, and agree to be bound by every term, condition,
+            obligation, and restriction set forth herein, together with our <strong>Privacy Policy</strong> (formulated
+            in strict compliance with the <em>Digital Personal Data Protection Act, 2023</em>), our <strong>Cookie
+            Policy</strong>, and our <strong>Cancellation &amp; Refund Policy</strong>. If you do not accept these Terms
+            without reservation, you are not permitted to access the Site or procure any goods offered thereon.
+          </p>
         </div>
       </section>
 
-      {/* ─── Mobile Category Horizontal Scrollbar Bar ─── */}
-      <div className="lg:hidden sticky top-16 sm:top-20 z-40 bg-[#0f0518]/95 backdrop-blur-md border-b border-[#D4AF37]/20 py-2.5 px-4 overflow-x-auto no-scrollbar flex items-center gap-2">
-        {[
-          { id: 'all', label: 'All (21)' },
-          { id: 'general', label: 'General' },
-          { id: 'orders', label: 'Orders & Shipping' },
-          { id: 'returns', label: 'Returns' },
-          { id: 'legal', label: 'Legal & Conduct' },
-        ].map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
-              activeCategory === cat.id
-                ? 'bg-[#D4AF37] text-[#0f0518] border-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.4)]'
-                : 'bg-[#1a0b2e]/60 text-[#A08BA6] border-[#D4AF37]/20'
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ─── Main Content Layout ─── */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10 flex flex-col lg:flex-row gap-8 lg:gap-12">
-        
-        {/* Left Desktop Navigation Sidebar */}
-        <aside className="hidden lg:block w-80 shrink-0">
-          <div className="glass-panel rounded-3xl p-6 sticky top-28 space-y-6">
-            <div>
-              <h3 className="text-xs font-bold text-[#D4AF37] uppercase tracking-[0.25em] font-cinzel mb-3">
-                Categories
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: 'all', label: 'All (21)' },
-                  { id: 'general', label: 'General' },
-                  { id: 'orders', label: 'Orders & Shipping' },
-                  { id: 'returns', label: 'Returns' },
-                  { id: 'legal', label: 'Legal & Conduct' },
-                ].map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer border ${
-                      activeCategory === cat.id
-                        ? 'bg-[#D4AF37] text-[#0f0518] border-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.4)]'
-                        : 'bg-transparent text-[#A08BA6] border-[#D4AF37]/20 hover:border-[#D4AF37]/50 hover:text-[#FDFBF7]'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
+      {/* ── SECTION 2.0 ── */}
+      <section id="sec-2" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            2.0 STATUTORY DEFINITIONS &amp; CONSTRUCTION
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 2.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            Whenever used in this Covenant, the following capitalized terms shall have the respective meanings
+            ascribed below:
+          </p>
+          <div className="border border-black divide-y divide-black font-mono text-xs my-4 bg-neutral-50">
+            <div className="p-3">
+              <span className="font-bold text-black uppercase">&ldquo;Business Day&rdquo;:</span> Any day other than a
+              Saturday, Sunday, or a public holiday declared by the Central Government of India or the State Government
+              of Maharashtra, during which commercial banks in Mumbai are open for regular transaction processing.
             </div>
-
-            {/* Quick Accordion Controls */}
-            <div className="flex gap-2 pt-2 border-t border-[#D4AF37]/15">
-              <button
-                onClick={expandAll}
-                className="flex-1 py-1.5 rounded-lg border border-[#D4AF37]/25 text-[9px] font-bold text-[#D4AF37] uppercase tracking-widest hover:bg-[#D4AF37]/10 transition-all cursor-pointer bg-transparent"
-              >
-                Expand All
-              </button>
-              <button
-                onClick={collapseAll}
-                className="flex-1 py-1.5 rounded-lg border border-gray-700 text-[9px] font-bold text-[#A08BA6] uppercase tracking-widest hover:text-[#FDFBF7] transition-all cursor-pointer bg-transparent"
-              >
-                Collapse All
-              </button>
+            <div className="p-3">
+              <span className="font-bold text-black uppercase">&ldquo;Data Fiduciary&rdquo;:</span> Has the meaning
+              assigned to it under Section 2(i) of the <em>Digital Personal Data Protection Act, 2023 (DPDP Act)</em>,
+              referring specifically to Kalastra, which determines the purpose and means of processing personal data.
             </div>
-
-            <div className="border-t border-[#D4AF37]/15 pt-4 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
-              <h3 className="text-xs font-bold text-[#D4AF37] uppercase tracking-[0.25em] font-cinzel mb-3">
-                Index Navigation
-              </h3>
-              <nav className="space-y-1">
-                {filteredSections.map((sec) => (
-                  <button
-                    key={sec.id}
-                    onClick={() => scrollToSection(sec.id)}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2.5 cursor-pointer ${
-                      activeSectionId === sec.id
-                        ? 'bg-[#D4AF37]/20 text-[#FFDF73] border border-[#D4AF37]/40 font-bold shadow-[0_0_10px_rgba(212,175,55,0.15)]'
-                        : 'text-[#A08BA6] hover:text-[#FDFBF7] hover:bg-white/5'
-                    }`}
-                  >
-                    <span className="text-xs shrink-0">{sec.icon}</span>
-                    <span className="truncate">
-                      {sec.num}. {sec.title}
-                    </span>
-                  </button>
-                ))}
-              </nav>
+            <div className="p-3">
+              <span className="font-bold text-black uppercase">&ldquo;Data Principal&rdquo;:</span> Has the meaning
+              assigned to it under Section 2(j) of the <em>DPDP Act, 2023</em>, referring to the natural person to
+              whom the personal data relates (the User/Customer).
+            </div>
+            <div className="p-3">
+              <span className="font-bold text-black uppercase">&ldquo;Made-to-Order Goods&rdquo;:</span> Any garment,
+              apparel item, or accessory that is not held in pre-existing ready inventory, but is customized, cut,
+              tailored, dyed, or stitched specifically pursuant to an individual customer&rsquo;s Order confirmation.
+            </div>
+            <div className="p-3">
+              <span className="font-bold text-black uppercase">&ldquo;Order&rdquo;:</span> A legally binding purchase
+              requisition submitted by the User via the Site and acknowledged by Kalastra through electronic confirmation.
+            </div>
+            <div className="p-3">
+              <span className="font-bold text-black uppercase">&ldquo;Site&rdquo;:</span> The online e-commerce website,
+              subdomains, progressive web applications, and digital storefronts operated by Kalastra.
             </div>
           </div>
-        </aside>
+        </div>
+      </section>
 
-        {/* Right Clauses Accordions & Content List */}
-        <main className="flex-1 space-y-4 sm:space-y-6 min-w-0">
-          
-          {/* Mobile Accordion Controls Bar */}
-          <div className="lg:hidden flex items-center justify-between px-2 text-xs">
-            <span className="text-[#A08BA6] uppercase tracking-widest text-[10px]">
-              Showing <span className="text-[#D4AF37] font-bold">{filteredSections.length}</span> clauses
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={expandAll}
-                className="text-[9px] text-[#D4AF37] font-bold uppercase tracking-widest bg-transparent border-none cursor-pointer"
-              >
-                Expand All
-              </button>
-              <span className="text-gray-600">•</span>
-              <button
-                onClick={collapseAll}
-                className="text-[9px] text-[#A08BA6] font-bold uppercase tracking-widest bg-transparent border-none cursor-pointer"
-              >
-                Collapse
-              </button>
-            </div>
+      {/* ── SECTION 3.0 ── */}
+      <section id="sec-3" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            3.0 ENTITY IDENTIFICATION &amp; REGULATORY STATUS
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 3.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            Pursuant to Rule 3(2) of the <em>Consumer Protection (E-Commerce) Rules, 2020</em>, the statutory details
+            of the operating business entity are declared as under:
+          </p>
+          <table className="w-full border border-black text-xs font-mono my-3">
+            <tbody>
+              <tr className="border-b border-black bg-neutral-100">
+                <td className="p-2.5 font-bold w-1/3 border-r border-black uppercase">Trade &amp; Legal Name</td>
+                <td className="p-2.5 font-bold">KALASTRA</td>
+              </tr>
+              <tr className="border-b border-black">
+                <td className="p-2.5 font-bold border-r border-black uppercase">Legal Constitution</td>
+                <td className="p-2.5">Sole Proprietorship established under the laws of India</td>
+              </tr>
+              <tr className="border-b border-black bg-neutral-50">
+                <td className="p-2.5 font-bold border-r border-black uppercase">Principal Place of Business</td>
+                <td className="p-2.5">Kopar Railway Station, Mumbai, Maharashtra, India</td>
+              </tr>
+              <tr className="border-b border-black">
+                <td className="p-2.5 font-bold border-r border-black uppercase">GSTIN Status</td>
+                <td className="p-2.5">Registered under CGST/SGST Acts; detailed on purchase invoices</td>
+              </tr>
+              <tr className="border-b border-black bg-neutral-50">
+                <td className="p-2.5 font-bold border-r border-black uppercase">Official Electronic Mail</td>
+                <td className="p-2.5 font-bold">kalastra29@gmail.com</td>
+              </tr>
+              <tr>
+                <td className="p-2.5 font-bold border-r border-black uppercase">Statutory Telephonic Support</td>
+                <td className="p-2.5 font-bold">+91 9082260829 (Monday&ndash;Friday, 10:00 to 18:00 IST)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* ── SECTION 4.0 ── */}
+      <section id="sec-4" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            4.0 USER ELIGIBILITY, ACCOUNTS &amp; CONTRACTUAL CAPACITY
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 4.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>4.1 Competence to Contract:</strong> Pursuant to Section 11 of the <em>Indian Contract Act, 1872</em>,
+            use of the Site is available only to persons who can form legally binding contracts under applicable law.
+            Persons who are &ldquo;incompetent to contract&rdquo; within the meaning of the Indian Contract Act, 1872,
+            including un-discharged insolvents and minors (individuals who have not completed the age of eighteen (18)
+            years), are not eligible to register or order products independently.
+          </p>
+          <p>
+            <strong>4.2 Mandatory Account Creation:</strong> Guest transactions are disabled. Every User must establish
+            a registered account by submitting accurate, truthful, and complete personal data. You warrant that all
+            representations made regarding identity, age, telephone number, and delivery addresses are authentic.
+          </p>
+          <p>
+            <strong>4.3 Credential Custodianship:</strong> You are solely responsible for maintaining the confidentiality
+            of your username, authentication token, and password. Any transaction originating from your authenticated
+            credentials shall be deemed lawfully executed by you, and you shall remain strictly liable for all financial
+            obligations arising therefrom.
+          </p>
+        </div>
+      </section>
+
+      {/* ── SECTION 5.0 ── */}
+      <section id="sec-5" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            5.0 MADE-TO-ORDER MANUFACTURING DOCTRINE &amp; TOLERANCES
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 5.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>5.1 Customized Production:</strong> Kalastra operates on a zero-inventory, made-to-order manufacturing
+            model. Every garment is crafted individually only after an Order is confirmed and full prepayment is received.
+            Raw fabric allocation, cutting, pattern drafting, and hand-finishing commence immediately upon confirmation.
+          </p>
+          <p>
+            <strong>5.2 Standard Tolerances:</strong> Handcrafted and tailored textiles are subject to natural variations.
+            The Customer acknowledges and agrees that:
+          </p>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>
+              A dimensional measurement variance of <strong>1 to 2 centimeters</strong> along seams, sleeves, or lengths
+              is standard industry tolerance and does not constitute a defect or non-conformity.
+            </li>
+            <li>
+              Color rendition may vary between computer/mobile display screens (due to RGB calibration, panel technology,
+              and backlighting) and actual dye lots on natural fibers. Such subtle optical variations are not defects.
+            </li>
+            <li>
+              Kalastra manufactures strictly in accordance with its standardized size charts. Custom bespoke sizing,
+              fitting alterations, or personal adjustments are not provided.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      {/* ── SECTION 6.0 ── */}
+      <section id="sec-6" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            6.0 ORDER OFFER, ACCEPTANCE &amp; STRICT NO-CANCELLATION COVENANT
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 6.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>6.1 Contract Formation:</strong> Placing an Order constitutes an irrevocable offer to purchase the
+            specified goods. The contract of sale is concluded and becomes legally binding only when Kalastra issues an
+            electronic confirmation email verifying payment receipt.
+          </p>
+          <div className="border-2 border-black p-4 bg-neutral-100 font-mono text-xs">
+            <strong className="block uppercase text-black mb-1">
+              NOTICE OF STRICT NO-CANCELLATION BY CUSTOMER:
+            </strong>
+            PURSUANT TO THE CUSTOMIZED AND MADE-TO-ORDER NATURE OF KALASTRA APPAREL, ONCE AN ORDER IS PLACED
+            AND PAYMENT IS VERIFIED, CANCELLATION BY THE CUSTOMER IS ABSOLUTELY PROHIBITED. RAW MATERIAL COMMITMENTS
+            AND ARTISAN CUTTING COMMENCE IMMEDIATELY. NO REFUNDS OR REVERSALS SHALL BE PERMITTED FOR BUYER REMORSE
+            OR MISTAKEN ORDERS.
           </div>
+          <p>
+            <strong>6.2 Cancellation by Company:</strong> Kalastra reserves the right to cancel an Order prior to dispatch
+            solely in cases of quality-control rejection, discovery of pricing errors, or suspected fraudulent activity.
+            In such events, Kalastra will issue a full 100% refund to the original payment method within 7 to 14 Business
+            Days as the customer&rsquo;s sole and exclusive remedy.
+          </p>
+        </div>
+      </section>
 
-          {filteredSections.length === 0 ? (
-            <div className="glass-panel rounded-3xl p-10 sm:p-16 text-center">
-              <p className="text-4xl mb-4">🔍</p>
-              <p className="text-base text-[#D4AF37] uppercase tracking-[0.25em] font-cinzel font-bold">No clauses match your query</p>
-              <p className="text-xs text-[#A08BA6] mt-2">Try searching for terms like "delivery", "refund", "made to order", or "GST"</p>
-              <button
-                onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
-                className="mt-6 px-6 py-2.5 bg-[#D4AF37] text-[#0f0518] font-bold text-xs uppercase tracking-widest rounded-xl cursor-pointer hover:brightness-110 transition-all border-none"
-              >
-                Reset Search
-              </button>
-            </div>
-          ) : (
-            filteredSections.map((sec) => {
-              const isExpanded = expandedSections[sec.id] ?? false;
+      {/* ── SECTION 7.0 ── */}
+      <section id="sec-7" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            7.0 PRICING, CURRENCY (INR) &amp; TAX INVOICING (GST)
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 7.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>7.1 Indian Rupees &amp; Taxes:</strong> All prices displayed on the Site are denominated in Indian
+            Rupees (INR) and are inclusive of Goods and Services Tax (GST) applicable under the <em>Central Goods and
+            Services Tax Act, 2017</em>, and corresponding State/Integrated GST enactments.
+          </p>
+          <p>
+            <strong>7.2 Pricing Rectification:</strong> In the event a product is erroneously listed at an incorrect
+            price due to technical error, Kalastra reserves the right to cancel any Order placed at the erroneous price,
+            promptly refunding any amounts paid.
+          </p>
+        </div>
+      </section>
 
-              return (
-                <article
-                  key={sec.id}
-                  id={sec.id}
-                  className={`glass-panel rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 border ${
-                    isExpanded ? 'border-[#D4AF37]/35 shadow-[0_0_30px_rgba(0,0,0,0.5)]' : 'border-[#D4AF37]/15 hover:border-[#D4AF37]/30'
-                  }`}
-                >
-                  {/* Header / Accordion Trigger (Product Detail Style L368-375) */}
-                  <div
-                    onClick={() => toggleSection(sec.id)}
-                    className="p-5 sm:p-7 flex items-center justify-between gap-4 cursor-pointer select-none bg-gradient-to-r from-transparent via-white/[0.02] to-transparent hover:bg-white/[0.04] transition-colors"
-                  >
-                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                      <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex items-center justify-center text-lg sm:text-2xl shadow-[0_0_12px_rgba(212,175,55,0.15)] shrink-0">
-                        {sec.icon}
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[9px] sm:text-[10px] font-black text-[#D4AF37] uppercase tracking-[0.25em] font-cinzel block">
-                          Clause {sec.num}
-                        </span>
-                        <h2 className="text-sm sm:text-lg font-bold text-[#FDFBF7] font-cinzel tracking-wide truncate mt-0.5">
-                          {sec.title}
-                        </h2>
-                      </div>
-                    </div>
+      {/* ── SECTION 8.0 ── */}
+      <section id="sec-8" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            8.0 ONLINE PAYMENT PROTOCOLS &amp; NON-RETENTION OF CREDENTIALS
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 8.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>8.1 Prepayment Requirement:</strong> All Orders must be paid in full prior to the initiation of
+            manufacturing. Cash-on-Delivery (COD), offline drafts, and post-dated payments are not accepted.
+          </p>
+          <p>
+            <strong>8.2 Third-Party Payment Aggregator:</strong> All payment transactions are processed exclusively
+            through RBI-authorized payment aggregators (including Razorpay Software Private Limited) using 256-bit SSL
+            encryption conforming to the <em>Payment Card Industry Data Security Standard (PCI-DSS)</em>.
+          </p>
+          <p>
+            <strong>8.3 Non-Retention of Financial Credentials:</strong> Kalastra does not collect, view, or store
+            complete debit/credit card numbers, CVVs, net-banking credentials, or UPI PINs on its servers. All financial
+            credentials are tokenized directly by authorized payment gateways.
+          </p>
+        </div>
+      </section>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={(e) => copySectionLink(sec.id, e)}
-                        className="p-2 rounded-lg border border-[#D4AF37]/20 text-[#A08BA6] hover:text-[#D4AF37] hover:border-[#D4AF37]/50 transition-all cursor-pointer bg-transparent text-[10px] hidden sm:flex items-center gap-1"
-                        title="Copy Clause Link"
-                      >
-                        {copiedSection === sec.id ? (
-                          <span className="text-[#10B981] font-bold">✓ Copied</span>
-                        ) : (
-                          <span>🔗 Link</span>
-                        )}
-                      </button>
+      {/* ── SECTION 9.0 ── */}
+      <section id="sec-9" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            9.0 DOMESTIC SHIPPING, DELIVERY TIMELINES &amp; RISK ALLOCATION
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 9.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>9.1 Territorial Limitation:</strong> Orders are accepted and fulfilled exclusively within the
+            sovereign territory of India. We do not dispatch to international destinations.
+          </p>
+          <p>
+            <strong>9.2 Fulfillment Timelines:</strong> Estimated delivery timeline is <strong>7 to 14 Business Days</strong>
+            from the date of Order confirmation. This timeframe incorporates custom artisan manufacturing (typically 4–7
+            Business Days) followed by domestic courier transit.
+          </p>
+          <p>
+            <strong>9.3 Transit Risk Allocation:</strong> Kalastra bears the risk of loss or destruction of goods while
+            in transit until physical delivery at the shipping address provided. If a shipment is confirmed lost by our
+            carrier, Kalastra will manufacture a replacement or issue a full refund.
+          </p>
+          <p>
+            <strong>9.4 Accurate Address Obligation:</strong> You are solely responsible for ensuring accuracy of your
+            postal PIN code, street address, and contact telephone number. If a parcel is returned undelivered due to an
+            incomplete or erroneous address, re-dispatch charges will be billed to the Customer.
+          </p>
+        </div>
+      </section>
 
-                      {/* Accordion Chevron Indicator */}
-                      <div className={`w-8 h-8 rounded-full border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-[#D4AF37]/10' : ''}`}>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
+      {/* ── SECTION 10.0 ── */}
+      <section id="sec-10" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            10.0 RETURNS, INSPECTION &amp; QUALIFYING DEFECT POLICY
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 10.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>10.1 Limited Return Rights:</strong> Given the made-to-order nature of each piece, returns are
+            strictly confined to items that are demonstrably defective, damaged during transit, or materially mismatched
+            from the confirmed Order.
+          </p>
+          <p>
+            <strong>10.2 Mandatory 7-Day Notice:</strong> Any claim of damage or manufacturing defect must be reported
+            within <strong>7 calendar days of physical delivery</strong> by emailing <code>kalastra29@gmail.com</code> with:
+          </p>
+          <ul className="list-disc pl-6 space-y-1 text-xs">
+            <li>The official Order Number and invoice copy;</li>
+            <li>High-resolution digital photographs and/or unboxing video clearly displaying the alleged defect;</li>
+            <li>Photographs of the outer courier packaging and tags.</li>
+          </ul>
+          <p>
+            <strong>10.3 Restitution:</strong> For approved defect claims, Kalastra will provide reverse pickup or a
+            prepaid shipping label at its own cost and, following inspection, issue a full refund to the original payment
+            source within <strong>7 to 14 Business Days</strong>. Direct exchanges are not offered. Refer to our
+            dedicated <strong>Cancellation &amp; Refund Policy</strong> for complete procedural details.
+          </p>
+        </div>
+      </section>
 
-                  {/* Expandable Accordion Body */}
-                  {isExpanded && (
-                    <div className="px-5 sm:px-8 pb-6 sm:pb-8 pt-2 border-t border-[#D4AF37]/10 space-y-4 animate-fade-in">
-                      {sec.content.map((item, idx) => {
-                        if (item.type === 'paragraph') {
-                          return (
-                            <p key={idx} className="text-xs sm:text-sm text-[#A08BA6] leading-relaxed font-light">
-                              {item.text}
-                            </p>
-                          );
-                        }
+      {/* ── SECTION 11.0 ── */}
+      <section id="sec-11" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            11.0 PROPRIETARY RIGHTS, TRADEMARKS &amp; ARTISTIC COPYRIGHT
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 11.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>11.1 Brand Ownership:</strong> All trademarks, service marks, trade names, brand imagery, garment
+            designs, graphics, photographs, audio/video assets, and software code embodied within the Site are the exclusive
+            intellectual property of Kalastra, protected under the <em>Trade Marks Act, 1999</em>, the <em>Copyright
+            Act, 1957</em>, the <em>Designs Act, 2000</em>, and applicable international conventions.
+          </p>
+          <p>
+            <strong>11.2 License Restrictions:</strong> You are granted a limited, revocable, non-exclusive license solely
+            for personal, non-commercial viewing of the Site. No portion of our garment designs, artwork, or textual
+            content may be scraped, replicated, re-sold, or reverse-engineered without prior written authorization from
+            Kalastra.
+          </p>
+        </div>
+      </section>
 
-                        if (item.type === 'callout') {
-                          const isWarn = item.calloutType === 'warning';
-                          const isImp = item.calloutType === 'important';
-                          return (
-                            <div
-                              key={idx}
-                              className="p-4 sm:p-5 rounded-2xl border backdrop-blur-md relative overflow-hidden"
-                              style={{
-                                background: isWarn ? 'rgba(244,63,94,0.1)' : isImp ? 'rgba(212,175,55,0.1)' : 'rgba(59,130,246,0.1)',
-                                borderColor: isWarn ? 'rgba(244,63,94,0.3)' : isImp ? 'rgba(212,175,55,0.3)' : 'rgba(59,130,246,0.3)',
-                              }}
-                            >
-                              <div
-                                className="absolute top-0 left-0 bottom-0 w-1.5"
-                                style={{ background: isWarn ? '#F43F5E' : isImp ? '#D4AF37' : '#3B82F6' }}
-                              />
-                              <p className="text-xs sm:text-sm font-bold leading-relaxed tracking-wide" style={{ color: isWarn ? '#F43F5E' : isImp ? '#FFDF73' : '#60A5FA' }}>
-                                {item.text}
-                              </p>
-                            </div>
-                          );
-                        }
+      {/* ── SECTION 12.0 ── */}
+      <section id="sec-12" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            12.0 USER CONDUCT, CYBER SECURITY &amp; STATUTORY PROHIBITIONS
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 12.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            In accordance with Rule 3(1)(b) of the <em>Information Technology (Intermediary Guidelines and Digital Media
+            Ethics Code) Rules, 2021</em>, you agree not to host, display, upload, modify, transmit, or distribute any
+            information that:
+          </p>
+          <ul className="list-disc pl-6 space-y-1 text-xs">
+            <li>Belongs to another person and to which you do not have any legal right;</li>
+            <li>Is defamatory, obscene, pornographic, pedophilic, invasive of another&rsquo;s privacy, or racially offensive;</li>
+            <li>Infringes any patent, trademark, copyright, or other proprietary rights;</li>
+            <li>Contains software viruses or any malicious computer code designed to disrupt, destroy, or limit the functionality of any computer resource;</li>
+            <li>Threatens the unity, integrity, defense, security, or sovereignty of India, or public order.</li>
+          </ul>
+        </div>
+      </section>
 
-                        if (item.type === 'bullet_list') {
-                          return (
-                            <ul key={idx} className="space-y-2.5 pl-1">
-                              {item.items?.map((bullet, bIdx) => (
-                                <li key={bIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-[#A08BA6] leading-relaxed font-light">
-                                  <span className="text-[#D4AF37] font-bold text-xs mt-1 shrink-0">◆</span>
-                                  <span>{bullet}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          );
-                        }
+      {/* ── SECTION 13.0 ── */}
+      <section id="sec-13" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            13.0 PROMOTIONAL COVENANTS &amp; DISCOUNT COUPON RESTRICTIONS
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 13.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            Discount codes and promotional credits issued by Kalastra are non-transferable, possess no cash surrender
+            value, and cannot be combined unless expressly stated in the promotion terms. Kalastra reserves the absolute
+            right to revoke any promotional coupon in the event of suspected abuse or unauthorized distribution.
+          </p>
+        </div>
+      </section>
 
-                        if (item.type === 'key_value') {
-                          return (
-                            <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-[#0a0310]/70 p-3.5 sm:p-4 rounded-2xl border border-[#D4AF37]/15">
-                              {item.keyValue?.map((kv, kvIdx) => (
-                                <div key={kvIdx} className="p-3 bg-[#1a0b2e]/50 rounded-xl border border-[#D4AF37]/10">
-                                  <p className="text-[9px] font-black uppercase tracking-widest text-[#D4AF37] font-cinzel mb-1">{kv.label}</p>
-                                  <p className="text-xs sm:text-sm text-[#FDFBF7] font-mono leading-snug break-words">{kv.value}</p>
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        }
+      {/* ── SECTION 14.0 ── */}
+      <section id="sec-14" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            14.0 DISCLAIMER OF WARRANTIES &amp; GARMENT CARE OBLIGATIONS
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 14.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>14.1 As-Is Standard:</strong> Except as expressly provided herein or required by mandatory Indian
+            consumer protection statutes, the Site, services, and apparel are supplied on an &ldquo;as is&rdquo; and
+            &ldquo;as available&rdquo; basis without warranties of any kind, whether express or implied.
+          </p>
+          <p>
+            <strong>14.2 Garment Care:</strong> Customers must scrupulously adhere to wash and care instructions affixed
+            to garments. Kalastra disclaims all liability for color bleeding, fabric degradation, shrinkage, or distortion
+            resulting from machine-washing, harsh detergents, or non-recommended dry cleaning.
+          </p>
+        </div>
+      </section>
 
-                        return null;
-                      })}
-                    </div>
-                  )}
-                </article>
-              );
-            })
-          )}
+      {/* ── SECTION 15.0 ── */}
+      <section id="sec-15" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            15.0 LIMITATION OF LIABILITY &amp; LIQUIDATED DAMAGES CAP
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 15.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            To the maximum extent permissible under applicable Indian law, Kalastra, its sole proprietor, and its
+            representatives shall not be liable for any indirect, incidental, punitive, special, or consequential damages
+            arising out of or in connection with the purchase of goods or utilization of the platform.
+          </p>
+          <p className="border border-black p-3 bg-neutral-50 font-mono text-xs">
+            <strong>AGGREGATE MAXIMUM LIABILITY:</strong> IN NO EVENT SHALL THE TOTAL CUMULATIVE LIABILITY OF KALASTRA
+            FOR ALL CLAIMS ARISING OUT OF AN ORDER EXCEED THE EXACT PURCHASE PRICE ACTUALLY PAID BY THE CUSTOMER FOR
+            THE SPECIFIC GARMENT GIVING RISE TO THE ALLEGED CAUSE OF ACTION.
+          </p>
+        </div>
+      </section>
 
-          {/* Contact Card at Bottom (Product Detail Feature Style) */}
-          <div className="glass-panel rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden border border-[#D4AF37]/30 shadow-[0_0_40px_rgba(212,175,55,0.15)] mt-12">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-[#D4AF37]/15 to-transparent rounded-bl-full blur-3xl pointer-events-none" />
-            <span className="text-3xl sm:text-4xl block mb-3">💬</span>
-            <h3 className="text-lg sm:text-xl font-bold gold-gradient-text font-cinzel tracking-wider mb-2">Have Questions About Our Covenant?</h3>
-            <p className="text-xs sm:text-sm text-[#A08BA6] max-w-md mx-auto mb-6 font-light leading-relaxed">
-              Our customer support concierge is ready to assist you during standard business hours.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <a
-                href="mailto:kalastra29@gmail.com"
-                className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-[#D4AF37] to-[#FFDF73] text-[#0f0518] text-xs font-black uppercase tracking-[0.2em] rounded-xl hover:shadow-[0_0_25px_rgba(212,175,55,0.5)] transition-all cursor-pointer font-cinzel text-center border-none"
-              >
-                Email Support
-              </a>
-              <a
-                href="tel:+919082260829"
-                className="w-full sm:w-auto px-6 py-3.5 bg-[#0a0310] text-[#D4AF37] text-xs font-black uppercase tracking-[0.2em] rounded-xl border border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 transition-all cursor-pointer font-cinzel text-center"
-              >
-                Call +91 9082260829
-              </a>
-            </div>
+      {/* ── SECTION 16.0 ── */}
+      <section id="sec-16" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            16.0 INDEMNIFICATION COVENANT
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 16.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            You agree to defend, indemnify, and hold harmless Kalastra, its proprietor, affiliates, and contractors
+            from and against any claims, liabilities, damages, losses, costs, and expenses (including reasonable legal fees)
+            arising from: (a) your breach of these Terms; (b) your violation of any third-party rights, including IP or privacy
+            rights; or (c) any fraud, misrepresentation, or gross negligence committed by you.
+          </p>
+        </div>
+      </section>
+
+      {/* ── SECTION 17.0 (DPDP ACT 2023 COMPLIANCE) ── */}
+      <section id="sec-17" className="border-b border-black pb-8 bg-neutral-50 p-4 border">
+        <div className="flex items-baseline justify-between border-b border-black pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            17.0 DATA PROTECTION &amp; COMPLIANCE WITH DPDP ACT, 2023
+          </h2>
+          <span className="font-mono text-xs font-bold text-black">STATUTORY CLAUSE 17.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>17.1 Statutory Recognition:</strong> Kalastra recognizes and strictly complies with the provisions of
+            the <em>Digital Personal Data Protection Act, 2023 (Act No. 22 of 2023)</em> of the Parliament of India
+            (&ldquo;DPDP Act&rdquo;), the <em>Information Technology Act, 2000</em>, and the <em>Information Technology
+            (Reasonable Security Practices and Procedures and Sensitive Personal Data or Information) Rules, 2011</em>.
+          </p>
+          <p>
+            <strong>17.2 Legal Capacities:</strong> In all processing of digital personal data:
+          </p>
+          <ul className="list-disc pl-6 space-y-1 text-xs">
+            <li>
+              <strong>Kalastra</strong> acts strictly as a <strong>&ldquo;Data Fiduciary&rdquo;</strong> as defined under
+              Section 2(i) of the DPDP Act, determining the purpose and means of data processing;
+            </li>
+            <li>
+              <strong>The Customer/User</strong> is designated as the <strong>&ldquo;Data Principal&rdquo;</strong> as
+              defined under Section 2(j) of the DPDP Act.
+            </li>
+          </ul>
+          <p>
+            <strong>17.3 Lawful Grounds for Processing:</strong> Personal data (including name, delivery address, phone
+            number, email, and billing records) is processed solely for lawful purposes under Section 4 and Section 6
+            of the DPDP Act, specifically:
+          </p>
+          <ul className="list-disc pl-6 space-y-1 text-xs">
+            <li>To fulfill the contractual made-to-order manufacturing and delivery covenant agreed upon by you;</li>
+            <li>To comply with statutory invoicing and tax filing obligations under the Central Goods and Services Tax Act, 2017;</li>
+            <li>To render transactional status updates, shipping tracking, and customer grievance resolution;</li>
+            <li>Pursuant to specified lawful consents explicitly provided during registration or checkout.</li>
+          </ul>
+          <p>
+            <strong>17.4 Statutory Rights of Data Principals:</strong> Under Sections 11, 12, 13, and 14 of the DPDP Act,
+            2023, you enjoy statutory rights including:
+          </p>
+          <ul className="list-disc pl-6 space-y-1 text-xs">
+            <li><strong>Right to Access Information:</strong> Obtain a summary of your personal data processed by Kalastra;</li>
+            <li><strong>Right to Correction &amp; Erasure:</strong> Request correction of inaccurate data, completion of incomplete records, or erasure of data no longer necessary for tax or fulfillment purposes;</li>
+            <li><strong>Right of Grievance Redressal:</strong> File grievances directly with our statutory Grievance Redressal Officer;</li>
+            <li><strong>Right to Nominate:</strong> Nominate another individual to exercise your rights in the event of death or incapacity.</li>
+          </ul>
+          <p>
+            <strong>17.5 Processing of Children&rsquo;s Personal Data:</strong> In accordance with Section 9 of the DPDP Act,
+            Kalastra does not knowingly process personal data of children under eighteen (18) years of age without verifiable
+            parental consent, nor does it engage in tracking, behavioral monitoring, or targeted advertising directed at children.
+          </p>
+          <p>
+            <strong>17.6 Data Protection Board of India (DPBI):</strong> In the event any grievance is not resolved to your
+            satisfaction through our internal redressal mechanism within the statutory timeframe, you hold the legal right
+            to lodge a formal complaint before the <strong>Data Protection Board of India</strong> as constituted under
+            Section 18 of the DPDP Act, 2023.
+          </p>
+          <p className="text-xs italic text-neutral-600">
+            For exhaustive details on data categories, retention schedules, and international transfer restrictions, refer to
+            our standalone <strong>Privacy Policy (DPDP Act, 2023 Compliant)</strong>.
+          </p>
+        </div>
+      </section>
+
+      {/* ── SECTION 18.0 ── */}
+      <section id="sec-18" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            18.0 THIRD-PARTY INTERMEDIARIES &amp; LOGISTICS PROVIDERS
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 18.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            Order fulfillment requires engagement of licensed third-party logistics carriers and certified payment
+            gateways (Data Processors under the DPDP Act). While Kalastra ensures such partners adhere to stringent
+            confidentiality and data protection standards, Kalastra is not liable for autonomous courier operational delays
+            caused by regional weather, strikes, or regional transport curfews.
+          </p>
+        </div>
+      </section>
+
+      {/* ── SECTION 19.0 ── */}
+      <section id="sec-19" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            19.0 FORCE MAJEURE EXCLUSIONS
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 19.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            Neither party shall be held in breach of this Covenant for delay or failure of performance resulting from acts
+            of God, national lockdowns, state epidemics, floods, earthquakes, armed conflicts, civic strife, telecommunications
+            failures, electrical grid shutdowns, or governmental embargoes beyond reasonable control. In such events, manufacturing
+            and delivery milestones shall be extended by a duration equivalent to the period of disruption.
+          </p>
+        </div>
+      </section>
+
+      {/* ── SECTION 20.0 ── */}
+      <section id="sec-20" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            20.0 GOVERNING LAW, DISPUTE RESOLUTION &amp; EXCLUSIVE JURISDICTION
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 20.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>20.1 Governing Law:</strong> These Terms and any dispute or claim arising out of or in connection with
+            them shall be governed by, construed, and enforced in accordance with the substantive laws of the Republic
+            of India, without regard to conflict of law principles.
+          </p>
+          <p>
+            <strong>20.2 Good-Faith Conciliation:</strong> Prior to initiating any formal legal suit, the aggrieved party
+            shall transmit a formal written Statement of Dispute to the other party, allowing thirty (30) days for informal
+            good-faith resolution.
+          </p>
+          <p className="border border-black p-3 bg-neutral-50 font-mono text-xs">
+            <strong>EXCLUSIVE TERRITORIAL JURISDICTION:</strong> SUBJECT TO MANDATORY PROVISIONS OF APPLICABLE CONSUMER
+            PROTECTION LAWS, ALL DISPUTES, LITIGATION, OR LEGAL PROCEEDINGS ARISING FROM OR PERTAINING TO THIS COVENANT
+            SHALL BE SUBJECT TO THE SOLE AND EXCLUSIVE JURISDICTION OF THE COURTS OF COMPETENT JURISDICTION SITUATED AT
+            <strong> MUMBAI, MAHARASHTRA, INDIA</strong>.
+          </p>
+        </div>
+      </section>
+
+      {/* ── SECTION 21.0 ── */}
+      <section id="sec-21" className="border-b border-black pb-8">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            21.0 SEVERABILITY, ENTIRE AGREEMENT &amp; AMENDMENTS
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 21.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            <strong>21.1 Severability:</strong> If any provision of these Terms is adjudicated to be unlawful, void, or
+            unenforceable by a competent court or tribunal, such provision shall be deemed severable and shall not affect
+            the validity and enforceability of any remaining provisions.
+          </p>
+          <p>
+            <strong>21.2 Entire Understanding:</strong> These Terms, together with the Privacy Policy, Cookie Policy,
+            and individual Order Confirmations, constitute the entire legal covenant between Kalastra and the User,
+            superseding all prior electronic, oral, or written communications.
+          </p>
+          <p>
+            <strong>21.3 Unilateral Amendments:</strong> Kalastra reserves the right to amend these Terms to reflect legislative
+            changes (including notifications under the DPDP Act, 2023). Notice of material changes will be displayed on this
+            page with an updated revision date.
+          </p>
+        </div>
+      </section>
+
+      {/* ── SECTION 22.0 ── */}
+      <section id="sec-22" className="pb-4">
+        <div className="flex items-baseline justify-between border-b border-neutral-300 pb-2 mb-4">
+          <h2 className="text-lg font-serif font-black uppercase text-black">
+            22.0 STATUTORY NOTICE &amp; GRIEVANCE REDRESSAL OFFICER
+          </h2>
+          <span className="font-mono text-xs text-neutral-500">CLAUSE 22.0</span>
+        </div>
+        <div className="space-y-3">
+          <p>
+            Pursuant to Rule 5(9) of the <em>Consumer Protection (E-Commerce) Rules, 2020</em> and Section 13 of the
+            <em>Digital Personal Data Protection Act, 2023</em>, the contact particulars of our statutory Grievance
+            Redressal Officer are as follows:
+          </p>
+          <div className="border border-black p-4 bg-neutral-50 font-mono text-xs space-y-1">
+            <div className="font-bold text-sm text-black">GRIEVANCE REDRESSAL &amp; DATA PROTECTION DESK</div>
+            <div><strong>Designated Officer:</strong> Legal Compliance Lead &amp; Grievance Officer</div>
+            <div><strong>Entity:</strong> Kalastra (Sole Proprietorship)</div>
+            <div><strong>Postal Address:</strong> Kopar Railway Station, Mumbai, Maharashtra, India</div>
+            <div><strong>Grievance Email:</strong> kalastra29@gmail.com</div>
+            <div><strong>Direct Telephone:</strong> +91 9082260829</div>
+            <div><strong>Statutory Acknowledgment Window:</strong> Within 48 hours of receipt</div>
+            <div><strong>Resolution Redressal Timeline:</strong> Within 30 days of registration</div>
           </div>
-        </main>
-      </div>
-
-      {/* Floating Scroll to Top Button */}
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-6 right-5 z-40 w-11 h-11 sm:w-12 sm:h-12 rounded-full glass-panel border border-[#D4AF37]/40 text-[#D4AF37] flex items-center justify-center text-lg hover:bg-[#D4AF37] hover:text-[#0f0518] transition-all duration-300 cursor-pointer shadow-[0_0_20px_rgba(212,175,55,0.25)] hover:scale-110"
-        title="Scroll to Top"
-      >
-        ↑
-      </button>
-    </div>
+        </div>
+      </section>
+    </LegalLayout>
   );
 }
