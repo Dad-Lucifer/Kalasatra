@@ -6,10 +6,7 @@ interface AdminAuthPageProps {
   onLoginSuccess: () => void;
 }
 
-type TabType = 'login' | 'signup';
-
 export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
-  const [tab, setTab] = useState<TabType>('login');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string; list?: string[] } | null>(null);
 
@@ -17,9 +14,6 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [otpCode, setOtpCode] = useState('');
 
   // OTP verification sub-view
@@ -37,47 +31,11 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
     }
   }, [resendTimer]);
 
-  const handleTabChange = (newTab: TabType) => {
-    setTab(newTab);
-    setMessage(null);
-    setPassword('');
-    setOtpCode('');
-  };
-
   const showMessage = (type: 'success' | 'error', text: string, list?: string[]) => {
     setMessage({ type, text, list });
   };
 
-  // 1. ADMIN SIGNUP REQUEST
-  const handleAdminSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    const payload = {
-      email,
-      password,
-      name,
-      ...(phone ? { phone } : {}),
-    };
-
-    const res = await apiRequest('/admin/signup', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-
-    setLoading(false);
-    if (res.success) {
-      showMessage('success', res.message || 'Admin account created! OTP code sent to your email.');
-      setOtpEmail(email);
-      setIsVerifyingOtp(true);
-      setResendTimer(60);
-    } else {
-      showMessage('error', res.message || 'Signup failed', res.errors);
-    }
-  };
-
-  // 2. VERIFY OTP REQUEST
+  // 1. VERIFY OTP REQUEST
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -95,7 +53,6 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
     if (res.success) {
       showMessage('success', 'Email verified successfully! Admin account activated. You can now log in.');
       setIsVerifyingOtp(false);
-      setTab('login');
       setPassword('');
       setOtpCode('');
     } else {
@@ -234,157 +191,62 @@ export default function AdminAuthPage({ onLoginSuccess }: AdminAuthPageProps) {
             </div>
           </form>
         ) : (
-          <div className="animate-fade-in">
-            <div className="flex mb-10 border-b border-[#FDFBF7]/10">
-              <button
-                onClick={() => handleTabChange('login')}
-                className={`flex-1 pb-4 text-[10px] tracking-[0.2em] uppercase transition-all duration-500 bg-transparent border-none cursor-pointer ${tab === 'login'
-                    ? 'text-[#D4AF37] border-b border-[#D4AF37]'
-                    : 'text-[#FDFBF7]/30 hover:text-[#FDFBF7]/60'
-                  }`}
-              >
-                Authorize
-              </button>
-              <button
-                onClick={() => handleTabChange('signup')}
-                className={`flex-1 pb-4 text-[10px] tracking-[0.2em] uppercase transition-all duration-500 bg-transparent border-none cursor-pointer ${tab === 'signup'
-                    ? 'text-[#D4AF37] border-b border-[#D4AF37]'
-                    : 'text-[#FDFBF7]/30 hover:text-[#FDFBF7]/60'
-                  }`}
-              >
-                Register
-              </button>
+          <form onSubmit={handleAdminLogin} className="space-y-8 animate-fade-in">
+            <div className="space-y-2 group">
+              <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Admin Email</label>
+              <input
+                type="email"
+                placeholder="admin@Kalastra.com"
+                className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
 
-            {tab === 'login' && (
-              <form onSubmit={handleAdminLogin} className="space-y-8">
-                <div className="space-y-2 group">
-                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Admin Email</label>
-                  <input
-                    type="email"
-                    placeholder="admin@Kalastra.com"
-                    className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2 group relative">
-                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Passcode</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full px-0 py-3 pr-10 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={togglePasswordVisibility}
-                      className="absolute top-1/2 right-0 -translate-y-1/2 text-[#FDFBF7]/20 hover:text-[#D4AF37] transition-colors bg-transparent border-none cursor-pointer"
-                    >
-                      {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
-                    </button>
-                  </div>
-                </div>
-
-                <button type="submit" className="w-full mt-10 py-4 bg-[#D4AF37] text-[#050505] text-[10px] tracking-[0.2em] font-bold uppercase hover:bg-[#FDFBF7] hover:shadow-[0_0_30px_rgba(212,175,55,0.15)] transition-all duration-500 cursor-pointer border-none" disabled={loading}>
-                  <span className="flex items-center justify-center">
-                    {loading ? <span className="w-3 h-3 border-2 border-[#050505] border-t-transparent rounded-full animate-spin mr-3" /> : null}
-                    {loading ? 'Establishing Link...' : 'Access Portal'}
-                  </span>
+            <div className="space-y-2 group relative">
+              <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Passcode</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-0 py-3 pr-10 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute top-1/2 right-0 -translate-y-1/2 text-[#FDFBF7]/20 hover:text-[#D4AF37] transition-colors bg-transparent border-none cursor-pointer"
+                >
+                  {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
                 </button>
+              </div>
+            </div>
 
-                <div className="text-center mt-8">
-                  <p className="text-[9px] tracking-[0.2em] text-[#FDFBF7]/30 uppercase">
-                    Pending Verification?{' '}
-                    <span
-                      onClick={() => {
-                        setOtpEmail(email);
-                        setIsVerifyingOtp(true);
-                      }}
-                      className="text-[#D4AF37]/70 hover:text-[#D4AF37] cursor-pointer transition-colors ml-1"
-                    >
-                      Verify Now
-                    </span>
-                  </p>
-                </div>
-              </form>
-            )}
+            <button type="submit" className="w-full mt-10 py-4 bg-[#D4AF37] text-[#050505] text-[10px] tracking-[0.2em] font-bold uppercase hover:bg-[#FDFBF7] hover:shadow-[0_0_30px_rgba(212,175,55,0.15)] transition-all duration-500 cursor-pointer border-none" disabled={loading}>
+              <span className="flex items-center justify-center">
+                {loading ? <span className="w-3 h-3 border-2 border-[#050505] border-t-transparent rounded-full animate-spin mr-3" /> : null}
+                {loading ? 'Establishing Link...' : 'Access Portal'}
+              </span>
+            </button>
 
-            {tab === 'signup' && (
-              <form onSubmit={handleAdminSignup} className="space-y-8">
-                <div className="space-y-2 group">
-                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Designation</label>
-                  <input
-                    type="text"
-                    placeholder="Full Name"
-                    className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2 group">
-                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Admin Email</label>
-                  <input
-                    type="email"
-                    placeholder="admin@Kalastra.com"
-                    className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2 group">
-                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Secure Line</label>
-                  <input
-                    type="tel"
-                    placeholder="+1 234 567 890 (Optional)"
-                    className="w-full px-0 py-3 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2 group relative">
-                  <label className="block text-[9px] tracking-[0.25em] text-[#FDFBF7]/40 uppercase group-focus-within:text-[#D4AF37] transition-colors">Passcode</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full px-0 py-3 pr-10 bg-transparent border-b border-[#FDFBF7]/10 text-[#FDFBF7] text-sm placeholder-[#FDFBF7]/10 outline-none focus:border-[#D4AF37]/50 transition-all duration-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={togglePasswordVisibility}
-                      className="absolute top-1/2 right-0 -translate-y-1/2 text-[#FDFBF7]/20 hover:text-[#D4AF37] transition-colors bg-transparent border-none cursor-pointer"
-                    >
-                      {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
-                    </button>
-                  </div>
-                  <p className="text-[8px] text-[#FDFBF7]/20 mt-3 uppercase tracking-[0.15em] leading-relaxed">
-                    Min 8 chars • Uppercase • Lowercase • Number • Symbol
-                  </p>
-                </div>
-
-                <button type="submit" className="w-full mt-10 py-4 bg-[#D4AF37] text-[#050505] text-[10px] tracking-[0.2em] font-bold uppercase hover:bg-[#FDFBF7] hover:shadow-[0_0_30px_rgba(212,175,55,0.15)] transition-all duration-500 cursor-pointer border-none" disabled={loading}>
-                  <span className="flex items-center justify-center">
-                    {loading ? <span className="w-3 h-3 border-2 border-[#050505] border-t-transparent rounded-full animate-spin mr-3" /> : null}
-                    {loading ? 'Initializing...' : 'Request Clearance'}
-                  </span>
-                </button>
-              </form>
-            )}
-          </div>
+            <div className="text-center mt-8">
+              <p className="text-[9px] tracking-[0.2em] text-[#FDFBF7]/30 uppercase">
+                Pending Verification?{' '}
+                <span
+                  onClick={() => {
+                    setOtpEmail(email);
+                    setIsVerifyingOtp(true);
+                  }}
+                  className="text-[#D4AF37]/70 hover:text-[#D4AF37] cursor-pointer transition-colors ml-1"
+                >
+                  Verify Now
+                </span>
+              </p>
+            </div>
+          </form>
         )}
 
       </div>
