@@ -4,7 +4,6 @@ const { Router } = require("express");
 const router = Router();
 
 const {
-  adminSignup,
   adminVerifyOtp,
   adminResendOtp,
   adminLogin,
@@ -16,7 +15,6 @@ const { requireAdmin } = require("../middlewares/rbac.middleware");
 const { authLimiter, resendOtpLimiter } = require("../middlewares/rateLimiter.middleware");
 const {
   validate,
-  adminSignupSchema,
   adminLoginSchema,
   verifyOtpSchema,
   resendOtpSchema,
@@ -24,17 +22,7 @@ const {
 
 // ─── Public Routes ────────────────────────────────────────────────────────────
 
-/**
- * @route   POST /api/v1/admin/signup
- * @desc    Register new admin user — triggers email OTP
- * @access  Public
- */
-router.post(
-  "/signup",
-  authLimiter,
-  validate(adminSignupSchema),
-  adminSignup
-);
+// Public admin registration is disabled. Admin/owner accounts must be provisioned internally.
 
 /**
  * @route   POST /api/v1/admin/verify-otp
